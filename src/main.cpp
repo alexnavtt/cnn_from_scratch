@@ -29,6 +29,10 @@ int main(int argc, char* argv[]){
 
     my_cnn::SimpleMatrix<float> SSM(M, {0, 0, 0}, {2, 3, 2});
     std::cout << "Rectangular matrix:\n" << SSM;
+    SSM *= SSM;
+    std::cout << "After squaring:\n" << SSM;
+    SSM += 10;
+    std::cout << "After offset: \n" << SSM;
 
     std::cout << "After invalid size operation:\n";
     try{

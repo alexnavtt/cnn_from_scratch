@@ -6,6 +6,7 @@
 #include <iostream>
 #include <valarray>
 #include <stdexcept>
+#include <type_traits>
 
 namespace my_cnn{
 
@@ -41,6 +42,29 @@ private:
        throw MatrixSizeException(ss.str()); \
 }
 
+#define ADD_VALARRAY_OPERATOR(op)                                       \
+    template<typename Other>                                            \
+    SimpleMatrix<T> operator op (const Other& other){                   \
+        SimpleMatrix<T> new_mat = *this;                                \
+        if constexpr (std::is_same_v<Other, SimpleMatrix<T>>){          \
+            if (dim_ != other.dim_) THROW_SIZE_EXCEPTION;               \
+            new_mat.data_ op##= other.data_;                            \
+        }else{                                                          \
+            new_mat.data_ op##= other;                                  \
+        }                                                               \
+        return new_mat;                                                 \
+    }                                                                   \
+    template<typename Other>                                            \
+    SimpleMatrix<T> operator op##= (const Other& other){                \
+        if constexpr (std::is_same_v<Other, SimpleMatrix<T>>){          \
+            if (dim_ != other.dim_) THROW_SIZE_EXCEPTION;               \
+            data_ op##= other.data_;                                    \
+        }else{                                                          \
+            data_ op##= other;                                          \
+        }                                                               \
+        return *this;                                                   \
+    }
+
 template<typename T>  
 class SimpleMatrix{
 public:
@@ -58,32 +82,10 @@ public:
     )])
     {}
 
-    SimpleMatrix<T> operator+(const SimpleMatrix<T>& other){
-        if (dim_ != other.dim_) THROW_SIZE_EXCEPTION;
-        SimpleMatrix<T> new_mat = *this;
-        new_mat.data_ += other.data_;
-        return new_mat;
-    }
-
-    SimpleMatrix<T> operator+=(const SimpleMatrix<T>& other){
-        if (dim_ != other.dim_) THROW_SIZE_EXCEPTION;
-        this->data_ += other.data_;
-        return *this;
-    }
-
-    SimpleMatrix operator*(const SimpleMatrix& other){
-        if (dim_ != other.dim_) THROW_SIZE_EXCEPTION;
-        SimpleMatrix<T> new_mat = *this;
-        new_mat.data_ *= other.data_;
-        return new_mat;
-    }
-
-    SimpleMatrix operator*=(const SimpleMatrix& other){
-        if (dim_ != other.dim_) THROW_SIZE_EXCEPTION;
-        SimpleMatrix<T> new_mat = *this;
-        this->data_ *= other.data_;
-        return new_mat;
-    }
+    ADD_VALARRAY_OPERATOR(+)
+    ADD_VALARRAY_OPERATOR(*)
+    ADD_VALARRAY_OPERATOR(-)
+    ADD_VALARRAY_OPERATOR(/)
 
     friend std::ostream& operator<<(std::ostream& os, const SimpleMatrix<T>& M){
         T max = M.data_.max();
