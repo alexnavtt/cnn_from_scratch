@@ -7,8 +7,8 @@ int main(int argc, char* argv[]){
 
     my_cnn::SimpleMatrix<float> M({5, 5, 2});
     int val = 0;
-    for (int j = 0; j < 5; j++){
-        for (int i = 0; i < 5; i++){
+    for (int i = 0; i < 5; i++){
+        for (int j = 0; j < 5; j++){
             M(i, j) = val++;
         }
     }
@@ -28,6 +28,16 @@ int main(int argc, char* argv[]){
     std::cout << "After Modification:\n" << OSM;
 
     std::cout << "Initial Matrix Again:\n" << M;
+
+    my_cnn::SimpleMatrix<float> SSM(M, {0, 0, 0}, {2, 3, 2});
+    std::cout << "Rectangular matrix:\n" << SSM;
+
+    std::cout << "After invalid size operation:\n";
+    try{
+        std::cout << SSM*OSM;
+    }catch(my_cnn::MatrixSizeException& e){
+        std::cout << "Failed opeartion: " << e.what();
+    }
 
     return 0;
 }
