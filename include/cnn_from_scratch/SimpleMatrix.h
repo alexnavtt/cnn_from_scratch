@@ -98,6 +98,9 @@ public:
         return os;
     }
 
+    auto begin() {return std::begin(data_);}
+    auto end() {return std::end(data_);}
+
     size_t getIndex(size_t x_idx, size_t y_idx, size_t z_idx=0) const{
         return z_idx * dim_.y * dim_.x + y_idx * dim_.x + x_idx;
     }

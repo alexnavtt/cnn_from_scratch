@@ -7,10 +7,8 @@ int main(int argc, char* argv[]){
 
     my_cnn::SimpleMatrix<float> M({5, 5, 2});
     int val = 0;
-    for (int i = 0; i < 5; i++){
-        for (int j = 0; j < 5; j++){
-            M(i, j) = val++;
-        }
+    for (float& v : M){
+        v = val++;
     }
 
     std::cout << "Initial Matrix:\n";
