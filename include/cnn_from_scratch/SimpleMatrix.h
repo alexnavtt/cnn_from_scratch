@@ -10,9 +10,14 @@
 namespace my_cnn{
 
 struct dim3{
-    uint x;
-    uint y;
-    uint z;
+    union{
+        struct{
+            uint x;
+            uint y;
+            uint z;
+        };
+        uint data[3];
+    };
 
     bool operator==(const dim3& other) const{return (x == other.x) && (y == other.y) && (z == other.z);}
     bool operator!=(const dim3& other) const{return not (other == *this);}
@@ -111,6 +116,14 @@ public:
 
     const T& operator()(size_t x_idx, size_t y_idx, size_t z_idx=0) const {
         return data_[getIndex(x_idx, y_idx, z_idx)];
+    }
+
+    uint dim(size_t idx) const{
+        return dim_.data[idx];
+    }
+
+    const dim3& dims() const{
+        return dim_;
     }
 
 protected:
