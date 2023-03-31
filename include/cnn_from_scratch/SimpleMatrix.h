@@ -91,8 +91,15 @@ protected:
 
 template<typename T>
 std::ostream& operator<<(std::ostream& os, const my_cnn::SimpleMatrix<T>& M){
-    const T max = M.data_.max();
-    const int max_width = ceil(log10(max));
+    int default_precision = std::cout.precision();
+    int max_width;
+    if constexpr (std::is_integral_v<T>){
+        const T max = M.data_.abs().max();
+        max_width = ceil(log10(max));
+    }else{
+        std::cout << std::setprecision(3) << std::fixed;
+        max_width = 4;
+    }
 
     for (int i = 0; i < M.dim_.x; i++){
         for (int k = 0; k < M.dim_.z; k++){
@@ -104,6 +111,9 @@ std::ostream& operator<<(std::ostream& os, const my_cnn::SimpleMatrix<T>& M){
         }
         os << "\n";
     }
+
+    std::cout << std::setprecision(default_precision);
+    std::cout << std::defaultfloat;
 
     return os;
 }
