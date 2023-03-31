@@ -8,5 +8,5 @@ include_directories(
     include
 )
 
-add_executable(main src/main.cpp)
+add_executable(main src/main.cpp src/SimpleMatrix.cpp)
 target_compile_options(main PRIVATE -g)

@@ -1,7 +1,6 @@
 #include <iostream>
 #include <iomanip>
-// #include "cnn_from_scratch/ModelDescription.h"
-#include "cnn_from_scratch/Kernel.h"
+#include <cnn_from_scratch/SimpleMatrix.h>
 
 int main(int argc, char* argv[]){
 
