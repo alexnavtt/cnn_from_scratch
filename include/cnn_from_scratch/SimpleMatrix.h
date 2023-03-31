@@ -8,6 +8,8 @@
 #include <stdexcept>
 #include <type_traits>
 
+#include "cnn_from_scratch/SubMatrixView.h"
+
 namespace my_cnn{
 
 struct dim3{
@@ -38,6 +40,16 @@ private:
        << dim_.x << ", " << dim_.y << ", " << dim_.z \
        << ") and (" \
        << other.dim_.x << ", " << other.dim_.y << ", " << other.dim_.z \
+       << ")\n";    \
+       throw MatrixSizeException(ss.str()); \
+}
+
+#define THROW_SUB_SIZE_EXCEPTION { \
+    std::stringstream ss;      \
+    ss << "subMatrix generation size mismatch. Max indices of (" \
+       << idx.x-1 + sub_dim.x << ", " << idx.y-1 + sub_dim.y << ", " << idx.z-1 + sub_dim.z \
+       << ") would exceed initial matrix size which is (" \
+       << dim_.x << ", " << dim_.y << ", " << dim_.z \
        << ")\n";    \
        throw MatrixSizeException(ss.str()); \
 }
@@ -73,14 +85,39 @@ public:
     data_((T)0, dim.x*dim.y*dim.z)
     {}
 
-    SimpleMatrix(const SimpleMatrix<T>& M, dim3 idx, dim3 sub_dim) :
-    dim_(sub_dim),
-    data_(M.data_[std::gslice(
-        M.getIndex(idx.x, idx.y, idx.z), 
-        {sub_dim.z, sub_dim.y, sub_dim.x}, 
-        {M.dim_.y*M.dim_.x, M.dim_.x, 1}
-    )])
-    {}
+    SimpleMatrix<T> subMatrix(dim3 idx, dim3 sub_dim) const{
+        // Verify that this is a valid submatrix
+        if (idx.x-1 + sub_dim.x >= dim_.x || 
+            idx.y-1 + sub_dim.y >= dim_.y || 
+            idx.z-1 + sub_dim.z >= dim_.z)
+            THROW_SUB_SIZE_EXCEPTION;
+
+        SimpleMatrix<T> sub_mat(sub_dim);
+        sub_mat.data_ = data_[
+            std::gslice(
+                getIndex(idx.x, idx.y, idx.z), 
+                {sub_dim.z, sub_dim.y, sub_dim.x}, 
+                {dim_.y*dim_.x, dim_.x, 1}
+            )
+        ];
+        return sub_mat;
+    }
+
+    SubMatrixView<T> subMat(dim3 idx, dim3 sub_dim){
+        // Verify that this is a valid submatrix
+        if (idx.x-1 + sub_dim.x >= dim_.x || 
+            idx.y-1 + sub_dim.y >= dim_.y || 
+            idx.z-1 + sub_dim.z >= dim_.z)
+            THROW_SUB_SIZE_EXCEPTION;
+
+        return SubMatrixView<T>(data_, 
+            std::gslice(
+                getIndex(idx.x, idx.y, idx.z), 
+                {sub_dim.z, sub_dim.y, sub_dim.x}, 
+                {dim_.y*dim_.x, dim_.x, 1}
+            )
+        );
+    }
 
     ADD_VALARRAY_OPERATOR(+)
     ADD_VALARRAY_OPERATOR(*)
@@ -88,8 +125,8 @@ public:
     ADD_VALARRAY_OPERATOR(/)
 
     friend std::ostream& operator<<(std::ostream& os, const SimpleMatrix<T>& M){
-        T max = M.data_.max();
-        int max_width = ceil(log10(max));
+        const T max = M.data_.max();
+        const int max_width = ceil(log10(max));
 
         for (int i = 0; i < M.dim_.x; i++){
             for (int k = 0; k < M.dim_.z; k++){
