@@ -37,15 +37,15 @@ void printImageColorImpl(const SimpleMatrix<T>& M, T max_val){
 template<typename T>
 void printImage(const SimpleMatrix<T>& M){
     if constexpr (std::is_integral_v<T>){
-        if (M.dim(2) == 1)
-            printImageBWImpl<T>(M, std::numeric_limits<unsigned char>::max());
-        else if (M.dim(2) == 3)
+        if (M.dim(2) == 3)
             printImageColorImpl<T>(M, std::numeric_limits<unsigned char>::max()); 
+        else
+            printImageBWImpl<T>(M, std::numeric_limits<unsigned char>::max());
     }else if (std::is_floating_point_v<T>){
-        if (M.dim(2) == 1)
-            printImageBWImpl<T>(M, 1.0);
-        else if (M.dim(2) == 3)
+        if (M.dim(2) == 3)
             printImageColorImpl<T>(M, 1.0); 
+        else
+            printImageBWImpl<T>(M, 1.0);
     }
 }
 
