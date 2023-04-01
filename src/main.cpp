@@ -4,8 +4,9 @@
 #include <iomanip>
 #include <assert.h>
 #include <iostream>
-#include "cnn_from_scratch/imageUtil.h"
 #include "cnn_from_scratch/Kernel.h"
+#include "cnn_from_scratch/Pooling.h"
+#include "cnn_from_scratch/imageUtil.h"
 
 int main(int argc, char* argv[]){
 
@@ -42,6 +43,16 @@ int main(int argc, char* argv[]){
     my_cnn::SimpleMatrix<float> convolved_image = K.convolve();
     my_cnn::printImage(convolved_image.slice(0));
     my_cnn::printImage(convolved_image.slice(1));
+
+    my_cnn::Pooling pool;
+    pool.dim0 = 2;
+    pool.dim1 = 2;
+    pool.stride0 = 2;
+    pool.stride1 = 2;
+    pool.type = my_cnn::MAX;
+    my_cnn::SimpleMatrix<float> pooled_image = my_cnn::pooledMatrix(convolved_image, pool);
+    my_cnn::printImage(pooled_image.slice(0));
+    my_cnn::printImage(pooled_image.slice(1));
 
     return 0;
 }
