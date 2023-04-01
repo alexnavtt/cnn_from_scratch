@@ -58,6 +58,8 @@ public:
     data_(initial_val, dim.x*dim.y*dim.z)
     {}
 
+    size_t size() const noexcept {return data_.size();}
+
     SimpleMatrix<T> subMat(dim3 idx, dim3 sub_dim) const;
 
     SubMatrixView<T> subMatView(dim3 idx, dim3 sub_dim);
@@ -105,6 +107,8 @@ public:
 
     T& operator()(size_t x_idx, size_t y_idx, size_t z_idx=0);
     const T& operator()(size_t x_idx, size_t y_idx, size_t z_idx=0) const;
+    T& operator()(dim3 idx);
+    const T& operator()(dim3 idx) const;
 
     uint dim(size_t idx) const{
         return dim_.data[idx];
@@ -137,6 +141,8 @@ public:
         }
         return output;
     }
+
+    const std::valarray<T>& data() const{return data_;}
 
 protected:
     dim3 dim_;

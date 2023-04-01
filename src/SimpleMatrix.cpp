@@ -33,6 +33,16 @@ T& SimpleMatrix<T>::operator()(size_t x_idx, size_t y_idx, size_t z_idx) {
     return data_[getIndex(x_idx, y_idx, z_idx)];
 }
 
+template<typename T>
+const T& SimpleMatrix<T>::operator()(dim3 idx) const {
+    return data_[getIndex(idx.x, idx.y, idx.z)];
+}
+
+template<typename T>
+T& SimpleMatrix<T>::operator()(dim3 idx) {
+    return data_[getIndex(idx.x, idx.y, idx.z)];
+}
+
 template <typename T> 
 template<typename Other>
 SimpleMatrix<T>& SimpleMatrix<T>::operator=(const SimpleMatrix<Other>& M){
