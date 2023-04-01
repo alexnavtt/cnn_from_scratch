@@ -1,3 +1,4 @@
+#include <cstring>
 #include "cnn_from_scratch/SimpleMatrix.h"
 
 #define THROW_SUB_SIZE_EXCEPTION { \
@@ -31,9 +32,24 @@ template<typename T>
 T& SimpleMatrix<T>::operator()(size_t x_idx, size_t y_idx, size_t z_idx) {
     return data_[getIndex(x_idx, y_idx, z_idx)];
 }
+
+template <typename T> 
+template<typename Other>
+SimpleMatrix<T>& SimpleMatrix<T>::operator=(const SimpleMatrix<Other>& M){
+    dim_ = M.dim_;
+    data_.resize(dim_.x*dim_.y*dim_.z);
+    if constexpr (std::is_same_v<T, Other>){
+        data_ = M.data_;
+    }else{
+        for (size_t i = 0; i < data_.size(); i++){
+            data_[i] = static_cast<T>(M.data_[i]);
+        }
+    }
+    return *this;
+}
     
 template<typename T>
-SimpleMatrix<T> SimpleMatrix<T>::subMatrix(dim3 idx, dim3 sub_dim) const{
+SimpleMatrix<T> SimpleMatrix<T>::subMat(dim3 idx, dim3 sub_dim) const{
     // Verify that this is a valid submatrix
     if (idx.x-1 + sub_dim.x >= dim_.x || 
         idx.y-1 + sub_dim.y >= dim_.y || 
@@ -52,7 +68,7 @@ SimpleMatrix<T> SimpleMatrix<T>::subMatrix(dim3 idx, dim3 sub_dim) const{
 }
 
 template<typename T>
-SubMatrixView<T> SimpleMatrix<T>::subMat(dim3 idx, dim3 sub_dim){
+SubMatrixView<T> SimpleMatrix<T>::subMatView(dim3 idx, dim3 sub_dim){
     // Verify that this is a valid submatrix
     if (idx.x-1 + sub_dim.x >= dim_.x || 
         idx.y-1 + sub_dim.y >= dim_.y || 
@@ -66,6 +82,18 @@ SubMatrixView<T> SimpleMatrix<T>::subMat(dim3 idx, dim3 sub_dim){
             {dim_.y*dim_.x, dim_.x, 1}
         )
     );
+}
+
+template<typename T> 
+void SimpleMatrix<T>::conditionallySet(T val, Comparison pred, T other){
+    switch (pred){
+        case LESS:          data_[data_ <  other] = val; return;
+        case LESS_EQUAL :   data_[data_ <= other] = val; return;
+        case GREATER:       data_[data_ >  other] = val; return;
+        case GREATER_EQUAL: data_[data_ >= other] = val; return;
+        case EQUAL:         data_[data_ == other] = val; return;
+        case NOT_EQUAL:     data_[data_ != other] = val; return;
+    }
 }
 
 } // namespace my_cnn
