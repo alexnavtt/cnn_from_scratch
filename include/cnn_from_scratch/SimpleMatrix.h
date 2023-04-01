@@ -114,9 +114,33 @@ public:
         return dim_;
     }
 
+    T sum() const{return data_.sum();}
+    T max() const{return data_.max();}
+    T min() const{return data_.min();}
+    SimpleMatrix<T> abs() const {
+        if constexpr (std::is_signed_v<T>){
+            SimpleMatrix<T> output(dim_);
+            output.data_ = std::abs(data_);
+            return output;
+        }
+        return *this;
+    }
+
+    SimpleMatrix<T> slice(unsigned idx) const{
+        return subMat({0, 0, idx}, {dim_.x, dim_.y, 1});
+    }
+
+    std::valarray<T> channelSum() const{
+        std::valarray<T> output(dim_.z);
+        for (unsigned z = 0; z < dim_.z; z++){
+            output[z] = slice(z).sum();
+        }
+        return output;
+    }
+
 protected:
     dim3 dim_;
-   public: std::valarray<T> data_;
+    std::valarray<T> data_;
 };
 
 template<typename T>
