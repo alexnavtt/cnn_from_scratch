@@ -24,13 +24,34 @@ public:
         input_data_ = input_data;
     }
 
-    SimpleMatrix<float> apply(dim3 idx, size_t channel){
-        // Create a submatrix of the input data for the region we want to filter
-        SimpleMatrix<float> submatrix = input_data_->subMatrix(idx, weights.dims());
-        // Element-wise weight multiplication
-        submatrix *= weights;
-        // Bias addition
-        submatrix += biases[channel];
+    SimpleMatrix<float> convolve(){
+        if (not input_data_) 
+            throw std::runtime_error("No input data provided");
+
+        const auto channel_count = weights.dim(2);
+        if (input_data_->dim(2) != channel_count)
+            throw std::out_of_range("Mismatched channel count for convolution");
+
+        SimpleMatrix<float> output({
+            input_data_->dim(0)-weights.dim(0)+1, 
+            input_data_->dim(1)-weights.dim(1)+1, 
+            channel_count
+        });
+
+        const dim3 channel_strip{1, 1, channel_count};
+        dim3 idx{0, 0, 0};
+        for (idx.x = 0; idx.x < (input_data_->dim(0) - weights.dim(0)); idx.x++){
+            for (idx.y = 0; idx.y < (input_data_->dim(1) - weights.dim(1)); idx.y++){
+                output.subMatView(idx, channel_strip) 
+                    = (input_data_->subMat(idx, weights.dims()) * weights).channelSum();
+            }
+        }
+
+        // Normalize the output to remain in the bounds [0, 1]
+        output += output.abs().min();
+        output /= output.max();
+
+        return output;
     }
 
     SimpleMatrix<float> weights;
