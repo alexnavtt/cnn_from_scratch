@@ -3,6 +3,7 @@
 #include <random>
 #include <chrono>
 #include "cnn_from_scratch/SimpleMatrix.h"
+#include "cnn_from_scratch/imageUtil.h"
 
 namespace my_cnn{
     
@@ -24,6 +25,18 @@ public:
         input_data_ = input_data;
     }
 
+    SimpleMatrix<float> padInput() const{
+        // Create the augmented input data
+        SimpleMatrix<float> padded({
+            input_data_->dim(0) + 2*weights.dim(0) - 1,
+            input_data_->dim(1) + 2*weights.dim(1) - 1,
+            weights.dim(2)
+        });
+
+        padded.subMatView({weights.dim(0), weights.dim(1), 0}, input_data_->dims()) = input_data_->data();
+        return padded;
+    }
+
     SimpleMatrix<float> convolve(){
         if (not input_data_) 
             throw std::runtime_error("No input data provided");
@@ -32,18 +45,21 @@ public:
         if (input_data_->dim(2) != channel_count)
             throw std::out_of_range("Mismatched channel count for convolution");
 
+        SimpleMatrix<float> input_augmented = padInput();
+
+        // Create the output container
         SimpleMatrix<float> output({
-            input_data_->dim(0)-weights.dim(0)+1, 
-            input_data_->dim(1)-weights.dim(1)+1, 
+            input_augmented.dim(0) - weights.dim(0)+1, 
+            input_augmented.dim(1) - weights.dim(1)+1, 
             channel_count
         });
 
         const dim3 channel_strip{1, 1, channel_count};
         dim3 idx{0, 0, 0};
-        for (idx.x = 0; idx.x < (input_data_->dim(0) - weights.dim(0)); idx.x++){
-            for (idx.y = 0; idx.y < (input_data_->dim(1) - weights.dim(1)); idx.y++){
+        for (idx.x = 0; idx.x < (input_augmented.dim(0) - weights.dim(0)); idx.x++){
+            for (idx.y = 0; idx.y < (input_augmented.dim(1) - weights.dim(1)); idx.y++){
                 output.subMatView(idx, channel_strip) 
-                    = (input_data_->subMat(idx, weights.dims()) * weights).channelSum();
+                    = (input_augmented.subMat(idx, weights.dims()) * weights).channelSum();
             }
         }
 
