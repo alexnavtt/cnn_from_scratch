@@ -12,6 +12,10 @@ public:
     std::gslice_array<T>(arr[g]),
     g_(g)
     {}
+
+    operator std::valarray<T>(){
+        return std::valarray<T>(*dynamic_cast<std::gslice_array<T>*>(this));
+    }
 private:
     std::gslice g_;
 };
