@@ -47,10 +47,6 @@ public:
             }
         }
 
-        // Normalize the output to remain in the bounds [0, 1]
-        output += output.abs().min();
-        output /= output.max();
-
         return output;
     }
 
