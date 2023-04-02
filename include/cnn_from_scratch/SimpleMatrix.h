@@ -197,9 +197,9 @@ public:
         }
     }
 
-    // SimpleMatrix<T> slice(unsigned idx) const{
-    //     return subMat({0, 0, idx}, {dim_.x, dim_.y, 1});
-    // }
+    std::gslice slice(unsigned idx) const{
+        return std::gslice(idx*dim_.y*dim_.x, {1, dim_.y, dim_.x}, {dim_.x*dim_.y, dim_.x, 1});
+    }
 
     // std::valarray<T> channelSum() const{
     //     std::valarray<T> output(dim_.z);
