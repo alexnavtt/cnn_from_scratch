@@ -1,6 +1,7 @@
 #pragma once
 
 #include <math.h>
+#include <utility>
 #include <iomanip>
 #include <sstream>
 #include <iostream>
@@ -24,6 +25,35 @@ namespace my_cnn{
        throw MatrixSizeException(ss.str()); \
 }
 
+#define ADD_MATRIX_CONST_OPERATOR(op) \
+    template<typename Other> \
+    SimpleMatrix<T> operator op(const Other& other) const{ \
+        using namespace std::literals; \
+        if (not sizeCheck(other)) \
+            throw MatrixSizeException("my_cnn::SimpleMatrix: Failure in operator \""s + #op + "\", size mismatch"s); \
+        SimpleMatrix<T> out; \
+        auto out_varr = static_cast<std::valarray<T>*>(&out); \
+        auto curr_varr = static_cast<const std::valarray<T>*>(this);  \
+        *out_varr = *curr_varr op other; \
+        out.dim_ = dim_; \
+        return out; \
+    } \
+    \
+    template<typename Other> \
+    friend SimpleMatrix<T> operator op(const Other& other, const SimpleMatrix<T>& M){ \
+        return M.operator op(other); \
+    }
+
+#define ADD_MATRIX_MODIFYING_OPERATOR(op) \
+    template<typename Other> \
+    SimpleMatrix<T>& operator op(const Other& other){ \
+        using namespace std::literals; \
+        if (not sizeCheck(other)) \
+            throw MatrixSizeException("my_cnn::SimpleMatrix: Failure in operator \""s + #op + "\", size mismatch"s); \
+        static_cast<std::valarray<T>&>(*this) op other; \
+        return *this; \
+    }
+
 template<typename T>  
 class SimpleMatrix : public std::valarray<T>{
     // Make all temlplates of SimpleMatrix friends
@@ -35,7 +65,7 @@ public:
     // Constructors
     SimpleMatrix(){};
 
-    SimpleMatrix(dim3 dim, T initial_val=0):
+    SimpleMatrix(dim3 dim, T initial_val=T{}):
     std::valarray<T>(initial_val, dim.x*dim.y*dim.z),
     dim_(dim)
     {}
@@ -69,25 +99,37 @@ public:
     template<typename Other>
     SimpleMatrix<T>& operator=(const SimpleMatrix<Other>& M);
 
-    template<typename Other>
-    SimpleMatrix<T> operator+(Other other){
-        if (not sizeCheck(other))
-            throw MatrixSizeException("my_cnn::SimpleMatrix: Failure in operator \"+\", size mismatch");
-        SimpleMatrix<T> out;
-        auto out_varr = static_cast<std::valarray<T>*>(&out);
-        auto curr_varr = static_cast<std::valarray<T>*>(this); 
-        *out_varr = *curr_varr + other;
-        out.dim_ = dim_;
-        return out;
-    }
-
-    template<typename Other>
-    SimpleMatrix<T>& operator+=(Other other){
-        if (not sizeCheck(other))
-            throw MatrixSizeException("my_cnn::SimpleMatrix: Failure in operator \"+=\", size mismatch");
-        static_cast<std::valarray<T>&>(*this) += other;
+    // Value setting
+    SimpleMatrix<T>& operator=(std::valarray<T>&& v){
+        if (v.size() == this->size())
+            static_cast<std::valarray<T>&>(*this) = std::forward<std::valarray<T>>(v);
+        else
+            throw MatrixSizeException("Cannot assign value to matrix, size mismatch");
         return *this;
     }
+
+    void setEntries(std::valarray<T>&& v){
+        if (v.size() == this->size())
+            static_cast<std::valarray<T>&>(*this) = v[
+                std::gslice(
+                    0, 
+                    {dim_.z, dim_.y, dim_.x},
+                    {dim_.x*dim_.y, 1, dim_.y}
+                )
+            ];
+        else
+            throw MatrixSizeException("Cannot assign value to matrix, size mismatch");
+    }
+
+    ADD_MATRIX_CONST_OPERATOR(+);
+    ADD_MATRIX_CONST_OPERATOR(-);
+    ADD_MATRIX_CONST_OPERATOR(*);
+    ADD_MATRIX_CONST_OPERATOR(/);
+
+    ADD_MATRIX_MODIFYING_OPERATOR(+=);
+    ADD_MATRIX_MODIFYING_OPERATOR(-=);
+    ADD_MATRIX_MODIFYING_OPERATOR(*=);
+    ADD_MATRIX_MODIFYING_OPERATOR(/=);
 
     template<typename T2>
     friend std::ostream& operator<<(std::ostream& os, const SimpleMatrix<T2>& M);
@@ -109,21 +151,11 @@ public:
     }
 
     SimpleMatrix<T> abs() const {
-        if constexpr (not std::is_signed_v<T>){
+        if constexpr (std::is_unsigned_v<T>)
             return *this;
-        }
         else{
-            SimpleMatrix<T> out;
-            static_cast<std::valarray<T>&>(out) =
-                static_cast<std::valarray<T>>(
-                    std::abs(
-                        static_cast<const std::valarray<T>&>(
-                            *this
-                        )
-                    )
-                );
-            out.dim_ = dim_;
-            return out;
+            SimpleMatrix<T> out(dim_);
+            return out = std::abs(*this);
         }
     }
 
