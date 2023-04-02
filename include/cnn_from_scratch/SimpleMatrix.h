@@ -168,6 +168,8 @@ public:
             throw MatrixSizeException("Cannot assign value to matrix, size mismatch");
     }
 
+    /* === Arithmetic === */
+
     ADD_MATRIX_CONST_OPERATOR(+);
     ADD_MATRIX_CONST_OPERATOR(-);
     ADD_MATRIX_CONST_OPERATOR(*);
@@ -177,9 +179,6 @@ public:
     ADD_MATRIX_MODIFYING_OPERATOR(-=);
     ADD_MATRIX_MODIFYING_OPERATOR(*=);
     ADD_MATRIX_MODIFYING_OPERATOR(/=);
-
-    template<typename T2>
-    friend std::ostream& operator<<(std::ostream& os, const SimpleMatrix<T2>& M);
 
     uint dim(size_t idx) const{
         return dim_.data[idx];
@@ -226,12 +225,12 @@ std::ostream& operator<<(std::ostream& os, const my_cnn::SimpleMatrix<T>& M){
         max_width = 4;
     }
 
-    for (int i = 0; i < M.dim_.x; i++){
-        for (int k = 0; k < M.dim_.z; k++){
+    for (int i = 0; i < M.dim(0); i++){
+        for (int k = 0; k < M.dim(2); k++){
             os << "[";
-            for (int j = 0; j < M.dim_.y; j++){
+            for (int j = 0; j < M.dim(1); j++){
                 const auto& val = M(i, j, k);
-                os << (val < 0 ? "" : " ") << std::setw(max_width) << +val << (j == M.dim_.y - 1 ? "]" : ",");
+                os << (val < 0 ? "" : " ") << std::setw(max_width) << +val << (j == M.dim(1) - 1 ? "]" : ",");
             }
             os << "   ";
         }
