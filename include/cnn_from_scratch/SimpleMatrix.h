@@ -62,28 +62,88 @@ class SimpleMatrix : public std::valarray<T>{
     
 public:
 
-    // Constructors
-    SimpleMatrix(){};
+    /* === Constructors === */
 
+    // Default constructor
+    SimpleMatrix() = default;
+
+    // Initial value based constructor
     SimpleMatrix(dim3 dim, T initial_val=T{}):
     std::valarray<T>(initial_val, dim.x*dim.y*dim.z),
     dim_(dim)
     {}
 
+    // Full matrix description constructor
+    SimpleMatrix(dim3 dim, std::valarray<T>&& vals):
+    std::valarray<T>(dim.x*dim.y*dim.z),
+    dim_(dim)
+    {
+        setEntries(std::forward<std::valarray<T>>(vals));
+    }
+
+    // Type conversion constructor
+    template<typename Other>
+    SimpleMatrix(const SimpleMatrix<Other>& M) : 
+    std::valarray<T>(M.dim_.x*M.dim_.y*M.dim_.z),
+    dim_(M.dim_)
+    {
+        std::copy(std::begin(M), std::end(M), std::begin(*this));
+    }
+
+    /* === Size Checking === */
+
+    // Check against another matrix
     template<typename Other>
     bool sizeCheck(const SimpleMatrix<Other>& other) const noexcept{
         return other.dim_ == dim_;
     }
 
+    // Check against a valarray
     template<typename Other>
     bool sizeCheck(const std::valarray<Other>& v) const noexcept{
         return v.size() == this->size();
     }
 
+    // Literal value
     template<typename Other>
     bool sizeCheck(const Other& v) const noexcept{
+        static_assert(std::is_arithmetic_v<Other>);
         return true;
     }
+
+    /* == Assignment === */
+
+    // Default
+    SimpleMatrix<T>& operator=(const SimpleMatrix<T>& M) = default;
+
+    // Value setting
+    SimpleMatrix<T>& operator=(std::valarray<T>&& v){
+        if (v.size() == this->size())
+            static_cast<std::valarray<T>&>(*this) = std::forward<std::valarray<T>>(v);
+        else
+            throw MatrixSizeException("Cannot assign value to matrix, size mismatch");
+        return *this;
+    }
+
+    // Type conversion
+    template<typename Other>
+    SimpleMatrix<T>& operator=(const SimpleMatrix<Other>& M){
+        dim_ = M.dim_;
+        this->resize(dim_.x*dim_.y*dim_.z);
+        std::copy(std::begin(M), std::end(M), std::begin(*this));
+        return *this;
+    }
+
+    /* === Indexing === */
+
+    // Get the scalar index into the matrix given a 3d index
+    size_t getIndex(size_t x_idx, size_t y_idx, size_t z_idx=0) const;
+    size_t getIndex(dim3 dim) const;
+
+    T& operator()(size_t x_idx, size_t y_idx, size_t z_idx=0);
+    const T& operator()(size_t x_idx, size_t y_idx, size_t z_idx=0) const;
+    T& operator()(dim3 idx);
+    const T& operator()(dim3 idx) const;
 
     SimpleMatrix<T> subMatCopy(dim3 idx, dim3 sub_dim) const;
 
@@ -93,19 +153,6 @@ public:
             {size.z, size.y, size.x},
             {dim_.y*dim_.x, dim_.x, 1}
         );
-    }
-
-    // Type conversion
-    template<typename Other>
-    SimpleMatrix<T>& operator=(const SimpleMatrix<Other>& M);
-
-    // Value setting
-    SimpleMatrix<T>& operator=(std::valarray<T>&& v){
-        if (v.size() == this->size())
-            static_cast<std::valarray<T>&>(*this) = std::forward<std::valarray<T>>(v);
-        else
-            throw MatrixSizeException("Cannot assign value to matrix, size mismatch");
-        return *this;
     }
 
     void setEntries(std::valarray<T>&& v){
@@ -133,14 +180,6 @@ public:
 
     template<typename T2>
     friend std::ostream& operator<<(std::ostream& os, const SimpleMatrix<T2>& M);
-
-    size_t getIndex(size_t x_idx, size_t y_idx, size_t z_idx=0) const;
-    size_t getIndex(dim3 dim) const;
-
-    T& operator()(size_t x_idx, size_t y_idx, size_t z_idx=0);
-    const T& operator()(size_t x_idx, size_t y_idx, size_t z_idx=0) const;
-    T& operator()(dim3 idx);
-    const T& operator()(dim3 idx) const;
 
     uint dim(size_t idx) const{
         return dim_.data[idx];

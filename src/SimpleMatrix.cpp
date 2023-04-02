@@ -46,21 +46,6 @@ T& SimpleMatrix<T>::operator()(dim3 idx) {
     // return data_[getIndex(idx.x, idx.y, idx.z)];
     return std::valarray<T>::operator[](getIndex(idx.x, idx.y, idx.z));
 }
-
-// template <typename T> 
-// template<typename Other>
-// SimpleMatrix<T>& SimpleMatrix<T>::operator=(const SimpleMatrix<Other>& M){
-//     dim_ = M.dim_;
-//     data_.resize(dim_.x*dim_.y*dim_.z);
-//     if constexpr (std::is_same_v<T, Other>){
-//         data_ = M.data_;
-//     }else{
-//         for (size_t i = 0; i < data_.size(); i++){
-//             data_[i] = static_cast<T>(M.data_[i]);
-//         }
-//     }
-//     return *this;
-// }
     
 template<typename T>
 SimpleMatrix<T> SimpleMatrix<T>::subMatCopy(dim3 idx, dim3 sub_dim) const{
@@ -112,6 +97,7 @@ SimpleMatrix<T> SimpleMatrix<T>::subMatCopy(dim3 idx, dim3 sub_dim) const{
 
 } // namespace my_cnn
 
+template class my_cnn::SimpleMatrix<bool>;
 template class my_cnn::SimpleMatrix<int>;
 template class my_cnn::SimpleMatrix<unsigned int>;
 template class my_cnn::SimpleMatrix<char>;
