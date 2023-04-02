@@ -24,83 +24,73 @@ namespace my_cnn{
        throw MatrixSizeException(ss.str()); \
 }
 
-#define ADD_VALARRAY_OPERATOR(op)                                       \
-    template<typename Other>                                            \
-    SimpleMatrix<T> operator op (const Other& other){                   \
-        SimpleMatrix<T> new_mat = *this;                                \
-        if constexpr (std::is_same_v<Other, SimpleMatrix<T>>){          \
-            if (dim_ != other.dim_) THROW_SIZE_EXCEPTION;               \
-            new_mat.data_ op##= other.data_;                            \
-        }else{                                                          \
-            new_mat.data_ op##= other;                                  \
-        }                                                               \
-        return new_mat;                                                 \
-    }                                                                   \
-    template<typename Other>                                            \
-    SimpleMatrix<T>& operator op##= (const Other& other){               \
-        if constexpr (std::is_same_v<Other, SimpleMatrix<T>>){          \
-            if (dim_ != other.dim_) THROW_SIZE_EXCEPTION;               \
-            data_ op##= other.data_;                                    \
-        }else{                                                          \
-            data_ op##= other;                                          \
-        }                                                               \
-        return *this;                                                   \
-    }
-
 template<typename T>  
-class SimpleMatrix{
+class SimpleMatrix : public std::valarray<T>{
+    // Make all temlplates of SimpleMatrix friends
     template <typename Other>
     friend class SimpleMatrix;
     
 public:
+
+    // Constructors
+    SimpleMatrix(){};
+
     SimpleMatrix(dim3 dim, T initial_val=0):
-    dim_(dim),
-    data_(initial_val, dim.x*dim.y*dim.z)
+    std::valarray<T>(initial_val, dim.x*dim.y*dim.z),
+    dim_(dim)
     {}
 
-    size_t size() const noexcept {return data_.size();}
-
-    SimpleMatrix<T> subMat(dim3 idx, dim3 sub_dim) const;
-
-    SubMatrixView<T> subMatView(dim3 idx, dim3 sub_dim);
-
-    enum Comparison{
-        GREATER,
-        GREATER_EQUAL,
-        LESS,
-        LESS_EQUAL,
-        EQUAL,
-        NOT_EQUAL
-    };
-    void conditionallySet(T val, Comparison pred, T other);
-
     template<typename Other>
-    SimpleMatrix(const SimpleMatrix<Other>& M):
-        dim_(M.dim_)
-    {
-        data_.resize(dim_.x*dim_.y*dim_.z);
-        if constexpr (std::is_same_v<T, Other>){
-            data_ = M.data_;
-        }else{
-            for (size_t i = 0; i < data_.size(); i++){
-                data_[i] = static_cast<T>(M.data_[i]);
-            }
-        }
+    bool sizeCheck(const SimpleMatrix<Other>& other) const noexcept{
+        return other.dim_ == dim_;
     }
 
     template<typename Other>
+    bool sizeCheck(const std::valarray<Other>& v) const noexcept{
+        return v.size() == this->size();
+    }
+
+    template<typename Other>
+    bool sizeCheck(const Other& v) const noexcept{
+        return true;
+    }
+
+    SimpleMatrix<T> subMatCopy(dim3 idx, dim3 sub_dim) const;
+
+    std::gslice subMatIdx(dim3 start, dim3 size) const{
+        return std::gslice(
+            getIndex(start),
+            {size.z, size.y, size.x},
+            {dim_.y*dim_.x, dim_.x, 1}
+        );
+    }
+
+    // Type conversion
+    template<typename Other>
     SimpleMatrix<T>& operator=(const SimpleMatrix<Other>& M);
 
-    ADD_VALARRAY_OPERATOR(+)
-    ADD_VALARRAY_OPERATOR(*)
-    ADD_VALARRAY_OPERATOR(-)
-    ADD_VALARRAY_OPERATOR(/)
+    template<typename Other>
+    SimpleMatrix<T> operator+(Other other){
+        if (not sizeCheck(other))
+            throw MatrixSizeException("my_cnn::SimpleMatrix: Failure in operator \"+\", size mismatch");
+        SimpleMatrix<T> out;
+        auto out_varr = static_cast<std::valarray<T>*>(&out);
+        auto curr_varr = static_cast<std::valarray<T>*>(this); 
+        *out_varr = *curr_varr + other;
+        out.dim_ = dim_;
+        return out;
+    }
+
+    template<typename Other>
+    SimpleMatrix<T>& operator+=(Other other){
+        if (not sizeCheck(other))
+            throw MatrixSizeException("my_cnn::SimpleMatrix: Failure in operator \"+=\", size mismatch");
+        static_cast<std::valarray<T>&>(*this) += other;
+        return *this;
+    }
 
     template<typename T2>
     friend std::ostream& operator<<(std::ostream& os, const SimpleMatrix<T2>& M);
-
-    auto begin() {return std::begin(data_);}
-    auto end()   {return std::end(data_);}
 
     size_t getIndex(size_t x_idx, size_t y_idx, size_t z_idx=0) const;
     size_t getIndex(dim3 dim) const;
@@ -118,35 +108,39 @@ public:
         return dim_;
     }
 
-    T sum() const{return data_.sum();}
-    T max() const{return data_.max();}
-    T min() const{return data_.min();}
     SimpleMatrix<T> abs() const {
-        if constexpr (std::is_signed_v<T>){
-            SimpleMatrix<T> output(dim_);
-            output.data_ = std::abs(data_);
-            return output;
+        if constexpr (not std::is_signed_v<T>){
+            return *this;
         }
-        return *this;
-    }
-
-    SimpleMatrix<T> slice(unsigned idx) const{
-        return subMat({0, 0, idx}, {dim_.x, dim_.y, 1});
-    }
-
-    std::valarray<T> channelSum() const{
-        std::valarray<T> output(dim_.z);
-        for (unsigned z = 0; z < dim_.z; z++){
-            output[z] = slice(z).sum();
+        else{
+            SimpleMatrix<T> out;
+            static_cast<std::valarray<T>&>(out) =
+                static_cast<std::valarray<T>>(
+                    std::abs(
+                        static_cast<const std::valarray<T>&>(
+                            *this
+                        )
+                    )
+                );
+            out.dim_ = dim_;
+            return out;
         }
-        return output;
     }
 
-    const std::valarray<T>& data() const{return data_;}
+    // SimpleMatrix<T> slice(unsigned idx) const{
+    //     return subMat({0, 0, idx}, {dim_.x, dim_.y, 1});
+    // }
+
+    // std::valarray<T> channelSum() const{
+    //     std::valarray<T> output(dim_.z);
+    //     for (unsigned z = 0; z < dim_.z; z++){
+    //         output[z] = slice(z).sum();
+    //     }
+    //     return output;
+    // }
 
 protected:
     dim3 dim_;
-    std::valarray<T> data_;
 };
 
 template<typename T>
@@ -154,7 +148,7 @@ std::ostream& operator<<(std::ostream& os, const my_cnn::SimpleMatrix<T>& M){
     int default_precision = std::cout.precision();
     int max_width;
     if constexpr (std::is_integral_v<T>){
-        const T max = abs(M.data_).max();
+        const T max = abs(M).max();
         max_width = ceil(log10(max));
     }else{
         std::cout << std::setprecision(3) << std::fixed;
@@ -165,7 +159,7 @@ std::ostream& operator<<(std::ostream& os, const my_cnn::SimpleMatrix<T>& M){
         for (int k = 0; k < M.dim_.z; k++){
             os << "[";
             for (int j = 0; j < M.dim_.y; j++){
-                const auto& val = M.data_[M.getIndex(i, j, k)];
+                const auto& val = M(i, j, k);
                 os << (val < 0 ? "" : " ") << std::setw(max_width) << +val << (j == M.dim_.y - 1 ? "]" : ",");
             }
             os << "   ";
