@@ -1,5 +1,5 @@
-#include <gtest/gtest.h>
 #include <limits>
+#include <gtest/gtest.h>
 #include "cnn_from_scratch/SimpleMatrix.h"
 
 TEST(Constructor, defaultConstructor){
@@ -49,7 +49,7 @@ TEST(Constructor, defaultVal){
     }
 }
 
-TEST(Indexing, WriteSingle){
+TEST(Indexing, writeSingle){
     my_cnn::SimpleMatrix<float> M({5, 5, 2});
     M(3, 2, 1) = 10;
 
@@ -59,13 +59,13 @@ TEST(Indexing, WriteSingle){
     }
 }
 
-TEST(Indexing, ReadSingle){
+TEST(Indexing, readSingle){
     my_cnn::SimpleMatrix<float> M({5, 5, 2});
     M[10] = 10;
     EXPECT_EQ(M(0, 2, 0), 10);
 }
 
-TEST(Indexing, WriteRange){
+TEST(Indexing, writeRange){
     my_cnn::SimpleMatrix<float> M({5, 5, 2});
     M[M.subMatIdx({0, 0, 0}, {2, 3, 2})] = 10;
 
@@ -81,7 +81,7 @@ TEST(Indexing, WriteRange){
     }
 }
 
-TEST(Indexing, ReadRange){
+TEST(Indexing, readRange){
     my_cnn::SimpleMatrix<int> M({5, 5, 2});
     for (size_t i = 0; i < M.dim(0); i++){
         for (size_t j = 0; j < M.dim(1); j++){
@@ -98,6 +98,24 @@ TEST(Indexing, ReadRange){
     EXPECT_EQ(MSubRange(0, 1, 0), 31);
     EXPECT_EQ(MSubRange(1, 1, 0), 32);
     EXPECT_EQ(MSubRange(2, 1, 0), 33);
+}
+
+TEST(Arithmetic, matrixAdd){
+    my_cnn::SimpleMatrix<float> M1({3, 3, 1});
+    my_cnn::SimpleMatrix<float> M2({3, 3, 1});
+
+    M1.setEntries({1, 2, 3,
+                   4, 5, 6,
+                   7, 8, 9});
+
+    M2.setEntries({9, 8, 7,
+                   6, 5, 4,
+                   3, 2, 1});
+
+    my_cnn::SimpleMatrix<float> M3 = M1 + M2;
+    for (auto& v : M3){
+        EXPECT_EQ(v,10.0f);
+    }
 }
 
 int main(int argc, char* argv[]){
