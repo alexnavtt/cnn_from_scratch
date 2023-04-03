@@ -301,6 +301,22 @@ TEST(Indexing, readMask){
     }
 }
 
+TEST(Arithmetic, scalarAdd){
+    my_cnn::SimpleMatrix<float> M1({3, 3, 1});
+
+    M1.setEntries({1, 2, 3,
+                   4, 5, 6,
+                   7, 8, 9});
+
+    my_cnn::SimpleMatrix<float> M2 = M1 + 1;
+    int val = 2;
+    for (int i = 0; i < 3; i++){
+        for (int j = 0; j < 3; j++){
+            EXPECT_EQ(M2(i,j,0),val++);
+        }
+    }
+}
+
 TEST(Arithmetic, matrixAdd){
     my_cnn::SimpleMatrix<float> M1({3, 3, 1});
     my_cnn::SimpleMatrix<float> M2({3, 3, 1});
@@ -317,6 +333,77 @@ TEST(Arithmetic, matrixAdd){
     for (auto& v : M3){
         EXPECT_EQ(v,10.0f);
     }
+}
+
+TEST(Arithmetic, scalarModify){
+    my_cnn::SimpleMatrix<float> M1({3, 3, 1});
+
+    M1.setEntries({1, 4, 7,
+                   2, 5, 8,
+                   3, 6, 9});
+
+    M1 += 1;
+    int val = 2;
+    for (auto& v : M1){
+        EXPECT_EQ(v, val++);
+    }
+}
+
+TEST(Arithmetic, rangeMatrixModify){
+    my_cnn::SimpleMatrix<float> M1({3, 3, 1});
+
+    M1.setEntries({1, 4, 7,
+                   2, 5, 8,
+                   3, 6, 9});
+
+    // Add a matrix to a range
+    my_cnn::dim3 sub_dim{3, 2, 1};
+    M1[M1.subMatIdx({0, 1, 0}, sub_dim)] += 
+        my_cnn::SimpleMatrix<float>(sub_dim, {6, 3,
+                                              5, 2,
+                                              4, 1});
+
+    // Add a valarray to a range
+    my_cnn::dim3 sub_dim2{3, 1, 1};
+    M1[M1.subMatIdx({0, 0, 0}, sub_dim2)] -= {1, 2, 3};
+
+    for (int i : {0, 1, 2}){
+        EXPECT_EQ(M1[i], 0);
+    }
+    for (int i : {3, 4, 5, 6, 7, 8}){
+        EXPECT_EQ(M1[i], 10);
+    }
+}
+
+TEST(Arithmetic, rangeScalarModify){
+    my_cnn::SimpleMatrix<float> M1({3, 3, 1});
+
+    M1.setEntries({1, 4, 7,
+                   2, 5, 8,
+                   3, 6, 9});
+
+    // std::gslice_array doesn't support scalar addition, so you have to create a matrix to add
+    my_cnn::dim3 sub_dim{3, 2, 1};
+    M1[M1.subMatIdx({0, 1, 0}, sub_dim)] -= my_cnn::SimpleMatrix<float>(sub_dim, 2);
+
+    for (int i : {0, 1, 2}){
+        EXPECT_EQ(M1[i], i+1);
+    }
+    for (int i : {3, 4, 5, 6, 7, 8}){
+        EXPECT_EQ(M1[i], i-1);
+    }
+}
+
+TEST(Arithmetic, channelSum){
+    my_cnn::SimpleMatrix<int> M({2, 2, 3});
+    M[M.slice(0)] = {1, 2, 3, 4};
+    M[M.slice(1)] = {2, 2, 2, 2};
+    M[M.slice(2)] = {-1, 0, 1, 0};
+
+    std::valarray<int> sum = M.channelSum();
+    EXPECT_EQ(sum[0], 10);
+    EXPECT_EQ(sum[1],  8);
+    EXPECT_EQ(sum[2],  0);
 }
 
 int main(int argc, char* argv[]){
