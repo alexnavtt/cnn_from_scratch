@@ -10,7 +10,9 @@ namespace my_cnn{
 class Kernel {
 public:
     Kernel(dim3 dim, unsigned stride) :
+    dim_(dim),
     weights(dim),
+    biases_(dim),
     stride(stride)
     {
         std::srand(std::chrono::steady_clock::now().time_since_epoch().count());
@@ -18,7 +20,14 @@ public:
         for (float& w : weights){
             w = static_cast<float>(std::rand()) / RAND_MAX;
         }
-        biases.resize(dim.z, 0);
+    }
+
+    void setBias(unsigned channel, float val){
+        biases_[biases_.slice(channel)] = val;
+    }
+
+    float getBias(unsigned channel){
+        return biases_[dim_.x*dim_.y*channel];
     }
 
     void setInputData(const SimpleMatrix<float>* input_data){
@@ -33,7 +42,7 @@ public:
             weights.dim(2)
         });
 
-        padded.subMatView({weights.dim(0), weights.dim(1), 0}, input_data_->dims()) = input_data_->data();
+        padded[padded.subMatIdx({weights.dim(0), weights.dim(1), 0}, input_data_->dims())] = *input_data_;
         return padded;
     }
 
@@ -58,8 +67,14 @@ public:
         dim3 idx{0, 0, 0};
         for (idx.x = 0; idx.x < (input_augmented.dim(0) - weights.dim(0)); idx.x++){
             for (idx.y = 0; idx.y < (input_augmented.dim(1) - weights.dim(1)); idx.y++){
-                output.subMatView(idx, channel_strip) 
-                    = (input_augmented.subMat(idx, weights.dims()) * weights).channelSum();
+                // Extract the sub region
+                SimpleMatrix<float> sub_region = input_augmented.subMatCopy(idx, weights.dims());
+                // Multiply by weights (all channels at once)
+                sub_region *= weights;
+                // Add the biases
+                sub_region += biases_;
+                // Set the region in the output layer
+                output[output.subMatIdx(idx, channel_strip)] = sub_region.channelSum();
             }
         }
 
@@ -67,10 +82,11 @@ public:
     }
 
     SimpleMatrix<float> weights;
-    std::valarray<float> biases;
     unsigned stride = 1;
 
 private:
+    dim3 dim_;
+    SimpleMatrix<float> biases_;
     const SimpleMatrix<float>* input_data_;
 };
 

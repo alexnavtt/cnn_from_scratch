@@ -180,6 +180,8 @@ public:
     ADD_MATRIX_MODIFYING_OPERATOR(*=);
     ADD_MATRIX_MODIFYING_OPERATOR(/=);
 
+    /* === Dimension === */
+
     uint dim(size_t idx) const{
         return dim_.data[idx];
     }
@@ -187,6 +189,8 @@ public:
     const dim3& dims() const{
         return dim_;
     }
+
+    /* === Other Math === */
 
     SimpleMatrix<T> abs() const {
         if constexpr (std::is_unsigned_v<T>)
@@ -201,13 +205,13 @@ public:
         return std::gslice(idx*dim_.y*dim_.x, {1, dim_.y, dim_.x}, {dim_.x*dim_.y, dim_.x, 1});
     }
 
-    // std::valarray<T> channelSum() const{
-    //     std::valarray<T> output(dim_.z);
-    //     for (unsigned z = 0; z < dim_.z; z++){
-    //         output[z] = slice(z).sum();
-    //     }
-    //     return output;
-    // }
+    std::valarray<T> channelSum() const{
+        std::valarray<T> output(dim_.z);
+        for (unsigned z = 0; z < dim_.z; z++){
+            output[z] = (*this)[slice(z)].sum();
+        }
+        return output;
+    }
 
 protected:
     dim3 dim_;
