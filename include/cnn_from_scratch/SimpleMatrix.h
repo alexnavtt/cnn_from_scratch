@@ -81,6 +81,14 @@ public:
         setEntries(std::forward<std::valarray<T>>(vals));
     }
 
+    // From a gslice_array
+    SimpleMatrix(dim3 dim, std::gslice_array<T>&& vals):
+    std::valarray<T>(dim.x*dim.y*dim.z),
+    dim_(dim)
+    {
+        setEntries(std::valarray<T>(vals));
+    }
+
     // Type conversion constructor
     template<typename Other>
     SimpleMatrix(const SimpleMatrix<Other>& M) : 
@@ -120,6 +128,16 @@ public:
     SimpleMatrix<T>& operator=(std::valarray<T>&& v){
         if (v.size() == this->size())
             static_cast<std::valarray<T>&>(*this) = std::forward<std::valarray<T>>(v);
+        else
+            throw MatrixSizeException("Cannot assign value to matrix, size mismatch");
+        return *this;
+    }
+
+    // Value setting
+    SimpleMatrix<T>& operator=(std::gslice_array<T>&& v){
+        std::valarray<T> arr(v);
+        if (arr.size() == this->size())
+            static_cast<std::valarray<T>&>(*this) = arr;
         else
             throw MatrixSizeException("Cannot assign value to matrix, size mismatch");
         return *this;
@@ -203,6 +221,12 @@ public:
 
     std::gslice slice(unsigned idx) const{
         return std::gslice(idx*dim_.y*dim_.x, {1, dim_.y, dim_.x}, {dim_.x*dim_.y, dim_.x, 1});
+    }
+
+    SimpleMatrix<T> sliceCopy(unsigned idx) const{
+        SimpleMatrix<T> out(dim_.slice());
+        out = this->operator[](slice(idx));
+        return out;
     }
 
     std::valarray<T> channelSum() const{
