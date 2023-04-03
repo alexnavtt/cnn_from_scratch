@@ -5,7 +5,7 @@
 #include <assert.h>
 #include <iostream>
 #include "cnn_from_scratch/Kernel.h"
-// #include "cnn_from_scratch/Pooling.h"
+#include "cnn_from_scratch/Pooling.h"
 #include "cnn_from_scratch/imageUtil.h"
 
 int main(int argc, char* argv[]){
@@ -30,9 +30,9 @@ int main(int argc, char* argv[]){
     std::cout << "Kernel weights are\n" << K.weights << "\n";
 
     // No bias in this case
-    K.biases[0] = 0;
-    K.biases[1] = 0;
-    std::cout << "Kernel biases are " << K.biases[0] << " and " << K.biases[1] << "\n";
+    K.setBias(0, 0);
+    K.setBias(1, 0);
+    std::cout << "Kernel biases are " << K.getBias(0) << " and " << K.getBias(1) << "\n";
 
     // Convert the byte image to float data
     my_cnn::SimpleMatrix<float> floating_point_image = input_image;
@@ -45,29 +45,27 @@ int main(int argc, char* argv[]){
 
     // Display both layers
     std::cout << "Input images: \n";
-    my_cnn::SimpleMatrix<float> im1(slice_dim);
-    my_cnn::SimpleMatrix<float> im2(slice_dim);
-    im1 = floating_point_image[floating_point_image.slice(0)];
-    im2 = floating_point_image[floating_point_image.slice(1)];
-    my_cnn::printImage(im1);
-    my_cnn::printImage(im2);
+    my_cnn::printImage(floating_point_image.sliceCopy(0));
+    my_cnn::printImage(floating_point_image.sliceCopy(1));
 
-    // // Apply the convolution kernel
-    // K.setInputData(&floating_point_image);
-    // my_cnn::SimpleMatrix<float> convolved_image = K.convolve();
-    // my_cnn::printImage(convolved_image.slice(0));
-    // my_cnn::printImage(convolved_image.slice(1));
+    // Apply the convolution kernel
+    K.setInputData(&floating_point_image);
+    my_cnn::SimpleMatrix<float> convolved_image = K.convolve();
+    std::cout << "After convolution: \n";
+    my_cnn::printImage(convolved_image.sliceCopy(0));
+    my_cnn::printImage(convolved_image.sliceCopy(1));
 
-    // // Run a 2x2 mean pooling
-    // my_cnn::Pooling pool;
-    // pool.dim0 = 2;
-    // pool.dim1 = 2;
-    // pool.stride0 = 2;
-    // pool.stride1 = 2;
-    // pool.type = my_cnn::AVG;
-    // my_cnn::SimpleMatrix<float> pooled_image = my_cnn::pooledMatrix(convolved_image, pool);
-    // my_cnn::printImage(pooled_image.slice(0));
-    // my_cnn::printImage(pooled_image.slice(1));
+    // Run a 2x2 mean pooling
+    my_cnn::Pooling pool;
+    pool.dim0 = 2;
+    pool.dim1 = 2;
+    pool.stride0 = 2;
+    pool.stride1 = 2;
+    pool.type = my_cnn::AVG;
+    my_cnn::SimpleMatrix<float> pooled_image = my_cnn::pooledMatrix(convolved_image, pool);
+    std::cout << "After pooling: \n";
+    my_cnn::printImage(pooled_image.sliceCopy(0));
+    my_cnn::printImage(pooled_image.sliceCopy(1));
 
     return 0;
 }
