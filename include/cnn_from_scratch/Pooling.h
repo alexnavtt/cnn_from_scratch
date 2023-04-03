@@ -28,7 +28,7 @@ SimpleMatrix<T> pooledMatrix(const SimpleMatrix<T>& input, const Pooling& pool){
         dim3 out_idx{0, 0, z};
         for (in_idx.y = 0, out_idx.y = 0; in_idx.y < input.dim(1) - pool.dim1 + 1; in_idx.y += pool.stride1, out_idx.y++){
             for (in_idx.x = 0, out_idx.x = 0; in_idx.x < input.dim(0) - pool.dim0 + 1; in_idx.x += pool.stride0, out_idx.x++){
-                const auto AoI = input.subMat(in_idx, pool_size);
+                const auto AoI = input.subMatCopy(in_idx, pool_size);
                 switch (pool.type){
                     case MIN:
                         output(out_idx) = AoI.min();
