@@ -20,6 +20,7 @@ struct dim3{
     }
     bool operator==(const dim3& other) const{return (x == other.x) && (y == other.y) && (z == other.z);}
     bool operator!=(const dim3& other) const{return not (other == *this);}
+    dim3 slice() const noexcept {return {x, y, 1};}
 };
 
 } // namespace my_cnn
