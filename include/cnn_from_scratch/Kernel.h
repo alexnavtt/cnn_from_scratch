@@ -50,10 +50,11 @@ public:
         if (not input_data_) 
             throw std::runtime_error("No input data provided");
 
-        const auto channel_count = weights.dim(2);
-        if (input_data_->dim(2) != channel_count)
+        const auto input_channel_count = input_data_->dim(2);
+        if (weights.dim(2) % input_channel_count)
             throw std::out_of_range("Mismatched channel count for convolution");
 
+        const auto channel_count = weights.dim(2) / input_channel_count;
         SimpleMatrix<float> input_augmented = padInput();
 
         // Create the output container
