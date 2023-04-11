@@ -208,6 +208,14 @@ public:
 
     /* === Other Math === */
 
+    bool operator ==(const SimpleMatrix<T>& other) const{
+        if (dim_ != other.dim_) return false;
+        for (size_t i = 0; i < this->size(); i++){
+            if (this->operator[](i) != other[i]) return false;
+        }
+        return true;
+    }
+
     SimpleMatrix<T> abs() const {
         if constexpr (std::is_unsigned_v<T>)
             return *this;
