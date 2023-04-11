@@ -112,6 +112,27 @@ TEST(Constructor, subMat){
     EXPECT_EQ(M_expected, M2);
 }
 
+TEST(Constructor, subMatCopy){
+    my_cnn::SimpleMatrix<int> M({3, 3, 2}, 
+        {1, 2, 3,
+         4, 5, 6,
+         7, 8, 9, 
+         
+         10, 11, 12,
+         13, 14, 15,
+         16, 17, 18});
+    my_cnn::SimpleMatrix<int> M2 = M.subMatCopy({1, 1, 0}, {2, 2, 2});
+
+    my_cnn::SimpleMatrix<int> M_expected({2, 2, 2},
+        {5, 6,
+         8, 9,
+         
+         14, 15,
+         17, 18});
+
+    EXPECT_EQ(M_expected, M2);
+}
+
 TEST(Assignment, default){
     my_cnn::SimpleMatrix<int> M1({3, 2, 1}, 
         {1, 2,
