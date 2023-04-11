@@ -11,7 +11,7 @@ include_directories(
 enable_testing()
 find_package(GTest REQUIRED)
 
-add_executable(main src/main.cpp src/SimpleMatrix.cpp)
+add_executable(main src/main.cpp src/SimpleMatrix.cpp src/ModelDescription.cpp)
 target_compile_options(main PRIVATE -g)
 
 include(GoogleTest)

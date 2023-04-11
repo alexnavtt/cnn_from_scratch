@@ -7,17 +7,21 @@
 #include "cnn_from_scratch/Kernel.h"
 #include "cnn_from_scratch/Pooling.h"
 #include "cnn_from_scratch/imageUtil.h"
+#include "cnn_from_scratch/ModelDescription.h"
 
 int main(int argc, char* argv[]){
 
     // Grayscale image for testing
-    my_cnn::SimpleMatrix<unsigned char> input_image({25, 25, 2});
+    my_cnn::SimpleMatrix<unsigned char> input_image({25, 25, 1});
     
     // Let's make it a 4 for fun
-    input_image[input_image.subMatIdx({ 5,  4,  0}, {10,  2,  2})] = 255;
-    input_image[input_image.subMatIdx({15,  4,  0}, { 2, 12,  2})] = 255;
-    input_image[input_image.subMatIdx({ 7, 12,  0}, {15,  1,  2})] = 255;
-    my_cnn::printImage(input_image);
+    input_image[input_image.subMatIdx({ 5,  4,  0}, {10,  2,  1})] = 255;
+    input_image[input_image.subMatIdx({15,  4,  0}, { 2, 12,  1})] = 255;
+    input_image[input_image.subMatIdx({ 7, 12,  0}, {15,  1,  1})] = 255;
+    // my_cnn::printImage(input_image);
+
+    // Create a model to put the image through
+    my_cnn::ModelDescription<unsigned char> model;
 
     // Create an edge detection kernel
     my_cnn::Kernel K({3, 3, 2}, 1);
@@ -33,27 +37,28 @@ int main(int argc, char* argv[]){
     K.setBias(0, 0);
     K.setBias(1, 0);
     std::cout << "Kernel biases are " << K.getBias(0) << " and " << K.getBias(1) << "\n";
+    model.addKernel(K, "FirstConvolutionLayer");
 
     // Convert the byte image to float data
-    my_cnn::SimpleMatrix<float> floating_point_image = input_image;
-    floating_point_image /= 255.0; 
+    // my_cnn::SimpleMatrix<float> floating_point_image = input_image;
+    // floating_point_image /= 255.0; 
 
     // Invert the second layer
-    my_cnn::dim3 slice_dim{floating_point_image.dim(0), floating_point_image.dim(1), 1};
-    floating_point_image[floating_point_image.slice(1)] *= my_cnn::SimpleMatrix<float>(slice_dim, -1);
-    floating_point_image[floating_point_image.slice(1)] += my_cnn::SimpleMatrix<float>(slice_dim,  1);
+    // my_cnn::dim3 slice_dim{floating_point_image.dim(0), floating_point_image.dim(1), 1};
+    // floating_point_image[floating_point_image.slice(1)] *= my_cnn::SimpleMatrix<float>(slice_dim, -1);
+    // floating_point_image[floating_point_image.slice(1)] += my_cnn::SimpleMatrix<float>(slice_dim,  1);
 
     // Display both layers
-    std::cout << "Input images: \n";
-    my_cnn::printImage(floating_point_image.sliceCopy(0));
-    my_cnn::printImage(floating_point_image.sliceCopy(1));
+    // std::cout << "Input images: \n";
+    // my_cnn::printImage(floating_point_image.sliceCopy(0));
+    // my_cnn::printImage(floating_point_image.sliceCopy(1));
 
     // Apply the convolution kernel
-    K.setInputData(&floating_point_image);
-    my_cnn::SimpleMatrix<float> convolved_image = K.convolve();
-    std::cout << "After convolution: \n";
-    my_cnn::printImage(convolved_image.sliceCopy(0));
-    my_cnn::printImage(convolved_image.sliceCopy(1));
+    // K.setInputData(&floating_point_image);
+    // my_cnn::SimpleMatrix<float> convolved_image = K.convolve();
+    // std::cout << "After convolution: \n";
+    // my_cnn::printImage(convolved_image.sliceCopy(0));
+    // my_cnn::printImage(convolved_image.sliceCopy(1));
 
     // Run a 2x2 mean pooling
     my_cnn::Pooling pool;
@@ -62,10 +67,13 @@ int main(int argc, char* argv[]){
     pool.stride0 = 2;
     pool.stride1 = 2;
     pool.type = my_cnn::AVG;
-    my_cnn::SimpleMatrix<float> pooled_image = my_cnn::pooledMatrix(convolved_image, pool);
-    std::cout << "After pooling: \n";
-    my_cnn::printImage(pooled_image.sliceCopy(0));
-    my_cnn::printImage(pooled_image.sliceCopy(1));
+    model.addPooling(pool, "FirstPoolingLayer");
+    // my_cnn::SimpleMatrix<float> pooled_image = my_cnn::pooledMatrix(convolved_image, pool);
+    // std::cout << "After pooling: \n";
+    // my_cnn::printImage(pooled_image.sliceCopy(0));
+    // my_cnn::printImage(pooled_image.sliceCopy(1));
+
+    model.run(input_image);
 
     return 0;
 }
