@@ -83,11 +83,9 @@ public:
 
     // From a gslice_array
     SimpleMatrix(dim3 dim, std::gslice_array<T>&& vals):
-    std::valarray<T>(dim.x*dim.y*dim.z),
+    std::valarray<T>(vals),
     dim_(dim)
-    {
-        setEntries(std::valarray<T>(vals));
-    }
+    {}
 
     // Type conversion constructor
     template<typename Other>
@@ -244,13 +242,12 @@ protected:
 template<typename T>
 std::ostream& operator<<(std::ostream& os, const my_cnn::SimpleMatrix<T>& M){
     int default_precision = std::cout.precision();
-    int max_width;
-    if constexpr (std::is_integral_v<T>){
-        const T max = abs(M).max();
-        max_width = ceil(log10(max));
-    }else{
-        std::cout << std::setprecision(3) << std::fixed;
-        max_width = 4;
+    const T max = abs(M).max();
+    int max_width = ceil(log10(max));
+    
+    if constexpr (std::is_floating_point_v<T>){
+        std::cout << std::setprecision(2) << std::fixed;
+        max_width += 3;
     }
 
     for (int i = 0; i < M.dim(0); i++){
@@ -258,7 +255,7 @@ std::ostream& operator<<(std::ostream& os, const my_cnn::SimpleMatrix<T>& M){
             os << "[";
             for (int j = 0; j < M.dim(1); j++){
                 const auto& val = M(i, j, k);
-                os << (val < 0 ? "" : " ") << std::setw(max_width) << +val << (j == M.dim(1) - 1 ? "]" : ",");
+                os << (val < 0 ? "-" : " ") << std::setw(max_width) << abs(val) << (j == M.dim(1) - 1 ? "]" : ",");
             }
             os << "   ";
         }
