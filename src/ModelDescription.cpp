@@ -35,7 +35,10 @@ void ModelDescription<InputDataType>::run(SimpleMatrix<InputDataType> input)
         active_data = &input;
     }
     std::cout << "Input image is \n";
-    printImage(*active_data);
+    for (uint layer = 0; layer < active_data->dim(2); layer++){
+        SimpleMatrix<float> image_layer(active_data->dims().slice(), (*active_data)[active_data->slice(layer)]);
+        printImage(image_layer);
+    }
 
     // For each stage of the model, apply the necessary step
     for (size_t i = 0; i < flow.stages.size(); i++){
@@ -60,12 +63,10 @@ void ModelDescription<InputDataType>::run(SimpleMatrix<InputDataType> input)
         }
 
         std::cout << "After applying layer " << flow.names[i] << "\n";
-        printImage(*active_data);
         for (uint layer = 0; layer < active_data->dim(2); layer++){
             SimpleMatrix<float> image_layer(active_data->dims().slice(), (*active_data)[active_data->slice(layer)]);
             printImage(image_layer);
         }
-        std::cout << *active_data << "\n";
     }
 }
 
