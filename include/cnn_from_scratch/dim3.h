@@ -14,6 +14,10 @@ struct dim3{
         unsigned data[3] = {0, 0, 0};
     };
 
+    dim3() = default;
+    dim3(unsigned val) : x(val), y(val), z(val) {}
+    dim3(unsigned x_, unsigned y_, unsigned z_) : x(x_), y(y_), z(z_) {}
+
     friend std::ostream& operator << (std::ostream& os, dim3 dim){
         os << "(" << dim.x << ", " << dim.y << ", " << dim.z << ")";
         return os;
