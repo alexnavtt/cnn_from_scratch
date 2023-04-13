@@ -206,6 +206,33 @@ public:
     ADD_MATRIX_MODIFYING_OPERATOR(*=);
     ADD_MATRIX_MODIFYING_OPERATOR(/=);
 
+    template<typename Other>
+    SimpleMatrix<T> matMul(const SimpleMatrix<Other> M){
+        if (dim_.z != M.dim_.z){
+            std::cout << "Matrix multiply error: Differing number of layers. ";
+            std::cout << "This has " << dim_.z << " layers and the other has " << M.dim_.z << "\n";
+            throw MatrixSizeException("Multiplication layer mismatch");
+        }else if(dim_.y != M.dim_.x){
+            std::cout << "Matrix multiply error: Incompatible matrix dimensions ";
+            std::cout << dim_ << " and " << M.dim_ << "\n";
+            throw MatrixSizeException("Multiplication dimension mismatch");
+        }
+
+        SimpleMatrix<typename std::common_type<T, Other>::type> out({dim_.x, M.dim_.y, dim_.z});
+        for (uint row = 0; row < out.dim_.x; row++){
+            for (uint col = 0; col < out.dim_.y; col++){
+                for (uint layer = 0; layer < dim_.z; layer++){
+                    out(row, col, layer) = (
+                        (*this)[this->subMatIdx({row, 0, layer}, {1, dim_.y, 1})] * 
+                        M[M.subMatIdx({0, col, layer}, {M.dim_.x, 1, 1})]
+                    ).sum();
+                }
+            }
+        }
+
+        return out;
+    }
+
     /* === Dimension === */
 
     uint dim(size_t idx) const{

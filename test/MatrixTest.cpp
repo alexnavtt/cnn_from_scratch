@@ -436,6 +436,62 @@ TEST(Arithmetic, rangeScalarModify){
     }
 }
 
+TEST(Arithmetic, squareMatMul){
+    my_cnn::SimpleMatrix<int> M1({3, 3, 1}), M2({3, 3, 1});
+
+    M1.setEntries({1, 4, 7,
+                   2, 5, 8,
+                   3, 6, 9});
+
+    M2.setEntries({1, 2, 3,
+                   1, 2, 3,
+                   1, 2, 3});
+
+    my_cnn::SimpleMatrix<int> M3 = M1.matMul(M2);
+
+    my_cnn::SimpleMatrix<int> M3_expected({3, 3, 1});
+    M3_expected.setEntries({12, 24, 36,
+                            15, 30, 45,
+                            18, 36, 54});
+    
+    EXPECT_EQ(M3, M3_expected);
+}
+
+TEST(Arithmetic, longMatMul){
+    my_cnn::SimpleMatrix<int> M1({3, 2, 1}), M2({2, 3, 1});
+
+    M1.setEntries({1, 4,
+                   2, 5,
+                   3, 6});
+
+    M2.setEntries({1, 2, 3,
+                   1, 2, 3});
+
+    my_cnn::SimpleMatrix<int> M3 = M1.matMul(M2);
+
+    my_cnn::SimpleMatrix<int> M3_expected({3, 3, 1});
+    M3_expected.setEntries({5, 10, 15,
+                            7, 14, 21,
+                            9, 18, 27});
+    
+    EXPECT_EQ(M3, M3_expected);
+}
+
+TEST(Arithmetic, badMatMul){
+    my_cnn::SimpleMatrix<int> M1({2, 2, 1}), M2({2, 3, 1});
+
+    M1.setEntries({1, 4,
+                   3, 6});
+
+    M2.setEntries({1, 2, 3,
+                   1, 2, 3});
+
+    EXPECT_THROW(
+        M2.matMul(M1),
+        my_cnn::MatrixSizeException
+    );
+}
+
 int main(int argc, char* argv[]){
     ::testing::InitGoogleTest(&argc, argv);
     return RUN_ALL_TESTS();
