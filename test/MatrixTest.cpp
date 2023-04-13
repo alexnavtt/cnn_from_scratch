@@ -75,6 +75,40 @@ TEST(Constructor, valueConstructor){
     EXPECT_THROW(my_cnn::SimpleMatrix<double> M2({3, 3, 2}, {0, 2, 4, 6, 8}), my_cnn::MatrixSizeException);
 }
 
+TEST(Constructor, copyConstructor){
+    my_cnn::SimpleMatrix<float> M1({3, 3, 2}, 
+        {1, 2, 3,
+         4, 5, 6,
+         7, 8, 9, 
+         
+         10, 11, 12,
+         13, 14, 15,
+         16, 17, 18});
+
+    my_cnn::SimpleMatrix<float> M2 = M1;
+    for (size_t i = 0; i < 18; i++){
+        EXPECT_EQ(M1[i], M2[i]);
+    }
+}
+
+TEST(Constructor, moveConstructor){
+    my_cnn::SimpleMatrix<float> M1({3, 3, 2}, 
+        {1, 2, 3,
+         4, 5, 6,
+         7, 8, 9, 
+         
+         10, 11, 12,
+         13, 14, 15,
+         16, 17, 18});
+
+    my_cnn::SimpleMatrix<float> M2 = M1;
+    my_cnn::SimpleMatrix<float> M3 = std::move(M1);
+    for (size_t i = 0; i < 18; i++){
+        EXPECT_EQ(M2[i], M3[i]);
+    }
+    EXPECT_NE(M3.size(), M1.size());
+}
+
 TEST(Constructor, typeConversion){
     my_cnn::SimpleMatrix<int> M({4, 2, 3}, 3);
     my_cnn::SimpleMatrix<unsigned> M2 = M;

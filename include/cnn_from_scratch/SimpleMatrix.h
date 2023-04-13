@@ -88,13 +88,16 @@ public:
     {}
 
     // Type conversion constructor
-    template<typename Other>
+    template<typename Other, typename = std::enable_if_t<not std::is_same_v<T, Other>>>
     SimpleMatrix(const SimpleMatrix<Other>& M) : 
     std::valarray<T>(M.dim_.x*M.dim_.y*M.dim_.z),
     dim_(M.dim_)
     {
         std::copy(std::begin(M), std::end(M), std::begin(*this));
     }
+
+    SimpleMatrix(const SimpleMatrix& M) : std::valarray<T>(M) , dim_(M.dim_) {}
+    SimpleMatrix(SimpleMatrix<T>&& M) : std::valarray<T>(std::forward<std::valarray<T>>(M)), dim_(M.dim_) {}
 
     /* === Size Checking === */
 
