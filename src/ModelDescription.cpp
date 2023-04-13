@@ -28,8 +28,7 @@ void ModelDescription<InputDataType, OutputDataType>::addConnectedLayer
     (size_t output_size, std::string_view name)
 {
     flow.indices.push_back(connected_layers.size());
-    ConnectedLayer& layer = connected_layers.emplace_back();
-    layer.biases.resize(output_size);
+    ConnectedLayer& layer = connected_layers.emplace_back(output_size);
     flow.stages.push_back(ModelFlowMode::FULLY_CONNECTED);
     flow.names.push_back(name);
 }
@@ -58,8 +57,7 @@ OutputDataType ModelDescription<InputDataType, OutputDataType>::forwardPropagati
 
         switch (stage){
             case KERNEL:
-                kernels[idx].setInputData(active_data);
-                *active_data = kernels[idx].convolve();
+                *active_data = kernels[idx].apply(*active_data);
                 break;
 
             case POOLING:
@@ -68,18 +66,8 @@ OutputDataType ModelDescription<InputDataType, OutputDataType>::forwardPropagati
 
             case FULLY_CONNECTED:
             {
-                // If this is the first time at this layer, resize and apply random values
-                ConnectedLayer& layer = connected_layers[idx];
-                layer.checkSize(*active_data);
-
-                // Reshape the active data into a vector
                 active_data->resize(1, active_data->size(), 1);
-
-                // Matrix multiply to get the output values
-                *active_data = active_data->matMul(layer.weights);
-
-                // Add the biases
-                *active_data += layer.biases;
+                *active_data = connected_layers[idx].apply(*active_data);
                 break;
             }
         }

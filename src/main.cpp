@@ -33,8 +33,9 @@ int main(int argc, char* argv[]){
     std::cout << "Kernel weights are\n" << K1.weights << "\n";
 
     // No bias in this case
-    K1.biases[0] = 0;
+    K1.biases = {0, 0};
     K1.pad_inputs = false;
+    K1.activation = my_cnn::RELU;
 
     // Run a 2x2 max pooling
     my_cnn::Pooling pool;
@@ -48,6 +49,7 @@ int main(int argc, char* argv[]){
     my_cnn::Kernel K2({3, 3, 2}, 4, 1);
     K2.weights *= 255;
     K2.pad_inputs = false;
+    K2.biases = {0, 0, 0, 0};
     std::cout << "Second kernel weights are\n" << K2.weights << "\n";
 
     // Full model description

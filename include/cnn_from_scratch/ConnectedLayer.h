@@ -2,16 +2,18 @@
 
 #include <assert.h>
 #include <valarray>
-#include <cnn_from_scratch/SimpleMatrix.h>
+#include "cnn_from_scratch/exceptions.h"
+#include "cnn_from_scratch/ModelLayer.h"
+#include "cnn_from_scratch/SimpleMatrix.h"
 
 namespace my_cnn{
     
-struct ConnectedLayer{
-    SimpleMatrix<float> weights;
-    std::valarray<float> biases;
-    bool initialized = false;
+class ConnectedLayer : public ModelLayer{
+public:
+    using ModelLayer::ModelLayer;
 
-    bool checkSize(const SimpleMatrix<float>& input_data){
+    bool checkSize(const SimpleMatrix<float>& input_data) override{
+        // If this is the first time at this layer, resize and apply random values
         if (not initialized){
             initialized = true;
             weights.resize(input_data.size(), biases.size(), 1);
@@ -25,9 +27,19 @@ struct ConnectedLayer{
         }
         // Otherwise check to make sure the size is correct
         else{
-            assert(weights.dims() == dim3(input_data.size(), biases.size(), 1));
+            return ( weights.dims() == dim3(input_data.size(), biases.size(), 1) );
         }
-        return true;
+    }
+
+    SimpleMatrix<float> apply(const SimpleMatrix<float>& input_data) override{
+        if (not checkSize(input_data)){
+            throw ModelLayerException("Invalid input size for fully connected layer. Input has size " + 
+                std::to_string(input_data.size()) + " and this layer has size " + std::to_string(weights.dim(0)));
+        }
+
+        SimpleMatrix<float> output = input_data.matMul(weights) + biases;
+        activate(output);
+        return output;
     }
 };
 
