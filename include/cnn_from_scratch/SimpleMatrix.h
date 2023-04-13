@@ -252,6 +252,11 @@ public:
         std::valarray<T>::resize(x*y*z);
     }
 
+    void resize(dim3 new_dim){
+        dim_ = new_dim;
+        std::valarray<T>::resize(new_dim.x*new_dim.y*new_dim.z);
+    }
+
     /* === Other Math === */
 
     bool operator ==(const SimpleMatrix<T>& other) const{
