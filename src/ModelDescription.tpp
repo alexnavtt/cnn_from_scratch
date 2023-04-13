@@ -92,6 +92,12 @@ ModelResults<OutputDataType> ModelDescription<InputDataType, OutputDataType>::fo
 
     // Make sure the size of the last layer matches up with the label vector size
     assert(active_data->size() == output_labels.size());
+
+    // Apply softmax to the output
+    *active_data = std::exp(*active_data - active_data->max());
+    *active_data /= active_data->sum();
+
+    // Find the maximum probability
     float* max_idx = std::max_element(std::begin(*active_data), std::end(*active_data));
 
     // Construct the output data
@@ -101,12 +107,5 @@ ModelResults<OutputDataType> ModelDescription<InputDataType, OutputDataType>::fo
     result.loss = true_label ? lossFcn(result.probabilities, *true_label) : 0;
     return result;
 }
-
-template class ModelDescription<float, int>;
-template class ModelDescription<double, int>;
-template class ModelDescription<char, int>;
-template class ModelDescription<unsigned char, int>;
-template class ModelDescription<int, int>;
-template class ModelDescription<unsigned int, int>;
 
 } // namespace my_cnn

@@ -43,3 +43,5 @@ public:
 };
 
 } // end namespace my_cnn
+
+#include <ModelDescription.tpp>

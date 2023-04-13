@@ -20,7 +20,7 @@ int main(int argc, char* argv[]){
     input_image[input_image.subMatIdx({ 7, 12,  0}, {15,  1,  1})] = 255;
 
     // Create a model to put the image through
-    my_cnn::ModelDescription<unsigned char, int> model;
+    my_cnn::ModelDescription<unsigned char, std::string> model;
 
     // Create an edge detection kernel
     my_cnn::Kernel K1({5, 5, 1}, 2, 1);
@@ -58,7 +58,7 @@ int main(int argc, char* argv[]){
     model.addKernel(K2, "SecondConvolutionLayer");
     model.addPooling(pool, "SecondPoolingLayer");
     model.addConnectedLayer(10, "ConnectedLayer");
-    model.setOutputLabels({0, 1, 2, 3, 4, 5, 6, 7, 8, 9});
+    model.setOutputLabels({"0", "1", "2", "3", "4", "5", "6", "7", "8", "9"});
 
     my_cnn::ModelResults result = model.forwardPropagation(input_image);
     std::cout << "Model predicted that the image was a " << result.label << "\n";
