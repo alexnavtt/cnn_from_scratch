@@ -32,9 +32,9 @@ namespace my_cnn{
         if (not sizeCheck(other)) \
             throw MatrixSizeException("my_cnn::SimpleMatrix: Failure in operator \""s + #op + "\", size mismatch"s); \
         SimpleMatrix<T> out; \
-        auto out_varr = static_cast<std::valarray<T>*>(&out); \
-        auto curr_varr = static_cast<const std::valarray<T>*>(this);  \
-        *out_varr = *curr_varr op other; \
+        auto& out_varr = static_cast<std::valarray<T>&>(out); \
+        auto& curr_varr = static_cast<const std::valarray<T>&>(*this);  \
+        out_varr = curr_varr op other; \
         out.dim_ = dim_; \
         return out; \
     } \
@@ -101,19 +101,26 @@ public:
     // Check against another matrix
     template<typename Other>
     bool sizeCheck(const SimpleMatrix<Other>& other) const noexcept{
-        return other.dim_ == dim_;
+        if (other.dim_ == dim_) return true;
+        printf("Size mismatch (Matrix): Compared sizes are (%u, %u, %u) for this and (%u, %u, %u) for other\n", 
+                dim_.x, dim_.y, dim_.z, other.dim_.x, other.dim_.y, other.dim_.z);
+        return false;
     }
 
-    // Check against a valarray
-    template<typename Other>
-    bool sizeCheck(const std::valarray<Other>& v) const noexcept{
-        return v.size() == this->size();
+    // Check against a valarray or gslice_array
+    template<typename ValarrayLike,
+    std::enable_if_t<std::is_convertible<ValarrayLike, std::valarray<typename ValarrayLike::value_type>>::value, bool> = true>
+    bool sizeCheck(const ValarrayLike& v) const {
+        using U = typename ValarrayLike::value_type;
+        if(static_cast<std::valarray<U>>(v).size() == this->size()) return true;
+        printf("Size mismatch (Valarray/gslice_array): Compared sizes are (%u, %u, %u) (i.e. size %zd) for this and %zd for other\n", 
+                dim_.x, dim_.y, dim_.z, this->size(), static_cast<std::valarray<U>>(v).size());
+        return false;
     }
 
     // Literal value
-    template<typename Other>
+    template<typename Other, std::enable_if_t<std::is_arithmetic<Other>::value, bool> = true>
     bool sizeCheck(const Other& v) const noexcept{
-        static_assert(std::is_arithmetic_v<Other>);
         return true;
     }
 
@@ -229,18 +236,14 @@ public:
         return std::gslice(idx*dim_.y*dim_.x, {1, dim_.y, dim_.x}, {dim_.x*dim_.y, dim_.x, 1});
     }
 
+    std::gslice slices(unsigned idx, unsigned num, unsigned stride = 1) const{
+        return std::gslice(idx*dim_.y*dim_.x, {num, dim_.y, dim_.x}, {stride*dim_.x*dim_.y, dim_.x, 1});
+    }
+
     SimpleMatrix<T> sliceCopy(unsigned idx) const{
         SimpleMatrix<T> out(dim_.slice());
         out = this->operator[](slice(idx));
         return out;
-    }
-
-    std::valarray<T> channelSum() const{
-        std::valarray<T> output(dim_.z);
-        for (unsigned z = 0; z < dim_.z; z++){
-            output[z] = (*this)[slice(z)].sum();
-        }
-        return output;
     }
 
 protected:
