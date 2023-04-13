@@ -34,7 +34,18 @@ void ModelDescription<InputDataType, OutputDataType>::addConnectedLayer
 }
 
 template<typename InputDataType, typename OutputDataType>
-OutputDataType ModelDescription<InputDataType, OutputDataType>::forwardPropagation(SimpleMatrix<InputDataType> input)
+float ModelDescription<InputDataType, OutputDataType>::lossFcn(const std::valarray<float>& probabilities, const OutputDataType& true_label) const{
+    switch (loss_function){
+        default:
+        case CROSS_ENTROPY:
+            // Find the index of the true label
+            size_t true_idx = std::distance(std::begin(output_labels), std::find(std::begin(output_labels), std::end(output_labels), true_label));
+            return -1*log10(probabilities[true_idx]);
+    }
+}
+
+template<typename InputDataType, typename OutputDataType>
+ModelResults<OutputDataType> ModelDescription<InputDataType, OutputDataType>::forwardPropagation(SimpleMatrix<InputDataType> input, OutputDataType* true_label)
 {
     SimpleMatrix<float> kernel_copy;
     SimpleMatrix<float>* active_data = nullptr;
@@ -82,7 +93,13 @@ OutputDataType ModelDescription<InputDataType, OutputDataType>::forwardPropagati
     // Make sure the size of the last layer matches up with the label vector size
     assert(active_data->size() == output_labels.size());
     float* max_idx = std::max_element(std::begin(*active_data), std::end(*active_data));
-    return output_labels[std::distance(std::begin(*active_data), max_idx)];
+
+    // Construct the output data
+    ModelResults<OutputDataType> result;
+    result.label = output_labels[std::distance(std::begin(*active_data), max_idx)];
+    result.probabilities = std::move(*active_data);
+    result.loss = true_label ? lossFcn(result.probabilities, *true_label) : 0;
+    return result;
 }
 
 template class ModelDescription<float, int>;

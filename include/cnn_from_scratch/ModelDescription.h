@@ -10,6 +10,17 @@
 
 namespace my_cnn{
 
+template<typename OutputDataType>
+struct ModelResults{
+    OutputDataType label;
+    std::valarray<float> probabilities;
+    float loss;
+};
+
+enum LossFunction{
+    CROSS_ENTROPY
+};
+
 template<typename InputDataType, typename OutputDataType>
 class ModelDescription{
 public:
@@ -18,6 +29,7 @@ public:
     std::vector<ConnectedLayer> connected_layers;
     std::vector<OutputDataType> output_labels;
     ModelFlow flow;
+    LossFunction loss_function;
 
     bool saveModel(std::string filename);
     bool loadModel(std::string filename);
@@ -25,8 +37,9 @@ public:
     void addPooling(Pooling pool, std::string_view name = "");
     void addConnectedLayer(size_t output_size, std::string_view name = "");
     void setOutputLabels(std::vector<OutputDataType> labels) {output_labels = labels;}
-    OutputDataType forwardPropagation(SimpleMatrix<InputDataType> input);
+    ModelResults<OutputDataType> forwardPropagation(SimpleMatrix<InputDataType> input, OutputDataType* true_label = nullptr);
     void backwardsPropagation(float loss, float learning_rate);
+    float lossFcn(const std::valarray<float>& probabilities, const OutputDataType& true_label) const;
 };
 
 } // end namespace my_cnn
