@@ -24,6 +24,16 @@ void ModelDescription<InputDataType>::addPooling
 }
 
 template<typename InputDataType>
+void ModelDescription<InputDataType>::addConnectedLayer
+    (std::string_view name)
+{
+    flow.indices.push_back(connected_layers.size());
+    connected_layers.emplace_back();
+    flow.stages.push_back(ModelFlowMode::FULLY_CONNECTED);
+    flow.names.push_back(name);
+}
+
+template<typename InputDataType>
 void ModelDescription<InputDataType>::run(SimpleMatrix<InputDataType> input)
 {
     SimpleMatrix<float> kernel_copy;
