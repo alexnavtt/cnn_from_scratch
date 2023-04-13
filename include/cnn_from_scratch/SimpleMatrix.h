@@ -108,8 +108,11 @@ public:
     }
 
     // Check against a valarray or gslice_array
-    template<typename ValarrayLike,
-    std::enable_if_t<std::is_convertible<ValarrayLike, std::valarray<typename ValarrayLike::value_type>>::value, bool> = true>
+    template <typename ValarrayLike, std::enable_if_t<
+        std::is_convertible_v<
+            ValarrayLike, 
+            std::valarray<typename ValarrayLike::value_type>>, 
+        bool> = true>
     bool sizeCheck(const ValarrayLike& v) const {
         using U = typename ValarrayLike::value_type;
         if(static_cast<std::valarray<U>>(v).size() == this->size()) return true;
