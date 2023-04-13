@@ -1,10 +1,11 @@
+#include <assert.h>
 #include "cnn_from_scratch/imageUtil.h"
 #include "cnn_from_scratch/ModelDescription.h"
 
 namespace my_cnn{
     
-template<typename InputDataType>
-void ModelDescription<InputDataType>::addKernel
+template<typename InputDataType, typename OutputDataType>
+void ModelDescription<InputDataType, OutputDataType>::addKernel
     (Kernel kernel, std::string_view name)
 {
     flow.indices.push_back(kernels.size());
@@ -13,8 +14,8 @@ void ModelDescription<InputDataType>::addKernel
     flow.names.push_back(name);
 }
 
-template<typename InputDataType>
-void ModelDescription<InputDataType>::addPooling
+template<typename InputDataType, typename OutputDataType>
+void ModelDescription<InputDataType, OutputDataType>::addPooling
     (Pooling pool, std::string_view name)
 {
     flow.indices.push_back(pools.size());
@@ -23,18 +24,19 @@ void ModelDescription<InputDataType>::addPooling
     flow.names.push_back(name);
 }
 
-template<typename InputDataType>
-void ModelDescription<InputDataType>::addConnectedLayer
-    (std::string_view name)
+template<typename InputDataType, typename OutputDataType>
+void ModelDescription<InputDataType, OutputDataType>::addConnectedLayer
+    (size_t output_size, std::string_view name)
 {
     flow.indices.push_back(connected_layers.size());
-    connected_layers.emplace_back();
+    ConnectedLayer& layer = connected_layers.emplace_back();
+    layer.biases.resize(output_size);
     flow.stages.push_back(ModelFlowMode::FULLY_CONNECTED);
     flow.names.push_back(name);
 }
 
-template<typename InputDataType>
-void ModelDescription<InputDataType>::run(SimpleMatrix<InputDataType> input)
+template<typename InputDataType, typename OutputDataType>
+void ModelDescription<InputDataType, OutputDataType>::run(SimpleMatrix<InputDataType> input)
 {
     SimpleMatrix<float> kernel_copy;
     SimpleMatrix<float>* active_data = nullptr;
@@ -66,7 +68,34 @@ void ModelDescription<InputDataType>::run(SimpleMatrix<InputDataType> input)
                 break;
 
             case FULLY_CONNECTED:
-                break; /** TODO: */
+            {
+                // If this is the first time at this layer, resize and apply random values
+                ConnectedLayer& layer = connected_layers[idx];
+                if (not layer.initialized){
+                    layer.initialized = true;
+                    layer.weights.resize(active_data->size(), layer.biases.size(), 1);
+                    for (auto& v : layer.weights){
+                        v = (float)rand() / (float)RAND_MAX;
+                    }
+                    for (auto& v : layer.biases){
+                        v = (float)rand() / (float)RAND_MAX;
+                    }
+                }
+                // Otherwise check to make sure the size is correct
+                else{
+                    assert(layer.weights.dims() == dim3(active_data->size(), layer.biases.size(), 1));
+                }
+
+                // Reshape the active data into a vector
+                active_data->resize(1, active_data->size(), 1);
+
+                // Matrix multiply to get the output values
+                *active_data = active_data->matMul(layer.weights);
+
+                // Add the biases
+                *active_data += layer.biases;
+                break;
+            }
 
             case OUTPUT:
                 break; /** TODO: */
@@ -80,11 +109,11 @@ void ModelDescription<InputDataType>::run(SimpleMatrix<InputDataType> input)
     }
 }
 
-template class ModelDescription<float>;
-template class ModelDescription<double>;
-template class ModelDescription<char>;
-template class ModelDescription<unsigned char>;
-template class ModelDescription<int>;
-template class ModelDescription<unsigned int>;
+template class ModelDescription<float, std::string>;
+template class ModelDescription<double, std::string>;
+template class ModelDescription<char, std::string>;
+template class ModelDescription<unsigned char, std::string>;
+template class ModelDescription<int, std::string>;
+template class ModelDescription<unsigned int, std::string>;
 
 } // namespace my_cnn

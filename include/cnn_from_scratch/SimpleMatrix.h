@@ -155,7 +155,7 @@ public:
     template<typename Other>
     SimpleMatrix<T>& operator=(const SimpleMatrix<Other>& M){
         dim_ = M.dim_;
-        this->resize(dim_.x*dim_.y*dim_.z);
+        std::valarray<T>::resize(dim_.x*dim_.y*dim_.z);
         std::copy(std::begin(M), std::end(M), std::begin(*this));
         return *this;
     }
@@ -245,6 +245,11 @@ public:
 
     const dim3& dims() const{
         return dim_;
+    }
+
+    void resize(unsigned x, unsigned y, unsigned z){
+        dim_ = dim3(x, y, z);
+        std::valarray<T>::resize(x*y*z);
     }
 
     /* === Other Math === */
