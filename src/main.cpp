@@ -12,19 +12,20 @@
 int main(int argc, char* argv[]){
 
     // Grayscale image for testing
-    my_cnn::SimpleMatrix<unsigned char> input_image({25, 25, 1});
+    my_cnn::SimpleMatrix<unsigned char> input_image({25, 25, 2});
     
     // Let's make it a 4 for fun
     input_image[input_image.subMatIdx({ 5,  4,  0}, {10,  2,  1})] = 255;
     input_image[input_image.subMatIdx({15,  4,  0}, { 2, 12,  1})] = 255;
     input_image[input_image.subMatIdx({ 7, 12,  0}, {15,  1,  1})] = 255;
+    input_image[input_image.slice(1)] = input_image[input_image.slice(0)];
     // my_cnn::printImage(input_image);
 
     // Create a model to put the image through
     my_cnn::ModelDescription<unsigned char> model;
 
     // Create an edge detection kernel
-    my_cnn::Kernel K({3, 3, 2}, 1);
+    my_cnn::Kernel K({3, 3, 2}, 1, 1);
     K.weights[K.weights.subMatIdx({0, 0, 0}, {3, 1, 1})] = +1;
     K.weights[K.weights.subMatIdx({0, 1, 0}, {3, 1, 1})] =  0;
     K.weights[K.weights.subMatIdx({0, 2, 0}, {3, 1, 1})] = -1;
@@ -35,8 +36,8 @@ int main(int argc, char* argv[]){
 
     // No bias in this case
     K.setBias(0, 0);
-    K.setBias(1, 0);
-    std::cout << "Kernel biases are " << K.getBias(0) << " and " << K.getBias(1) << "\n";
+    // K.setBias(1, 0);
+    // std::cout << "Kernel biases are " << K.getBias(0) << " and " << K.getBias(1) << "\n";
     model.addKernel(K, "FirstConvolutionLayer");
 
     // Convert the byte image to float data
