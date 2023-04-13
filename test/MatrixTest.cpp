@@ -109,6 +109,23 @@ TEST(Constructor, moveConstructor){
     EXPECT_NE(M3.size(), M1.size());
 }
 
+TEST(Constructor, moveConstructorDiffType){
+    my_cnn::SimpleMatrix<float> M1({3, 3, 2}, 
+        {1, 2, 3,
+         4, 5, 6,
+         7, 8, 9, 
+         
+         10, 11, 12,
+         13, 14, 15,
+         16, 17, 18});
+
+    my_cnn::SimpleMatrix<int> M2 = std::move(M1);
+    for (size_t i = 0; i < 18; i++){
+        EXPECT_EQ(M1[i], M2[i]);
+    }
+    EXPECT_EQ(M1.size(), M2.size());
+}
+
 TEST(Constructor, typeConversion){
     my_cnn::SimpleMatrix<int> M({4, 2, 3}, 3);
     my_cnn::SimpleMatrix<unsigned> M2 = M;
