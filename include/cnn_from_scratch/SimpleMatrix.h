@@ -211,7 +211,7 @@ public:
     ADD_MATRIX_MODIFYING_OPERATOR(/=);
 
     template<typename Other>
-    SimpleMatrix<T> matMul(const SimpleMatrix<Other> M){
+    SimpleMatrix<T> matMul(const SimpleMatrix<Other> M) const{
         if (dim_.z != M.dim_.z){
             std::cout << "Matrix multiply error: Differing number of layers. ";
             std::cout << "This has " << dim_.z << " layers and the other has " << M.dim_.z << "\n";
