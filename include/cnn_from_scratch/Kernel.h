@@ -43,7 +43,7 @@ public:
             input_data_->dim(2)
         });
 
-        padded[padded.subMatIdx({dim_.x, dim_.y, 0}, input_data_->dims())] = *input_data_;
+        padded.subMatView({dim_.x, dim_.y, 0}, input_data_->dims()) = *input_data_;
         return padded;
     }
 

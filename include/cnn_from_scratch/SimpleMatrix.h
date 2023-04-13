@@ -181,6 +181,10 @@ public:
         );
     }
 
+    SubMatrixView<T> subMatView(dim3 idx, dim3 sub_dim){
+        return SubMatrixView<T>(*this, subMatIdx(idx, sub_dim));
+    }
+
     void setEntries(std::valarray<T>&& v){
         if (v.size() == this->size())
             static_cast<std::valarray<T>&>(*this) = v[
@@ -264,6 +268,10 @@ public:
 
     std::gslice slice(unsigned idx) const{
         return std::gslice(idx*dim_.y*dim_.x, {1, dim_.y, dim_.x}, {dim_.x*dim_.y, dim_.x, 1});
+    }
+
+    SubMatrixView<T> sliceView(unsigned idx) {
+        return SubMatrixView<T>(*this, slice(idx));
     }
 
     std::gslice slices(unsigned idx, unsigned num, unsigned stride = 1) const{

@@ -267,7 +267,7 @@ TEST(Indexing, writeRange){
     }
 
     my_cnn::SimpleMatrix<unsigned> M2({3, 3, 1});
-    M2[M2.subMatIdx({1, 1, 0}, {2, 2, 1})] = 1;
+    M2.subMatView({1, 1, 0}, {2, 2, 1}) = 1;
     EXPECT_EQ(M2(0, 0, 0), 0);
     EXPECT_EQ(M2(0, 1, 0), 0);
     EXPECT_EQ(M2(0, 2, 0), 0);
@@ -407,7 +407,7 @@ TEST(Arithmetic, rangeMatrixModify){
 
     // Add a valarray to a range
     my_cnn::dim3 sub_dim2{3, 1, 1};
-    M1[M1.subMatIdx({0, 0, 0}, sub_dim2)] -= {1, 2, 3};
+    M1.subMatView({0, 0, 0}, sub_dim2) -= {1, 2, 3};
 
     for (int i : {0, 1, 2}){
         EXPECT_EQ(M1[i], 0);
@@ -426,7 +426,7 @@ TEST(Arithmetic, rangeScalarModify){
 
     // std::gslice_array doesn't support scalar addition, so you have to create a matrix to add
     my_cnn::dim3 sub_dim{3, 2, 1};
-    M1[M1.subMatIdx({0, 1, 0}, sub_dim)] -= my_cnn::SimpleMatrix<float>(sub_dim, 2);
+    M1.subMatView({0, 1, 0}, sub_dim) -= 2;
 
     for (int i : {0, 1, 2}){
         EXPECT_EQ(M1[i], i+1);

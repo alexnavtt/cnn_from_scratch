@@ -24,16 +24,12 @@ int main(int argc, char* argv[]){
 
     // Create an edge detection kernel
     my_cnn::Kernel K1({5, 5, 1}, 2, 1);
-    K1.weights[K1.weights.subMatIdx({0, 0, 0}, {5, 1, 1})] = +1;
-    K1.weights[K1.weights.subMatIdx({0, 1, 0}, {5, 1, 1})] =  0;
-    K1.weights[K1.weights.subMatIdx({0, 2, 0}, {5, 1, 1})] =  0;
-    K1.weights[K1.weights.subMatIdx({0, 3, 0}, {5, 1, 1})] =  0;
-    K1.weights[K1.weights.subMatIdx({0, 4, 0}, {5, 1, 1})] = -1;
-    K1.weights[K1.weights.subMatIdx({0, 0, 1}, {1, 5, 1})] = +1;
-    K1.weights[K1.weights.subMatIdx({1, 0, 1}, {1, 5, 1})] =  0;
-    K1.weights[K1.weights.subMatIdx({2, 0, 1}, {1, 5, 1})] =  0;
-    K1.weights[K1.weights.subMatIdx({3, 0, 1}, {1, 5, 1})] =  0;
-    K1.weights[K1.weights.subMatIdx({4, 0, 1}, {1, 5, 1})] = -1;
+    K1.weights.subMatView({0, 0, 0}, {5, 1, 1}) = +1;
+    K1.weights.subMatView({0, 1, 0}, {5, 3, 1}) =  0;
+    K1.weights.subMatView({0, 4, 0}, {5, 1, 1}) = -1;
+    K1.weights.subMatView({0, 0, 1}, {1, 5, 1}) = +1;
+    K1.weights.subMatView({1, 0, 1}, {3, 5, 1}) =  0;
+    K1.weights.subMatView({4, 0, 1}, {1, 5, 1}) = -1;
     std::cout << "Kernel weights are\n" << K1.weights << "\n";
 
     // No bias in this case
