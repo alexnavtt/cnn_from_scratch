@@ -25,7 +25,8 @@ public:
     void addPooling(Pooling pool, std::string_view name = "");
     void addConnectedLayer(size_t output_size, std::string_view name = "");
     void setOutputLabels(std::vector<OutputDataType> labels) {output_labels = labels;}
-    OutputDataType run(SimpleMatrix<InputDataType> input);
+    OutputDataType forwardPropagation(SimpleMatrix<InputDataType> input);
+    void backwardsPropagation(float loss, float learning_rate);
 };
 
 } // end namespace my_cnn

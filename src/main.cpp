@@ -58,7 +58,7 @@ int main(int argc, char* argv[]){
     model.addConnectedLayer(10, "ConnectedLayer");
     model.setOutputLabels({0, 1, 2, 3, 4, 5, 6, 7, 8, 9});
 
-    int label = model.run(input_image);
+    int label = model.forwardPropagation(input_image);
     std::cout << "Model predicted that the image was a " << label << "\n";
 
     return 0;

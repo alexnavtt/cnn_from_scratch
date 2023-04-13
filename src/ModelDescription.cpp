@@ -35,7 +35,7 @@ void ModelDescription<InputDataType, OutputDataType>::addConnectedLayer
 }
 
 template<typename InputDataType, typename OutputDataType>
-OutputDataType ModelDescription<InputDataType, OutputDataType>::run(SimpleMatrix<InputDataType> input)
+OutputDataType ModelDescription<InputDataType, OutputDataType>::forwardPropagation(SimpleMatrix<InputDataType> input)
 {
     SimpleMatrix<float> kernel_copy;
     SimpleMatrix<float>* active_data = nullptr;
