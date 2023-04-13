@@ -246,6 +246,46 @@ TEST(Assignment, typeConversion){
     }
 }
 
+TEST(Assignment, transpose){
+    my_cnn::SimpleMatrix<float> M1({3, 2, 1}, 
+        { 1.0, 2.2,
+         -3.0, 4.9,
+         -5.3, 6.255});
+    
+    // setEntries takes care of reordering
+    my_cnn::SimpleMatrix<float> M2 = M1.transpose();
+    std::cout << M2 << "\n";
+
+    for (size_t i = 0; i < M1.dim(0); i++){
+        for (size_t j = 0; j < M1.dim(1); j++){
+            EXPECT_EQ(M1(i, j), M2(j, i));
+        }
+    }
+}
+
+TEST(Assignment, transposeFat){
+    my_cnn::SimpleMatrix<int> M1({3, 3, 2}, 
+        {1, 2, 3,
+         4, 5, 6,
+         7, 8, 9, 
+         
+         10, 11, 12,
+         13, 14, 15,
+         16, 17, 18});
+    
+    // setEntries takes care of reordering
+    my_cnn::SimpleMatrix<float> M2 = M1.transpose();
+    std::cout << M2 << "\n";
+
+    for (size_t k = 0; k < M1.dim(2); k++){
+        for (size_t i = 0; i < M1.dim(0); i++){
+            for (size_t j = 0; j < M1.dim(1); j++){
+                EXPECT_EQ(M1(i, j, k), M2(j, i, k));
+            }
+        }
+    }
+}
+
 TEST(SizeCheck, matrix){
     my_cnn::SimpleMatrix<float> M1({3, 4, 5});
     my_cnn::SimpleMatrix<float> M2({3, 4, 5});

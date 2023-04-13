@@ -260,6 +260,19 @@ public:
         this->resize(new_dim.x, new_dim.y, new_dim.z);
     }
 
+    SimpleMatrix<T> transpose(){
+        dim3 new_dim(dim_.y, dim_.x, dim_.z);
+        SimpleMatrix<T> output(new_dim);
+        static_cast<std::valarray<T>&>(output) = (*this)[
+            std::gslice(
+                0, 
+                {dim_.z, dim_.x, dim_.y},
+                {dim_.x*dim_.y, 1, dim_.x}
+            )
+        ];
+        return output;
+    }
+
     /* === Other Math === */
 
     bool operator ==(const SimpleMatrix<T>& other) const{
