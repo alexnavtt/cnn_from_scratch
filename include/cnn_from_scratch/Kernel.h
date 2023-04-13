@@ -21,7 +21,7 @@ public:
     dim_(filter_dim),
     num_filters_(num_filters),
     weights({dim_.x, dim_.y, dim_.z*num_filters}),
-    biases_(num_filters),
+    biases(num_filters),
     stride(stride)
     {
         std::srand(std::chrono::steady_clock::now().time_since_epoch().count());
@@ -29,14 +29,6 @@ public:
         for (float& w : weights){
             w = static_cast<float>(std::rand()) / RAND_MAX;
         }
-    }
-
-    void setBias(unsigned channel, float val){
-        biases_[channel] = val;
-    }
-
-    float getBias(unsigned channel){
-        return biases_[dim_.x*dim_.y*channel];
     }
 
     void setInputData(const SimpleMatrix<float>* input_data){
@@ -83,7 +75,7 @@ public:
         if (input_channel_count != dim_.z)
             throw std::out_of_range("Mismatched channel count for convolution");
 
-        SimpleMatrix<float> input_augmented = padInput();
+        SimpleMatrix<float> input_augmented = pad_inputs ? padInput() : *input_data_;
 
         // Create the output container
         SimpleMatrix<float> output({
@@ -107,7 +99,7 @@ public:
                     SimpleMatrix<float> layer_sub_region = sub_region;
                     layer_sub_region *= weights[layer_weight_idx];
                     // Sum the resulting matrices and add the biases
-                    float z_val = layer_sub_region.sum() + biases_[filter_layer];
+                    float z_val = layer_sub_region.sum() + biases[filter_layer];
                     // Apply the activation function
                     z_val = activate(z_val, RELU);
                     // Set the value in the output layer
@@ -122,12 +114,13 @@ public:
 private:
     dim3 dim_;
     unsigned num_filters_ = 0;
-    std::vector<float> biases_;
     const SimpleMatrix<float>* input_data_;
 
 public:
     SimpleMatrix<float> weights;
+    std::vector<float> biases;
     unsigned stride = 1;
+    bool pad_inputs = true;
 };
 
 } // namespace my_cnn
