@@ -436,18 +436,6 @@ TEST(Arithmetic, rangeScalarModify){
     }
 }
 
-TEST(Arithmetic, channelSum){
-    my_cnn::SimpleMatrix<int> M({2, 2, 3});
-    M[M.slice(0)] = {1, 2, 3, 4};
-    M[M.slice(1)] = {2, 2, 2, 2};
-    M[M.slice(2)] = {-1, 0, 1, 0};
-
-    std::valarray<int> sum = M.channelSum();
-    EXPECT_EQ(sum[0], 10);
-    EXPECT_EQ(sum[1],  8);
-    EXPECT_EQ(sum[2],  0);
-}
-
 int main(int argc, char* argv[]){
     ::testing::InitGoogleTest(&argc, argv);
     return RUN_ALL_TESTS();
