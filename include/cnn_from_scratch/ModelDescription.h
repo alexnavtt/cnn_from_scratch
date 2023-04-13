@@ -13,7 +13,8 @@ namespace my_cnn{
 template<typename OutputDataType>
 struct ModelResults{
     OutputDataType label;
-    std::valarray<float> probabilities;
+    size_t label_idx;
+    std::valarray<float> softmax_output;
     float loss;
 };
 
@@ -24,6 +25,7 @@ enum LossFunction{
 template<typename InputDataType, typename OutputDataType>
 class ModelDescription{
 public:
+    using result_t = ModelResults<OutputDataType>;
     std::vector<Kernel> kernels;
     std::vector<Pooling> pools;
     std::vector<ConnectedLayer> connected_layers;
@@ -37,8 +39,8 @@ public:
     void addPooling(Pooling pool, std::string_view name = "");
     void addConnectedLayer(size_t output_size, std::string_view name = "");
     void setOutputLabels(std::vector<OutputDataType> labels) {output_labels = labels;}
-    ModelResults<OutputDataType> forwardPropagation(SimpleMatrix<InputDataType> input, OutputDataType* true_label = nullptr);
-    void backwardsPropagation(float loss, float learning_rate);
+    result_t forwardPropagation(SimpleMatrix<InputDataType> input, OutputDataType* true_label = nullptr);
+    void backwardsPropagation(const result_t& result, float learning_rate);
     float lossFcn(const std::valarray<float>& probabilities, const OutputDataType& true_label) const;
 };
 
