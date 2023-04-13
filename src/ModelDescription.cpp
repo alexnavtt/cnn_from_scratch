@@ -1,4 +1,3 @@
-#include <assert.h>
 #include "cnn_from_scratch/imageUtil.h"
 #include "cnn_from_scratch/ModelDescription.h"
 
@@ -36,7 +35,7 @@ void ModelDescription<InputDataType, OutputDataType>::addConnectedLayer
 }
 
 template<typename InputDataType, typename OutputDataType>
-void ModelDescription<InputDataType, OutputDataType>::run(SimpleMatrix<InputDataType> input)
+OutputDataType ModelDescription<InputDataType, OutputDataType>::run(SimpleMatrix<InputDataType> input)
 {
     SimpleMatrix<float> kernel_copy;
     SimpleMatrix<float>* active_data = nullptr;
@@ -71,20 +70,7 @@ void ModelDescription<InputDataType, OutputDataType>::run(SimpleMatrix<InputData
             {
                 // If this is the first time at this layer, resize and apply random values
                 ConnectedLayer& layer = connected_layers[idx];
-                if (not layer.initialized){
-                    layer.initialized = true;
-                    layer.weights.resize(active_data->size(), layer.biases.size(), 1);
-                    for (auto& v : layer.weights){
-                        v = (float)rand() / (float)RAND_MAX;
-                    }
-                    for (auto& v : layer.biases){
-                        v = (float)rand() / (float)RAND_MAX;
-                    }
-                }
-                // Otherwise check to make sure the size is correct
-                else{
-                    assert(layer.weights.dims() == dim3(active_data->size(), layer.biases.size(), 1));
-                }
+                layer.checkSize(*active_data);
 
                 // Reshape the active data into a vector
                 active_data->resize(1, active_data->size(), 1);
@@ -96,9 +82,6 @@ void ModelDescription<InputDataType, OutputDataType>::run(SimpleMatrix<InputData
                 *active_data += layer.biases;
                 break;
             }
-
-            case OUTPUT:
-                break; /** TODO: */
         }
 
         std::cout << "After applying layer " << flow.names[i] << "\n";
@@ -107,13 +90,18 @@ void ModelDescription<InputDataType, OutputDataType>::run(SimpleMatrix<InputData
             printImage(image_layer);
         }
     }
+
+    // Make sure the size of the last layer matches up with the label vector size
+    assert(active_data->size() == output_labels.size());
+    float* max_idx = std::max_element(std::begin(*active_data), std::end(*active_data));
+    return output_labels[std::distance(std::begin(*active_data), max_idx)];
 }
 
-template class ModelDescription<float, std::string>;
-template class ModelDescription<double, std::string>;
-template class ModelDescription<char, std::string>;
-template class ModelDescription<unsigned char, std::string>;
-template class ModelDescription<int, std::string>;
-template class ModelDescription<unsigned int, std::string>;
+template class ModelDescription<float, int>;
+template class ModelDescription<double, int>;
+template class ModelDescription<char, int>;
+template class ModelDescription<unsigned char, int>;
+template class ModelDescription<int, int>;
+template class ModelDescription<unsigned int, int>;
 
 } // namespace my_cnn

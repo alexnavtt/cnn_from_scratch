@@ -24,7 +24,8 @@ public:
     void addKernel(Kernel kernel, std::string_view name = "");
     void addPooling(Pooling pool, std::string_view name = "");
     void addConnectedLayer(size_t output_size, std::string_view name = "");
-    void run(SimpleMatrix<InputDataType> input);
+    void setOutputLabels(std::vector<OutputDataType> labels) {output_labels = labels;}
+    OutputDataType run(SimpleMatrix<InputDataType> input);
 };
 
 } // end namespace my_cnn

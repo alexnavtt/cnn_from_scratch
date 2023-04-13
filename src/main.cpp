@@ -12,7 +12,7 @@
 int main(int argc, char* argv[]){
 
     // Grayscale image for testing
-    my_cnn::SimpleMatrix<unsigned char> input_image({25, 25, 1});
+    my_cnn::SimpleMatrix<unsigned char> input_image({28, 28, 1});
     
     // Let's make it a 4 for fun
     input_image[input_image.subMatIdx({ 5,  4,  0}, {10,  2,  1})] = 255;
@@ -20,7 +20,7 @@ int main(int argc, char* argv[]){
     input_image[input_image.subMatIdx({ 7, 12,  0}, {15,  1,  1})] = 255;
 
     // Create a model to put the image through
-    my_cnn::ModelDescription<unsigned char, std::string> model;
+    my_cnn::ModelDescription<unsigned char, int> model;
 
     // Create an edge detection kernel
     my_cnn::Kernel K1({5, 5, 1}, 2, 1);
@@ -35,7 +35,6 @@ int main(int argc, char* argv[]){
     // No bias in this case
     K1.biases[0] = 0;
     K1.pad_inputs = false;
-    model.addKernel(K1, "FirstConvolutionLayer");
 
     // Run a 2x2 max pooling
     my_cnn::Pooling pool;
@@ -44,17 +43,23 @@ int main(int argc, char* argv[]){
     pool.stride0 = 2;
     pool.stride1 = 2;
     pool.type = my_cnn::MAX;
-    model.addPooling(pool, "FirstPoolingLayer");
 
     // Add another filter layer
     my_cnn::Kernel K2({3, 3, 2}, 4, 1);
     K2.weights *= 255;
+    K2.pad_inputs = false;
     std::cout << "Second kernel weights are\n" << K2.weights << "\n";
+
+    // Full model description
+    model.addKernel(K1, "FirstConvolutionLayer");
+    model.addPooling(pool, "FirstPoolingLayer");
     model.addKernel(K2, "SecondConvolutionLayer");
-
+    model.addPooling(pool, "SecondPoolingLayer");
     model.addConnectedLayer(10, "ConnectedLayer");
+    model.setOutputLabels({0, 1, 2, 3, 4, 5, 6, 7, 8, 9});
 
-    model.run(input_image);
+    int label = model.run(input_image);
+    std::cout << "Model predicted that the image was a " << label << "\n";
 
     return 0;
 }
