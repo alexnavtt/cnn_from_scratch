@@ -77,7 +77,8 @@ ModelResults<OutputDataType> ModelDescription<InputDataType, OutputDataType>::fo
 
             case FULLY_CONNECTED:
             {
-                active_data->resize(1, active_data->size(), 1);
+                // Reshape to a column vector before passing it to the fully connected layer
+                active_data->resize(active_data->size(), 1, 1);
                 *active_data = connected_layers[idx].apply(*active_data);
                 break;
             }
@@ -93,19 +94,39 @@ ModelResults<OutputDataType> ModelDescription<InputDataType, OutputDataType>::fo
     // Make sure the size of the last layer matches up with the label vector size
     assert(active_data->size() == output_labels.size());
 
-    // Apply softmax to the output
+    // Create the output struct
+    ModelResults<OutputDataType> result;
+
+    // Apply softmax to the output and store that as well
     *active_data = std::exp(*active_data - active_data->max());
     *active_data /= active_data->sum();
+    result.softmax_output = std::move(*active_data);
 
     // Find the maximum probability
-    float* max_idx = std::max_element(std::begin(*active_data), std::end(*active_data));
+    float* max_idx = std::max_element(std::begin(result.softmax_output), std::end(result.softmax_output));
 
     // Construct the output data
-    ModelResults<OutputDataType> result;
-    result.label = output_labels[std::distance(std::begin(*active_data), max_idx)];
-    result.probabilities = std::move(*active_data);
-    result.loss = true_label ? lossFcn(result.probabilities, *true_label) : 0;
+    result.label_idx = std::distance(std::begin(result.softmax_output), max_idx);
+    result.label = output_labels[result.label_idx];
+    result.loss = true_label ? lossFcn(result.softmax_output, *true_label) : -1.0f;
     return result;
+}
+
+template<typename InputDataType, typename OutputDataType>
+void ModelDescription<InputDataType, OutputDataType>::backwardsPropagation(const result_t& result, float learning_rate){
+    // First we calculate the loss gradient with respect to the output values
+    std::valarray<float> dLdz = result.softmax_output;
+    dLdz[result.label_idx] -= 1;
+
+    // For each of the layers, calculate the corresponding gradient and adjust the weights accordingly
+    for (size_t i = flow.indices.size()-1; i >= 0; i--){
+        switch (flow.stages[i]){
+            case FULLY_CONNECTED:
+                ConnectedLayer& layer = connected_layers[i];
+                // dWd
+                break;
+        }
+    }
 }
 
 } // namespace my_cnn

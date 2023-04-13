@@ -14,9 +14,10 @@ public:
 
     bool checkSize(const SimpleMatrix<float>& input_data) override{
         // If this is the first time at this layer, resize and apply random values
+        dim3 expected_size(biases.size(), input_data.size(), 1);
         if (not initialized){
             initialized = true;
-            weights.resize(input_data.size(), biases.size(), 1);
+            weights.resize(expected_size);
             for (auto& v : weights){
                 v = (float)rand() / (float)RAND_MAX;
             }
@@ -27,7 +28,7 @@ public:
         }
         // Otherwise check to make sure the size is correct
         else{
-            return ( weights.dims() == dim3(input_data.size(), biases.size(), 1) );
+            return ( weights.dims() == expected_size );
         }
     }
 
@@ -37,7 +38,7 @@ public:
                 std::to_string(input_data.size()) + " and this layer has size " + std::to_string(weights.dim(0)));
         }
 
-        SimpleMatrix<float> output = input_data.matMul(weights) + biases;
+        SimpleMatrix<float> output = weights.matMul(input_data) + biases;
         activate(output);
         return output;
     }
