@@ -1,6 +1,7 @@
 #pragma once
 
-#include <cnn_from_scratch/imageUtil.h>
+#include "cnn_from_scratch/imageUtil.h"
+#include "cnn_from_scratch/ModelLayer.h"
 #include "cnn_from_scratch/SimpleMatrix.h"
 
 namespace my_cnn{
@@ -11,7 +12,7 @@ enum PoolingType{
     AVG
 };
     
-class Pooling{
+class Pooling : public ModelLayer{
 public:
     unsigned dim0 = 1;
     unsigned dim1 = 1;
@@ -19,9 +20,12 @@ public:
     unsigned stride1 = 1;
     PoolingType type = PoolingType::MAX;
 
-    template<typename T>
-    SimpleMatrix<T> propagateForward(const SimpleMatrix<T>& input){
-        SimpleMatrix<T> output({input.dim(0)/dim0, input.dim(1)/dim1, input.dim(2)});
+    bool checkSize(const SimpleMatrix<float>& input){
+        return input.dim(0) >= dim0 && input.dim(1) >= dim1;
+    }
+
+    SimpleMatrix<float> propagateForward(const SimpleMatrix<float>& input) override {
+        SimpleMatrix<float> output({input.dim(0)/dim0, input.dim(1)/dim1, input.dim(2)});
         const dim3 pool_size{dim0, dim1, 1};
         for (unsigned z = 0; z < input.dim(2); z++){
             dim3 in_idx{0, 0, z};
@@ -46,6 +50,11 @@ public:
             }
         }
         return output;
+    }
+
+    SimpleMatrix<float> propagateBackward(const SimpleMatrix<float>& input, const SimpleMatrix<float>& output_grad, [[maybe_unused]] float learning_rate) override{
+        /** TODO: */
+        return input;
     }
 };
 
