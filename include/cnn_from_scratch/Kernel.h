@@ -41,6 +41,14 @@ public:
         return input_data.dim(2) == dim_.z;
     }
 
+    dim3 outputSize(const SimpleMatrix<float>& input_data) const{
+        return dim3(
+            input_data.dim(0) - dim_.x + 2*dim_.x*pad_inputs + 1,
+            input_data.dim(1) - dim_.y + 2*dim_.y*pad_inputs + 1,
+            (uint)biases.size()
+        );
+    }
+
     [[nodiscard]] 
     SimpleMatrix<float> propagateForward(const SimpleMatrix<float>& input_data) override {
 
@@ -50,15 +58,12 @@ public:
         SimpleMatrix<float> input_augmented = pad_inputs ? padInput(input_data) : input_data;
 
         // Create the output container
-        SimpleMatrix<float> output({
-            input_augmented.dim(0) - dim_.x + 1, 
-            input_augmented.dim(1) - dim_.y + 1, 
-            (uint)biases.size()
-        });
+        dim3 output_size = outputSize(input_data);
+        SimpleMatrix<float> output(output_size);
 
         dim3 idx{0, 0, 0};
-        for (idx.x = 0; idx.x < (input_augmented.dim(0) - weights.dim(0)); idx.x++){
-            for (idx.y = 0; idx.y < (input_augmented.dim(1) - weights.dim(1)); idx.y++){
+        for (idx.x = 0; idx.x < output_size.x; idx.x++){
+            for (idx.y = 0; idx.y < output_size.y; idx.y++){
                 // Extract the sub region
                 SimpleMatrix<float> sub_region = input_augmented.subMatCopy(idx, dim_);
 

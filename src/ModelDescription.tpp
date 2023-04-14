@@ -136,6 +136,7 @@ void ModelDescription<InputDataType, OutputDataType>::backwardsPropagation(const
                 break;
 
             case KERNEL:
+                dLdz.reshape(kernels[idx].outputSize(layer_input));
                 break;
 
             case POOLING:
