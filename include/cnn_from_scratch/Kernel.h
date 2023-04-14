@@ -41,7 +41,7 @@ public:
         return input_data.dim(2) == dim_.z;
     }
 
-    [[nodiscard]] SimpleMatrix<float> apply(const SimpleMatrix<float>& input_data) override {
+    [[nodiscard]] SimpleMatrix<float> propagateForward(const SimpleMatrix<float>& input_data) override {
 
         if (not checkSize(input_data))
             throw ModelLayerException("Mismatched channel count for convolution");

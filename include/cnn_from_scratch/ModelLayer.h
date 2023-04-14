@@ -52,7 +52,7 @@ public:
     }
 
     virtual bool checkSize(const SimpleMatrix<float>& input) = 0;
-    virtual SimpleMatrix<float> apply(const SimpleMatrix<float>& input) = 0;
+    virtual SimpleMatrix<float> propagateForward(const SimpleMatrix<float>& input) = 0;
 };
 
 } // namespace my_cnn

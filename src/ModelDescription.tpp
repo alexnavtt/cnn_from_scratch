@@ -69,7 +69,7 @@ ModelResults<OutputDataType> ModelDescription<InputDataType, OutputDataType>::fo
 
         switch (stage){
             case KERNEL:
-                active_data = kernels[idx].apply(active_data);
+                active_data = kernels[idx].propagateForward(active_data);
                 break;
 
             case POOLING:
@@ -80,7 +80,7 @@ ModelResults<OutputDataType> ModelDescription<InputDataType, OutputDataType>::fo
             {
                 // Reshape to a column vector before passing it to the fully connected layer
                 active_data.reshape(active_data.size(), 1, 1);
-                active_data = connected_layers[idx].apply(active_data);
+                active_data = connected_layers[idx].propagateForward(active_data);
                 break;
             }
         }

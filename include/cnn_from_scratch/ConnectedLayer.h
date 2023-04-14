@@ -32,7 +32,7 @@ public:
         }
     }
 
-    SimpleMatrix<float> apply(const SimpleMatrix<float>& input_data) override{
+    SimpleMatrix<float> propagateForward(const SimpleMatrix<float>& input_data) override{
         if (not checkSize(input_data)){
             throw ModelLayerException("Invalid input size for fully connected layer. Input has size " + 
                 std::to_string(input_data.size()) + " and this layer has size " + std::to_string(weights.dim(0)));
