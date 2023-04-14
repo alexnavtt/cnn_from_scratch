@@ -230,8 +230,8 @@ public:
             for (uint col = 0; col < out.dim_.y; col++){
                 for (uint layer = 0; layer < dim_.z; layer++){
                     out(row, col, layer) = (
-                        (*this)[this->subMatIdx({row, 0, layer}, {1, dim_.y, 1})] * 
-                        M[M.subMatIdx({0, col, layer}, {M.dim_.x, 1, 1})]
+                        this->subMatCopy({row, 0, layer}, {1, dim_.y, 1}) * 
+                        M.subMatCopy({0, col, layer}, {M.dim_.x, 1, 1})
                     ).sum();
                 }
             }
