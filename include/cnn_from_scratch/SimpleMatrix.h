@@ -214,7 +214,25 @@ public:
     ADD_MATRIX_MODIFYING_OPERATOR(/=);
 
     template<typename Other>
-    SimpleMatrix<T> matMul(const SimpleMatrix<Other> M) const{
+    typename std::common_type_t<T, Other> dot(const SimpleMatrix<Other>& M) const{
+        if (this->size() != M.size()){
+            throw MatrixSizeException("Cannot get the dot product A.B, size mismatch. A has " 
+                + std::to_string(this->size()) + " elements and B has " + std::to_string(M.size()) + " elements");
+        }
+
+        if constexpr (std::is_same_v<T, Other>){
+            return (static_cast<const std::valarray<T>&>(*this) * static_cast<const std::valarray<T>&>(M)).sum();
+        }else{
+            std::common_type_t<T, Other> sum{};
+            for (size_t i = 0; i < this->size(); i++){
+                sum += M[i] * (*this)[i];
+            }
+            return sum;
+        }
+    }
+
+    template<typename Other>
+    SimpleMatrix<typename std::common_type<T, Other>::type> matMul(const SimpleMatrix<Other> M) const{
         if (dim_.z != M.dim_.z){
             std::cout << "Matrix multiply error: Differing number of layers. ";
             std::cout << "This has " << dim_.z << " layers and the other has " << M.dim_.z << "\n";
@@ -229,10 +247,11 @@ public:
         for (uint row = 0; row < out.dim_.x; row++){
             for (uint col = 0; col < out.dim_.y; col++){
                 for (uint layer = 0; layer < dim_.z; layer++){
-                    out(row, col, layer) = (
-                        this->subMatCopy({row, 0, layer}, {1, dim_.y, 1}) * 
-                        M.subMatCopy({0, col, layer}, {M.dim_.x, 1, 1})
-                    ).sum();
+
+                    out(row, col, layer) = 
+                        this->subMatCopy({row, 0, layer}, {1, dim_.y, 1})
+                            .dot(M.subMatCopy({0, col, layer}, {M.dim_.x, 1, 1}));
+
                 }
             }
         }
