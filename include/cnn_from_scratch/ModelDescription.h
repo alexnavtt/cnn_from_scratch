@@ -14,8 +14,8 @@ template<typename OutputDataType>
 struct ModelResults{
     OutputDataType label;
     size_t label_idx;
-    std::valarray<float> softmax_output;
     float loss;
+    std::vector<SimpleMatrix<float>> layer_inputs;
 };
 
 enum LossFunction{
