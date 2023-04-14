@@ -40,7 +40,7 @@ void printImageColorImpl(const SimpleMatrix<T>& M, T max_val){
 
 template<typename T>
 void printImage(const SimpleMatrix<T>& M){
-    T max = (std::is_integral_v<T> ? std::numeric_limits<unsigned char>::max() : 1.0);
+    T max = (std::is_integral_v<T> ? std::numeric_limits<unsigned char>::max() : M.max());
 
     if (M.dim(2) == 3)
         printImageColorImpl<T>(M, max); 
