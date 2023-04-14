@@ -126,18 +126,12 @@ void ModelDescription<InputDataType, OutputDataType>::backwardsPropagation(const
     // For each of the layers, calculate the corresponding gradient and adjust the weights accordingly
     for (int i = result.layer_inputs.size()-1; i >= 0; i--){
         SimpleMatrix<float> layer_input = result.layer_inputs[i];
-        SimpleMatrix<float> dLdW;
-        SimpleMatrix<float> dLdB;
         size_t idx = flow.indices[i];
 
         switch (flow.stages[i]){
             case FULLY_CONNECTED:
                 layer_input.reshape(1, layer_input.size(), 1);
-                dLdW = dLdz.matMul(layer_input);
-                dLdB = dLdz;
-                dLdz = connected_layers[idx].weights.transpose().matMul(dLdz);
-                connected_layers[idx].weights -= learning_rate * dLdW;
-                connected_layers[idx].biases  -= learning_rate * dLdB;
+                dLdz = connected_layers[idx].propagateBackward(layer_input, dLdz, learning_rate);
                 break;
 
             case KERNEL:

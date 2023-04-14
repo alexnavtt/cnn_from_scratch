@@ -53,6 +53,7 @@ public:
 
     virtual bool checkSize(const SimpleMatrix<float>& input) = 0;
     virtual SimpleMatrix<float> propagateForward(const SimpleMatrix<float>& input) = 0;
+    virtual SimpleMatrix<float> propagateBackward(const SimpleMatrix<float>& input, const SimpleMatrix<float>& output_grad, float learning_rate);
 };
 
 } // namespace my_cnn

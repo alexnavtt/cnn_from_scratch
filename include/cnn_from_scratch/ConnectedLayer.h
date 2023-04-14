@@ -42,6 +42,15 @@ public:
         activate(output);
         return output;
     }
+
+    SimpleMatrix<float> propagateBackward(const SimpleMatrix<float>& input_data, const SimpleMatrix<float>& output_grad, float learning_rate) override{
+        const SimpleMatrix<float>   dLdW = output_grad.matMul(input_data);
+        const SimpleMatrix<float>&  dLdB = output_grad;
+        const SimpleMatrix<float>&& dXdZ = weights.transpose().matMul(output_grad);
+        weights -= learning_rate * dLdW;
+        biases  -= learning_rate * dLdB;
+        return dXdZ;
+    }
 };
 
 } // namespace my_cnn
