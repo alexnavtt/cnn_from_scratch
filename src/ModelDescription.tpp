@@ -73,7 +73,7 @@ ModelResults<OutputDataType> ModelDescription<InputDataType, OutputDataType>::fo
                 break;
 
             case POOLING:
-                active_data = pooledMatrix(active_data, pools[idx]);
+                active_data = pools[idx].propagateForward(active_data);
                 break;
 
             case FULLY_CONNECTED:
