@@ -79,7 +79,7 @@ ModelResults<OutputDataType> ModelDescription<InputDataType, OutputDataType>::fo
             case FULLY_CONNECTED:
             {
                 // Reshape to a column vector before passing it to the fully connected layer
-                active_data.resize(active_data.size(), 1, 1);
+                active_data.reshape(active_data.size(), 1, 1);
                 active_data = connected_layers[idx].apply(active_data);
                 break;
             }
@@ -132,7 +132,7 @@ void ModelDescription<InputDataType, OutputDataType>::backwardsPropagation(const
 
         switch (flow.stages[i]){
             case FULLY_CONNECTED:
-                layer_input.resize(1, layer_input.size(), 1);
+                layer_input.reshape(1, layer_input.size(), 1);
                 dLdW = dLdz.matMul(layer_input);
                 dLdB = dLdz;
                 dLdz = connected_layers[idx].weights.transpose().matMul(dLdz);

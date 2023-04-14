@@ -250,14 +250,17 @@ public:
         return dim_;
     }
 
-    void resize(unsigned x, unsigned y, unsigned z){
+    void reshape(unsigned x, unsigned y, unsigned z){
+        if(x*y*z != dim_.x*dim_.y*dim_.z){
+            std::stringstream ss;
+            ss << "Cannot transform matrix from size " << dim_ << " to size " << dim3(x,y,z) << "\n";
+            throw MatrixTransformException(ss.str());
+        }
         dim_ = dim3(x, y, z);
-        if (this->size() != x*y*z)
-            std::valarray<T>::resize(x*y*z);
     }
 
-    void resize(dim3 new_dim){
-        this->resize(new_dim.x, new_dim.y, new_dim.z);
+    void reshape(dim3 new_dim){
+        this->reshape(new_dim.x, new_dim.y, new_dim.z);
     }
 
     SimpleMatrix<T> transpose(){

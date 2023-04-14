@@ -17,7 +17,7 @@ public:
         dim3 expected_size(biases.size(), input_data.size(), 1);
         if (not initialized){
             initialized = true;
-            weights.resize(expected_size);
+            weights = SimpleMatrix<float>(expected_size);
             for (auto& v : weights){
                 v = (float)rand() / (float)RAND_MAX;
             }
