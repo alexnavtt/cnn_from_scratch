@@ -65,14 +65,15 @@ ModelResults<OutputDataType> ModelDescription<InputDataType, OutputDataType>::fo
         size_t idx = flow.indices[i];
 
         // Record the input for this layer (to be used in back propagation)
-        result.layer_inputs.push_back(active_data);
 
         switch (stage){
             case KERNEL:
+                result.layer_inputs.push_back(active_data);
                 active_data = kernels[idx].propagateForward(active_data);
                 break;
 
             case POOLING:
+                result.layer_inputs.push_back(active_data);
                 active_data = pools[idx].propagateForward(active_data);
                 break;
 
@@ -80,6 +81,7 @@ ModelResults<OutputDataType> ModelDescription<InputDataType, OutputDataType>::fo
             {
                 // Reshape to a column vector before passing it to the fully connected layer
                 active_data.reshape(active_data.size(), 1, 1);
+                result.layer_inputs.push_back(active_data);
                 active_data = connected_layers[idx].propagateForward(active_data);
                 break;
             }
@@ -125,12 +127,11 @@ void ModelDescription<InputDataType, OutputDataType>::backwardsPropagation(const
 
     // For each of the layers, calculate the corresponding gradient and adjust the weights accordingly
     for (int i = result.layer_inputs.size()-1; i >= 0; i--){
-        SimpleMatrix<float> layer_input = result.layer_inputs[i];
+        const SimpleMatrix<float>& layer_input = result.layer_inputs[i];
         size_t idx = flow.indices[i];
 
         switch (flow.stages[i]){
             case FULLY_CONNECTED:
-                layer_input.reshape(1, layer_input.size(), 1);
                 dLdz = connected_layers[idx].propagateBackward(layer_input, dLdz, learning_rate);
                 break;
 
