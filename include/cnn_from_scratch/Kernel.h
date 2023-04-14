@@ -18,10 +18,10 @@ public:
         std::srand(std::chrono::steady_clock::now().time_since_epoch().count());
         // Set random weights in the interval [0, 1] upon construction
         for (float& w : weights){
-            w = static_cast<float>(std::rand()) / RAND_MAX;
+            w = 1 - 2*static_cast<float>(std::rand()) / RAND_MAX;
         }
         for (float& b : biases){
-            b = static_cast<float>(std::rand()) / RAND_MAX;
+            b = 1 - 2*static_cast<float>(std::rand()) / RAND_MAX;
         }
     }
 
