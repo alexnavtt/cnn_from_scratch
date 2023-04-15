@@ -140,6 +140,7 @@ void ModelDescription<InputDataType, OutputDataType>::backwardsPropagation(const
                 break;
 
             case POOLING:
+                dLdz = pools[idx].propagateBackward(layer_input, dLdz, learning_rate);
                 break;
         }
     }
