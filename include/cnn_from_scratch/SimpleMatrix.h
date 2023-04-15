@@ -9,7 +9,7 @@
 #include <stdexcept>
 #include <type_traits>
 
-#include "cnn_from_scratch/dim3.h"
+#include "cnn_from_scratch/dim.h"
 #include "cnn_from_scratch/exceptions.h"
 #include "cnn_from_scratch/SubMatrixView.h"
 
@@ -312,6 +312,14 @@ public:
             SimpleMatrix<T> out(dim_);
             return out = std::abs(*this);
         }
+    }
+
+    size_t minIndex() const{
+        return std::distance(std::begin(*this), std::min_element(std::begin(*this), std::end(*this)));
+    }
+
+    size_t maxIndex() const{
+        return std::distance(std::begin(*this), std::max_element(std::begin(*this), std::end(*this)));
     }
 
     std::gslice slice(unsigned idx) const{
