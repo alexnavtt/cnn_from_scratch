@@ -29,6 +29,7 @@ public:
     using type = typename MatrixType::type;
 
     SubMatrixView(MatrixType& mat, dim3 start, dim3 dim) : mat_ptr_(&mat), start_(start), dim_(dim) {}
+    SubMatrixView(const SubMatrixView<MatrixType>& other_view, dim3 start, dim3 dim) : mat_ptr_(other_view.mat_ptr_), start_(other_view.start_ + start), dim_(dim) {}
 
     size_t size() const noexcept {return dim_.x * dim_.y * dim_.z;}
 

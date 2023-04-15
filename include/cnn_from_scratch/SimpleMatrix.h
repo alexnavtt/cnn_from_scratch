@@ -200,7 +200,11 @@ public:
     }
 
     SubMatrixView<SimpleMatrix<T>> subMatView(dim3 idx, dim3 sub_dim){
-        return SubMatrixView<SimpleMatrix<T>>(*this, idx, sub_dim);
+        return SubMatrixView(*this, idx, sub_dim);
+    }
+
+    SubMatrixView<const SimpleMatrix<T>> subMatView(dim3 idx, dim3 sub_dim) const{
+        return SubMatrixView(*this, idx, sub_dim);
     }
 
     void setEntries(std::valarray<T>&& v){
@@ -228,19 +232,21 @@ public:
     ADD_MATRIX_MODIFYING_OPERATOR(*=);
     ADD_MATRIX_MODIFYING_OPERATOR(/=);
 
-    template<typename Other>
-    typename std::common_type_t<T, Other> dot(const SimpleMatrix<Other>& M) const{
+    template<typename Other, std::enable_if_t<std::is_convertible_v<Other, SimpleMatrix<typename Other::type>>, bool> = true>
+    typename std::common_type_t<T, typename Other::type> dot(const Other& M) const{
         if (this->size() != M.size()){
             throw MatrixSizeException("Cannot get the dot product A.B, size mismatch. A has " 
                 + std::to_string(this->size()) + " elements and B has " + std::to_string(M.size()) + " elements");
         }
 
-        if constexpr (std::is_same_v<T, Other>){
+        if constexpr (std::is_same_v<Other, SimpleMatrix<T>>){
             return (static_cast<const std::valarray<T>&>(*this) * static_cast<const std::valarray<T>&>(M)).sum();
         }else{
-            std::common_type_t<T, Other> sum{};
-            for (size_t i = 0; i < this->size(); i++){
-                sum += M[i] * (*this)[i];
+            std::common_type_t<T, typename Other::type> sum{};
+            auto this_it = std::begin(*this);
+            auto other_it = std::begin(M);
+            for (; this_it != std::end(*this); this_it++, other_it++){
+                sum += *this_it * *other_it;
             }
             return sum;
         }
@@ -265,7 +271,7 @@ public:
 
                     out(row, col, layer) = 
                         this->subMatCopy({row, 0, layer}, {1, dim_.y, 1})
-                            .dot(M.subMatCopy({0, col, layer}, {M.dim_.x, 1, 1}));
+                            .dot(M.subMatView({0, col, layer}, {M.dim_.x, 1, 1}));
 
                 }
             }
