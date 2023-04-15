@@ -1,57 +1,83 @@
 #pragma once
 
+#include <cstring>
 #include <ostream>
 
 namespace my_cnn{
 
-struct dim2{
+template<int N>
+struct Dim{
     union{
         struct{
-            unsigned x;
-            unsigned y;
+            int x;
+            int y;
+            int z;
         };
-        unsigned data[2] = {0, 0};
+        int data[std::max(N, 3)] = {0};
     };
+    static const int n = N;
 
-    dim2() = default;
-    dim2(unsigned val) : x(val), y(val) {}
-    dim2(unsigned x_, unsigned y_) : x(x_), y(y_) {}
+    Dim() = default;
 
-    friend std::ostream& operator << (std::ostream& os, dim2 dim){
-        os << "(" << dim.x << ", " << dim.y << ")";
+    Dim(int val) {
+        std::fill(data, data + N*sizeof(*data), val);
+    }
+
+    template<typename... ValSet>
+    Dim(ValSet... vals) {
+        static_assert((std::is_integral_v<ValSet> && ...));
+        static_assert(sizeof...(vals) <= N);
+        size_t i = 0; 
+        (void(data[i++] = vals), ...);
+    }
+
+    friend std::ostream& operator << (std::ostream& os, const Dim<N>& dim){
+        os << "(";
+        for (int i = 0; i < n; i++){
+            os << dim.data[i];
+            if (i != n-1) 
+                os << ", ";
+            else
+                os << ")";
+        }
         return os;
     }
-    bool operator==(const dim2& other) const{return (x == other.x) && (y == other.y);}
-    bool operator!=(const dim2& other) const{return not (other == *this);}
-};
-    
-struct dim3{
-    union{
-        struct{
-            unsigned x;
-            unsigned y;
-            unsigned z;
-        };
-        unsigned data[3] = {0, 0, 0};
-    };
 
-    dim3() = default;
-    dim3(unsigned val) : x(val), y(val), z(val) {}
-    dim3(unsigned x_, unsigned y_, unsigned z_) : x(x_), y(y_), z(z_) {}
-
-    friend std::ostream& operator << (std::ostream& os, dim3 dim){
-        os << "(" << dim.x << ", " << dim.y << ", " << dim.z << ")";
-        return os;
+    bool operator==(const Dim<N>& other) const{
+        bool equal = true;
+        for (size_t i = 0; (i < N) && equal; i++){
+            equal = equal && data[i] == other.data[i];
+        }
+        return equal;
     }
-    bool operator==(const dim3& other) const{return (x == other.x) && (y == other.y) && (z == other.z);}
-    bool operator!=(const dim3& other) const{return not (other == *this);}
-    dim3 operator+(const dim3& other) const{return dim3(x + other.x, y + other.y, z + other.z);}
-    dim3 operator-(const dim3& other) const{return dim3(x - other.x, y - other.y, z - other.z);}
-    dim3 slice() const noexcept {return {x, y, 1};}
-};
 
+    bool operator!=(const Dim<N>& other) const{
+        return not (other == *this);
+    }
+
+    Dim<N> operator+(const Dim<N>& other) const{
+        Dim<N> result;
+        for (int i = 0; i < N; i++){
+            result.data[i] = data[i] + other.data[i];
+        }
+        return result;
+    }
+
+    Dim<N> operator-(const Dim<N>& other) const{
+        Dim<N> result;
+        for (int i = 0; i < N; i++){
+            result.data[i] = data[i] - other.data[i];
+        }
+        return result;
+    }
+};  
+
+typedef Dim<3> dim3;
+typedef Dim<2> dim2;
+
+template<int N>
 struct DimIterator{
-    DimIterator(dim3 dim, dim3 idx) : dim(dim), idx(idx) {}
+    DimIterator(Dim<N> dim, Dim<N> idx) : dim(dim), idx(idx) {}
 
     DimIterator operator++(int){
         DimIterator tmp = *this;
@@ -60,14 +86,12 @@ struct DimIterator{
     }
 
     DimIterator& operator++(){
-        if (idx.x + 1 < dim.x) idx.x++;
-        else if (idx.y + 1 < dim.y){
-            idx.x = 0;
-            idx.y++;
-        }else{
-            idx.x = 0;
-            idx.y = 0;
-            idx.z++;
+        for (int i = 0; i < Dim<N>::n; i++){
+            if ((idx.data[i] + 1 < dim.data[i]) || (i == Dim<N>::n - 1)) {
+                idx.data[i]++; 
+                break;
+            }
+            else idx.data[i] = 0;
         }
         return *this;
     }
@@ -76,8 +100,8 @@ struct DimIterator{
         return idx == other.idx && dim == other.dim;
     }
 
-    dim3 idx;
-    dim3 dim;
+    Dim<N> idx;
+    Dim<N> dim;
 };
 
 } // namespace my_cnn

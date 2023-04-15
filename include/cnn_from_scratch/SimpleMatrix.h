@@ -290,7 +290,7 @@ public:
         return dim_;
     }
 
-    void reshape(unsigned x, unsigned y, unsigned z){
+    void reshape(int x, int y, int z){
         if(x*y*z != dim_.x*dim_.y*dim_.z){
             std::stringstream ss;
             ss << "Cannot transform matrix from size " << dim_ << " to size " << dim3(x,y,z) << "\n";
@@ -343,23 +343,23 @@ public:
         return std::distance(std::begin(*this), std::max_element(std::begin(*this), std::end(*this)));
     }
 
-    SubMatrixView<SimpleMatrix<T>> slices(unsigned idx, unsigned num){
+    SubMatrixView<SimpleMatrix<T>> slices(int idx, int num){
         return SubMatrixView(*this, {0, 0, idx}, {dim_.x, dim_.y, num});
     }
 
-    SubMatrixView<SimpleMatrix<T>> slice(unsigned idx) {
+    SubMatrixView<SimpleMatrix<T>> slice(int idx) {
         return slices(idx, 1);
     }
 
-    SubMatrixView<const SimpleMatrix<T>> slices(unsigned idx, unsigned num) const{
+    SubMatrixView<const SimpleMatrix<T>> slices(int idx, int num) const{
         return SubMatrixView(*this, {0, 0, idx}, {dim_.x, dim_.y, num});
     }
 
-    SubMatrixView<const SimpleMatrix<T>> slice(unsigned idx) const {
+    SubMatrixView<const SimpleMatrix<T>> slice(int idx) const {
         return slices(idx, 1);
     }
 
-    SimpleMatrix<T> sliceCopy(unsigned idx) const{
+    SimpleMatrix<T> sliceCopy(int idx) const{
         SimpleMatrix<T> out = slices(idx, 1);
         return out;
     }
