@@ -5,13 +5,17 @@
 
 namespace my_cnn{
 
-template<typename T, typename MatrixType>
-const T& SubMatrixView<T, MatrixType>::operator()(dim3 idx) const{
+// Declare type for ease of use
+template<typename MatrixType>
+using type = typename MatrixType::type;
+
+template<typename MatrixType>
+const type<MatrixType>& SubMatrixView<MatrixType>::operator()(dim3 idx) const{
     return mat_ptr_->operator()(start_ + idx);
 }
 
-template<typename T, typename MatrixType>
-const T& SubMatrixView<T, MatrixType>::at(dim3 idx) const{
+template<typename MatrixType>
+const type<MatrixType>& SubMatrixView<MatrixType>::at(dim3 idx) const{
     if (idx.x >= dim_.x || idx.y >= dim_.y || idx.z >= dim_.z){
         std::stringstream ss;
         ss << "Failed to index SubMatrixView of size " << dim_ << " with index " << idx;
@@ -20,51 +24,52 @@ const T& SubMatrixView<T, MatrixType>::at(dim3 idx) const{
     return this->operator[](idx);
 }
 
-// template<typename T, typename MatrixType>
-// template<std::enable_if_t<not std::is_const_v<MatrixType>, bool>>
-// T& SubMatrixView<T, MatrixType>::operator()(dim3 idx){
-//     return const_cast<T&>(const_cast<const SubMatrixView<T>&>(*this).operator()(idx)); 
-// }
-
-// template<typename T, typename MatrixType>
-// template<std::enable_if_t<not std::is_const_v<MatrixType>, bool>>
-// T& SubMatrixView<T, MatrixType>::at(dim3 idx){
-//     return const_cast<T&>(const_cast<const SubMatrixView<T>&>(*this).at(idx)); 
-// }
-
-template<typename T, typename MatrixType>
-SubMatrixView<T, MatrixType>::operator SimpleMatrix<T>() const{
-    SimpleMatrix<T> mat(this->dim_);
+template<typename MatrixType>
+SubMatrixView<MatrixType>::operator SimpleMatrix<SubMatrixView<MatrixType>::type>() const{
+    SimpleMatrix<SubMatrixView<MatrixType>::type> mat(this->dim_);
     std::copy(begin(), end(), std::begin(mat));
     return mat;
 }
 
-template<typename T, typename MatrixType>
-template<typename Other, std::enable_if_t<std::is_convertible_v<Other, T> && not std::is_const_v<MatrixType>, bool>>
-SubMatrixView<T, MatrixType>& SubMatrixView<T, MatrixType>::operator=(const Other& o){
+template<typename MatrixType>
+SimpleMatrix<type<MatrixType>> SubMatrixView<MatrixType>::matrix() const{
+    return *this;
+}
+
+template<typename MatrixType>
+template<typename Other, 
+    std::enable_if_t<
+        std::is_convertible_v<Other, type<MatrixType>> 
+        && not std::is_const_v<MatrixType>,
+    bool>>
+SubMatrixView<MatrixType>& SubMatrixView<MatrixType>::operator=(const Other& o){
     std::fill(begin(), end(), o);
     return *this;
 }
 
-template<typename T, typename MatrixType>
-template<typename Other, std::enable_if_t<std::is_convertible_v<Other, SimpleMatrix<T>> && not std::is_const_v<MatrixType>, bool>>
-SubMatrixView<T, MatrixType>& SubMatrixView<T, MatrixType>::operator=(const Other& o){
+template<typename MatrixType>
+template<typename Other, 
+    std::enable_if_t<
+        std::is_convertible_v<Other, SimpleMatrix<type<MatrixType>>> 
+        && not std::is_const_v<MatrixType>, 
+    bool>>
+SubMatrixView<MatrixType>& SubMatrixView<MatrixType>::operator=(const Other& o){
     std::copy(std::begin(o), std::end(o), std::begin(*this));
     return *this;
 }
 
 #define DEFINE_MODIFYING_OPERATOR(op)                                                               \
                                                                                                     \
-template<typename T, typename MatrixType>                                                                                \
-template<typename Other, std::enable_if_t<std::is_convertible_v<Other, T> && not std::is_const_v<MatrixType>, bool>>                   \
-SubMatrixView<T, MatrixType> SubMatrixView<T, MatrixType>::operator op(const Other& o){                                     \
-    std::for_each(begin(), end(), [&](T& val){val op o;});                                          \
+template<typename MatrixType>                                                                            \
+template<typename Other, std::enable_if_t<std::is_convertible_v<Other, type<MatrixType>> && not std::is_const_v<MatrixType>, bool>>                   \
+SubMatrixView<MatrixType>& SubMatrixView<MatrixType>::operator op(const Other& o){                                     \
+    std::for_each(begin(), end(), [&](type& val){val op o;});                                          \
     return *this;                                                                                   \
 }                                                                                                   \
                                                                                                     \
-template<typename T, typename MatrixType>                                                                                \
-template<typename Other, std::enable_if_t<std::is_convertible_v<Other, T> && not std::is_const_v<MatrixType>, bool>>                   \
-SubMatrixView<T, MatrixType> SubMatrixView<T, MatrixType>::operator op(const SimpleMatrix<Other>& o){                       \
+template<typename MatrixType>                                                                                \
+template<typename Other, std::enable_if_t<std::is_convertible_v<Other, type<MatrixType>> && not std::is_const_v<MatrixType>, bool>>                   \
+SubMatrixView<MatrixType>& SubMatrixView<MatrixType>::operator op(const SimpleMatrix<Other>& o){                       \
     assert(dim_ == o.dim_);                                                                         \
     auto it = begin();                                                                              \
     auto my_end = end();                                                                            \
@@ -74,11 +79,11 @@ SubMatrixView<T, MatrixType> SubMatrixView<T, MatrixType>::operator op(const Sim
     return *this;                                                                                   \
 }                                                                                                   \
                                                                                                     \
-template<typename T, typename MatrixType>                                                                                \
-template<typename Other, std::enable_if_t<std::is_convertible_v<Other, T> && not std::is_const_v<MatrixType>, bool>>                   \
-SubMatrixView<T, MatrixType> SubMatrixView<T, MatrixType>::operator op(const SubMatrixView<Other>& o){                      \
+template<typename MatrixType>                                                                                \
+template<typename Other, std::enable_if_t<std::is_convertible_v<Other, type<MatrixType>> && not std::is_const_v<MatrixType>, bool>>                   \
+SubMatrixView<MatrixType>& SubMatrixView<MatrixType>::operator op(const SubMatrixView<Other>& o){                      \
     assert(dim_ == o.dim_);                                                                         \
-    SubMatrixIterator<T, MatrixType> it = begin();                                                                              \
+    SubMatrixIterator<MatrixType> it = begin();                                                                              \
     auto my_end = end();                                                                            \
                                                                                                     \
     /* Check if we're copying from the range we're writing to */                                    \
@@ -100,30 +105,30 @@ DEFINE_MODIFYING_OPERATOR(-=);
 DEFINE_MODIFYING_OPERATOR(*=);
 DEFINE_MODIFYING_OPERATOR(/=);
 
-#define DEFINE_OUTPUT_OPERATOR(op)                                                                 \
-                                                                                                   \
-template<typename T, typename MatrixType>                                                          \
-template<typename Other, std::enable_if_t<std::is_convertible_v<Other, T>, bool>>                  \
-SimpleMatrix<typename std::common_type_t<T, Other>>                                                \
-SubMatrixView<T, MatrixType>::operator op(const Other& o) const {                                  \
-    using U = typename std::common_type_t<T, Other>;                                               \
-    SimpleMatrix<U> out = *this;                                                                   \
-    out op##= o;                                                                                   \
-    return out;                                                                                    \
-}                                                                                                  \
-                                                                                                   \
-template<typename T, typename MatrixType>                                                          \
-template<typename Other, std::enable_if_t<std::is_convertible_v<Other, SimpleMatrix<T>>, bool>>    \
-SimpleMatrix<typename std::common_type_t<T, Other>>                                                \
-SubMatrixView<T, MatrixType>::operator op(const Other& o) const {                                  \
-    using U = typename std::common_type_t<T, Other>;                                               \
-    SimpleMatrix<U> out(dim_);                                                                     \
-    auto it1 = std::begin(*this);                                                                  \
-    auto it2 = std::begin(o);                                                                      \
-    auto it3 = std::begin(out);                                                                    \
-    for (; it1 != std::end(*this); it1++, it2++, it3++){                                           \
-        *it3 = *it1 op *it2;                                                                       \
-    }                                                                                              \
+#define DEFINE_OUTPUT_OPERATOR(op)                                                                               \
+                                                                                                                 \
+template<typename MatrixType>                                                                                    \
+template<typename Other, std::enable_if_t<std::is_convertible_v<Other, type<MatrixType>>, bool>>                 \
+SimpleMatrix<typename std::common_type_t<type<MatrixType>, Other>>                                               \
+SubMatrixView<MatrixType>::operator op(const Other& o) const {                                                   \
+    using U = typename std::common_type_t<type, Other>;                                                          \
+    SimpleMatrix<U> out = *this;                                                                                 \
+    out op##= o;                                                                                                 \
+    return out;                                                                                                  \
+}                                                                                                                \
+                                                                                                                 \
+template<typename MatrixType>                                                                                    \
+template<typename Other, std::enable_if_t<std::is_convertible_v<Other, SimpleMatrix<type<MatrixType>>>, bool>>   \
+SimpleMatrix<typename std::common_type_t<type<MatrixType>, Other>>                                               \
+SubMatrixView<MatrixType>::operator op(const Other& o) const {                                                   \
+    using U = typename std::common_type_t<type, Other>;                                                          \
+    SimpleMatrix<U> out(dim_);                                                                                   \
+    auto it1 = std::begin(*this);                                                                                \
+    auto it2 = std::begin(o);                                                                                    \
+    auto it3 = std::begin(out);                                                                                  \
+    for (; it1 != std::end(*this); it1++, it2++, it3++){                                                         \
+        *it3 = *it1 op *it2;                                                                                     \
+    }                                                                                                            \
 }
 
 DEFINE_OUTPUT_OPERATOR(+);

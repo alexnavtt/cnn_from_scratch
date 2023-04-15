@@ -61,7 +61,7 @@ class SimpleMatrix : public std::valarray<T>{
     friend class SimpleMatrix;
 
     // Make SubMatrixView a friend
-    template <typename Other, typename MatrixType>
+    template <typename MatrixType>
     friend class SubMatrixView;
     
 public:
@@ -199,8 +199,8 @@ public:
         );
     }
 
-    SubMatrixView<T> subMatView(dim3 idx, dim3 sub_dim){
-        return SubMatrixView<T>(*this, idx, sub_dim);
+    SubMatrixView<SimpleMatrix<T>> subMatView(dim3 idx, dim3 sub_dim){
+        return SubMatrixView<SimpleMatrix<T>>(*this, idx, sub_dim);
     }
 
     void setEntries(std::valarray<T>&& v){
@@ -337,22 +337,20 @@ public:
         return std::distance(std::begin(*this), std::max_element(std::begin(*this), std::end(*this)));
     }
 
-    // std::gslice slice(unsigned idx) const{
-    //     return std::gslice(idx*dim_.y*dim_.x, {1, dim_.y, dim_.x}, {dim_.x*dim_.y, dim_.x, 1});
-    // }
-
-    // SubMatrixView<T> sliceView(unsigned idx) {
-    //     return SubMatrixView<T>(*this, slice(idx));
-    // }
-
-    SubMatrixView<T> slices(unsigned idx, unsigned num){
-        return SubMatrixView<T>(*this, {0, 0, idx}, {dim_.x, dim_.y, num});
-        // return std::gslice(idx*dim_.y*dim_.x, {num, dim_.y, dim_.x}, {stride*dim_.x*dim_.y, dim_.x, 1});
+    SubMatrixView<SimpleMatrix<T>> slices(unsigned idx, unsigned num){
+        return SubMatrixView(*this, {0, 0, idx}, {dim_.x, dim_.y, num});
     }
 
-    SubMatrixView<T, const SimpleMatrix<T>> slices(unsigned idx, unsigned num) const{
-        return SubMatrixView<T, const SimpleMatrix<T>>(*this, {0, 0, idx}, {dim_.x, dim_.y, num});
-        // return std::gslice(idx*dim_.y*dim_.x, {num, dim_.y, dim_.x}, {stride*dim_.x*dim_.y, dim_.x, 1});
+    SubMatrixView<SimpleMatrix<T>> slice(unsigned idx) {
+        return slices(idx, 1);
+    }
+
+    SubMatrixView<const SimpleMatrix<T>> slices(unsigned idx, unsigned num) const{
+        return SubMatrixView(*this, {0, 0, idx}, {dim_.x, dim_.y, num});
+    }
+
+    SubMatrixView<const SimpleMatrix<T>> slice(unsigned idx) const {
+        return slices(idx, 1);
     }
 
     SimpleMatrix<T> sliceCopy(unsigned idx) const{
