@@ -50,4 +50,34 @@ struct dim3{
     dim3 slice() const noexcept {return {x, y, 1};}
 };
 
+struct DimIterator{
+    DimIterator(dim3 dim, dim3 idx) : dim(dim), idx(idx) {}
+
+    DimIterator operator++(int){
+        DimIterator tmp = *this;
+        ++(*this);
+        return tmp;
+    }
+
+    DimIterator& operator++(){
+        if (idx.x + 1 < dim.x) idx.x++;
+        else if (idx.y + 1 < dim.y){
+            idx.x = 0;
+            idx.y++;
+        }else{
+            idx.x = 0;
+            idx.y = 0;
+            idx.z++;
+        }
+        return *this;
+    }
+
+    bool operator==(const DimIterator& other) const{
+        return idx == other.idx && dim == other.dim;
+    }
+
+    dim3 idx;
+    dim3 dim;
+};
+
 } // namespace my_cnn
