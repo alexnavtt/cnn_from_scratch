@@ -37,13 +37,8 @@ int main(int argc, char* argv[]){
     K1.pad_inputs = false;
     K1.activation = my_cnn::RELU;
 
-    // Run a 2x2 max pooling
-    my_cnn::Pooling pool;
-    pool.dim0 = 2;
-    pool.dim1 = 2;
-    pool.stride0 = 2;
-    pool.stride1 = 2;
-    pool.type = my_cnn::MAX;
+    // Run a 2x2 max pooling with a stride of 2x2
+    my_cnn::Pooling pool({2, 2}, {2, 2}, my_cnn::MAX);
 
     // Add another filter layer
     my_cnn::Kernel K2({3, 3, 2}, 4, 1);
