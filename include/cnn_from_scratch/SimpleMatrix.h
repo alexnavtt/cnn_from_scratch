@@ -59,8 +59,14 @@ class SimpleMatrix : public std::valarray<T>{
     // Make all temlplates of SimpleMatrix friends
     template <typename Other>
     friend class SimpleMatrix;
+
+    // Make SubMatrixView a friend
+    template <typename Other, typename MatrixType>
+    friend class SubMatrixView;
     
 public:
+
+    using type = T;
 
     /* === Constructors === */
 
@@ -104,6 +110,15 @@ public:
     // Check against another matrix
     template<typename Other>
     bool sizeCheck(const SimpleMatrix<Other>& other) const noexcept{
+        if (other.dim_ == dim_) return true;
+        printf("Size mismatch (Matrix): Compared sizes are (%u, %u, %u) for this and (%u, %u, %u) for other\n", 
+                dim_.x, dim_.y, dim_.z, other.dim_.x, other.dim_.y, other.dim_.z);
+        return false;
+    }
+
+    // Check against a matrix view
+    template<typename Other>
+    bool sizeCheck(const SubMatrixView<Other>& other) const noexcept{
         if (other.dim_ == dim_) return true;
         printf("Size mismatch (Matrix): Compared sizes are (%u, %u, %u) for this and (%u, %u, %u) for other\n", 
                 dim_.x, dim_.y, dim_.z, other.dim_.x, other.dim_.y, other.dim_.z);
@@ -185,7 +200,7 @@ public:
     }
 
     SubMatrixView<T> subMatView(dim3 idx, dim3 sub_dim){
-        return SubMatrixView<T>(*this, subMatIdx(idx, sub_dim));
+        return SubMatrixView<T>(*this, idx, sub_dim);
     }
 
     void setEntries(std::valarray<T>&& v){
@@ -322,21 +337,26 @@ public:
         return std::distance(std::begin(*this), std::max_element(std::begin(*this), std::end(*this)));
     }
 
-    std::gslice slice(unsigned idx) const{
-        return std::gslice(idx*dim_.y*dim_.x, {1, dim_.y, dim_.x}, {dim_.x*dim_.y, dim_.x, 1});
+    // std::gslice slice(unsigned idx) const{
+    //     return std::gslice(idx*dim_.y*dim_.x, {1, dim_.y, dim_.x}, {dim_.x*dim_.y, dim_.x, 1});
+    // }
+
+    // SubMatrixView<T> sliceView(unsigned idx) {
+    //     return SubMatrixView<T>(*this, slice(idx));
+    // }
+
+    SubMatrixView<T> slices(unsigned idx, unsigned num){
+        return SubMatrixView<T>(*this, {0, 0, idx}, {dim_.x, dim_.y, num});
+        // return std::gslice(idx*dim_.y*dim_.x, {num, dim_.y, dim_.x}, {stride*dim_.x*dim_.y, dim_.x, 1});
     }
 
-    SubMatrixView<T> sliceView(unsigned idx) {
-        return SubMatrixView<T>(*this, slice(idx));
-    }
-
-    std::gslice slices(unsigned idx, unsigned num, unsigned stride = 1) const{
-        return std::gslice(idx*dim_.y*dim_.x, {num, dim_.y, dim_.x}, {stride*dim_.x*dim_.y, dim_.x, 1});
+    SubMatrixView<T, const SimpleMatrix<T>> slices(unsigned idx, unsigned num) const{
+        return SubMatrixView<T, const SimpleMatrix<T>>(*this, {0, 0, idx}, {dim_.x, dim_.y, num});
+        // return std::gslice(idx*dim_.y*dim_.x, {num, dim_.y, dim_.x}, {stride*dim_.x*dim_.y, dim_.x, 1});
     }
 
     SimpleMatrix<T> sliceCopy(unsigned idx) const{
-        SimpleMatrix<T> out(dim_.slice());
-        out = this->operator[](slice(idx));
+        SimpleMatrix<T> out = slices(idx, 1);
         return out;
     }
 
@@ -345,7 +365,7 @@ protected:
 };
 
 template<typename T>
-std::ostream& operator<<(std::ostream& os, const my_cnn::SimpleMatrix<T>& M){
+std::ostream& operator<<(std::ostream& os, const SimpleMatrix<T>& M){
     int default_precision = std::cout.precision();
     const T max = abs(M).max();
     int max_width = ceil(log10(max));
@@ -373,4 +393,7 @@ std::ostream& operator<<(std::ostream& os, const my_cnn::SimpleMatrix<T>& M){
     return os;
 }
 
+
 } // namespace my_cnn
+
+#include <SubMatrixView.tpp>

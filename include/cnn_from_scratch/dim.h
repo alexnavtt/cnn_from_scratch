@@ -17,7 +17,7 @@ struct dim2{
     dim2(unsigned val) : x(val), y(val) {}
     dim2(unsigned x_, unsigned y_) : x(x_), y(y_) {}
 
-    friend std::ostream& operator << (std::ostream& os, dim3 dim){
+    friend std::ostream& operator << (std::ostream& os, dim2 dim){
         os << "(" << dim.x << ", " << dim.y << ")";
         return os;
     }
@@ -46,6 +46,7 @@ struct dim3{
     bool operator==(const dim3& other) const{return (x == other.x) && (y == other.y) && (z == other.z);}
     bool operator!=(const dim3& other) const{return not (other == *this);}
     dim3 operator+(const dim3& other) const{return dim3(x + other.x, y + other.y, z + other.z);}
+    dim3 operator-(const dim3& other) const{return dim3(x - other.x, y - other.y, z - other.z);}
     dim3 slice() const noexcept {return {x, y, 1};}
 };
 

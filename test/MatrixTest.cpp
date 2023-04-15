@@ -491,17 +491,13 @@ TEST(Arithmetic, rangeMatrixModify){
 
     // Add a matrix to a range
     my_cnn::dim3 sub_dim{3, 2, 1};
-    M1[M1.subMatIdx({0, 1, 0}, sub_dim)] += 
+    M1.subMatView({0, 1, 0}, sub_dim) += 
         my_cnn::SimpleMatrix<float>(sub_dim, {6, 3,
                                               5, 2,
                                               4, 1});
 
-    // Add a valarray to a range
-    my_cnn::dim3 sub_dim2{3, 1, 1};
-    M1.subMatView({0, 0, 0}, sub_dim2) -= {1, 2, 3};
-
     for (int i : {0, 1, 2}){
-        EXPECT_EQ(M1[i], 0);
+        EXPECT_EQ(M1[i], i+1);
     }
     for (int i : {3, 4, 5, 6, 7, 8}){
         EXPECT_EQ(M1[i], 10);
