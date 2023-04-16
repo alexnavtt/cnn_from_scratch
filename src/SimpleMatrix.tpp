@@ -23,6 +23,18 @@ std::valarray<T>(initial_val, dim.x*dim.y*dim.z),
 dim_(dim)
 {}
 
+// From a Matrix-like object
+template<typename T>
+template<typename MatrixType>
+SimpleMatrix<T>::SimpleMatrix(const MatrixType& M) : 
+std::valarray<T>(M.dim().x*M.dim().y*M.dim().z), 
+dim_(M.dim())
+{
+    for (DimIterator<3> idx(dim_, {0, 0, 0}); idx.idx.z < dim_.z; idx++){
+        (*this)(idx.idx) = M(idx.idx);
+    }
+}
+
 // Full matrix description constructor
 template<typename T>
 SimpleMatrix<T>::SimpleMatrix(dim3 dim, std::valarray<T>&& vals):

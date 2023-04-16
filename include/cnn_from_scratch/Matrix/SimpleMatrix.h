@@ -54,6 +54,10 @@ public:
     // Default constructor
     SimpleMatrix() = default;
 
+    // From a Matrix-like object
+    template<typename MatrixType>
+    SimpleMatrix(const MatrixType& M);
+
     // Initial value based constructor
     SimpleMatrix(dim3 dim, T initial_val=T{});
 
