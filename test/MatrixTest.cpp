@@ -1,6 +1,6 @@
 #include <limits>
 #include <gtest/gtest.h>
-#include "cnn_from_scratch/SimpleMatrix.h"
+#include "cnn_from_scratch/Matrix/SimpleMatrix.h"
 
 TEST(Constructor, defaultConstructor){
     my_cnn::SimpleMatrix<float> M1;
@@ -142,7 +142,7 @@ TEST(Constructor, typeConversion){
     }
 }
 
-TEST(Constructor, subMat){
+TEST(Constructor, subMatView){
     my_cnn::SimpleMatrix<int> M({3, 3, 2}, 
         {1, 2, 3,
          4, 5, 6,
@@ -151,7 +151,7 @@ TEST(Constructor, subMat){
          10, 11, 12,
          13, 14, 15,
          16, 17, 18});
-    my_cnn::SimpleMatrix<int> M2({2, 2, 2}, M[M.subMatIdx({1, 1, 0}, {2, 2, 2})]);
+    my_cnn::SimpleMatrix<int> M2 = M.subMatView({1, 1, 0}, {2, 2, 2});
 
     my_cnn::SimpleMatrix<int> M_expected({2, 2, 2},
         {5, 6,
@@ -344,7 +344,7 @@ TEST(Indexing, readSingle){
 
 TEST(Indexing, writeRange){
     my_cnn::SimpleMatrix<float> M({5, 5, 2});
-    M[M.subMatIdx({0, 0, 0}, {2, 3, 2})] = 10;
+    M.subMatView({0, 0, 0}, {2, 3, 2}) = 10;
 
     for (size_t i = 0; i < M.dim(0); i++){
         for (size_t j = 0; j < M.dim(1); j++){
