@@ -1,7 +1,7 @@
 #include <string>
 #include <type_traits>
-#include "cnn_from_scratch/SubMatrixView.h"
-#include "cnn_from_scratch/SimpleMatrix.h"
+#include "cnn_from_scratch/Matrix/SubMatrixView.h"
+#include "cnn_from_scratch/Matrix/SimpleMatrix.h"
 
 namespace my_cnn{
 

@@ -1,7 +1,7 @@
 #pragma once
 
 #include <iterator>
-#include <cnn_from_scratch/dim.h>
+#include <cnn_from_scratch/Matrix/dim.h>
 
 namespace my_cnn{
 

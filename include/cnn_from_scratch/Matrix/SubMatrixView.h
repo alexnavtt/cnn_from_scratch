@@ -2,8 +2,8 @@
 
 #include <string>
 #include <iterator>
-#include "cnn_from_scratch/dim.h"
-#include "cnn_from_scratch/SubMatrixViewIterator.h"
+#include "cnn_from_scratch/Matrix/dim.h"
+#include "cnn_from_scratch/Matrix/SubMatrixViewIterator.h"
 
 namespace my_cnn{
 

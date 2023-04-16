@@ -1,5 +1,4 @@
-// #include <cstring>
-#include "cnn_from_scratch/SimpleMatrix.h"
+#include "cnn_from_scratch/Matrix/SimpleMatrix.h"
 
 #define THROW_SUB_SIZE_EXCEPTION { \
     std::stringstream ss;      \

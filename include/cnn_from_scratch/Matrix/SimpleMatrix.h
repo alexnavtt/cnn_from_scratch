@@ -9,9 +9,9 @@
 #include <stdexcept>
 #include <type_traits>
 
-#include "cnn_from_scratch/dim.h"
+#include "cnn_from_scratch/Matrix/dim.h"
 #include "cnn_from_scratch/exceptions.h"
-#include "cnn_from_scratch/SubMatrixView.h"
+#include "cnn_from_scratch/Matrix/SubMatrixView.h"
 
 namespace my_cnn{
 
