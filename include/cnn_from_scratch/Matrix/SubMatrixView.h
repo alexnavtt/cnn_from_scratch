@@ -2,7 +2,7 @@
 
 #include <string>
 #include <iterator>
-#include "cnn_from_scratch/Matrix/dim.h"
+#include "cnn_from_scratch/Matrix/MatrixBase.h"
 #include "cnn_from_scratch/Matrix/SubMatrixViewIterator.h"
 
 namespace my_cnn{
@@ -12,7 +12,7 @@ template <typename T>
 class SimpleMatrix;
 
 template <typename MatrixType>
-class SubMatrixView {
+class SubMatrixView : public MatrixBase {
 
     // Declare friends
     template<typename Other>
@@ -28,11 +28,11 @@ public:
 
     using type = typename MatrixType::type;
 
-    SubMatrixView(MatrixType& mat, dim3 start, dim3 dim) : mat_ptr_(&mat), start_(start), dim_(dim) {}
-    SubMatrixView(const SubMatrixView<MatrixType>& other_view, dim3 start, dim3 dim) : mat_ptr_(other_view.mat_ptr_), start_(other_view.start_ + start), dim_(dim) {}
+    SubMatrixView(MatrixType& mat, dim3 start, dim3 dim) : 
+    MatrixBase(dim), mat_ptr_(&mat), start_(start) {}
 
-    size_t size() const noexcept {return dim_.x * dim_.y * dim_.z;}
-    dim3 dim() const {return dim_;}
+    SubMatrixView(const SubMatrixView<MatrixType>& other_view, dim3 start, dim3 dim) : 
+    MatrixBase(dim), mat_ptr_(other_view.mat_ptr_), start_(other_view.start_ + start) {}
 
     // Indexing - const
     const type& operator()(dim3 idx) const;
@@ -47,12 +47,12 @@ public:
 
     // Assign to a contained type
     template<typename Other, 
-            std::enable_if_t<std::is_convertible_v<Other, type> && not std::is_const_v<MatrixType>, bool> = true >
+            std::enable_if_t<std::is_convertible_v<Other, type>, bool> = true >
     SubMatrixView<MatrixType>& operator=(const Other& o);
 
-    // Assign to a matrix or matrix view
+    // Assign to a matrix-like object
     template<typename Other, 
-            std::enable_if_t<std::is_convertible_v<Other, SimpleMatrix<type>> && not std::is_const_v<MatrixType>, bool> = true >
+            std::enable_if_t<std::is_base_of_v<MatrixBase, Other>, bool> = true >
     SubMatrixView<MatrixType>& operator=(const Other& o);
 
     // All operator functions look the same, so we'll assign them via macro
@@ -87,7 +87,6 @@ public:
 
 private:
     dim3 start_;
-    dim3 dim_;
     MatrixType* mat_ptr_;
 };
 

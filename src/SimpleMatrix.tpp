@@ -20,15 +20,15 @@ namespace my_cnn{
 template<typename T>
 SimpleMatrix<T>::SimpleMatrix(dim3 dim, T initial_val):
 std::valarray<T>(initial_val, dim.x*dim.y*dim.z),
-dim_(dim)
+MatrixBase(dim)
 {}
 
 // From a Matrix-like object
 template<typename T>
-template<typename MatrixType>
+template<typename MatrixType, std::enable_if_t<std::is_base_of_v<MatrixBase, MatrixType>, bool>>
 SimpleMatrix<T>::SimpleMatrix(const MatrixType& M) : 
 std::valarray<T>(M.dim().x*M.dim().y*M.dim().z), 
-dim_(M.dim())
+MatrixBase(M.dim())
 {
     for (DimIterator<3> idx(dim_, {0, 0, 0}); idx.idx.z < dim_.z; idx++){
         (*this)(idx.idx) = M(idx.idx);
@@ -39,7 +39,7 @@ dim_(M.dim())
 template<typename T>
 SimpleMatrix<T>::SimpleMatrix(dim3 dim, std::valarray<T>&& vals):
 std::valarray<T>(dim.x*dim.y*dim.z),
-dim_(dim)
+MatrixBase(dim)
 {
     setEntries(std::forward<std::valarray<T>>(vals));
 }
@@ -48,15 +48,15 @@ dim_(dim)
 template<typename T>
 SimpleMatrix<T>::SimpleMatrix(dim3 dim, std::gslice_array<T>&& vals):
 std::valarray<T>(vals),
-dim_(dim)
+MatrixBase(dim)
 {}
 
 // Type conversion constructor
 template<typename T>
-template<typename Other, typename>
+template<typename Other, std::enable_if_t<not std::is_same_v<T, Other>, bool>>
 SimpleMatrix<T>::SimpleMatrix(const SimpleMatrix<Other>& M) : 
 std::valarray<T>(M.dim_.x*M.dim_.y*M.dim_.z),
-dim_(M.dim_)
+MatrixBase(M.dim_)
 {
     std::copy(std::begin(M), std::end(M), std::begin(*this));
 }
@@ -65,14 +65,14 @@ dim_(M.dim_)
 template<typename T>
 SimpleMatrix<T>::SimpleMatrix(const SimpleMatrix<T>& M) : 
 std::valarray<T>(M), 
-dim_(M.dim_) 
+MatrixBase(M.dim_) 
 {}
 
 // Move copy constructor
 template<typename T>
 SimpleMatrix<T>::SimpleMatrix(SimpleMatrix<T>&& M) : 
 std::valarray<T>(std::forward<std::valarray<T>>(M)), 
-dim_(M.dim_) 
+MatrixBase(M.dim_) 
 {}
 
 // ================================== //
@@ -128,11 +128,6 @@ void SimpleMatrix<T>::setEntries(std::valarray<T>&& v){
 // ================================== //
 // =========== DIMENSIONS =========== //
 // ================================== //
-
-template<typename T>
-const dim3& SimpleMatrix<T>::dim() const{
-    return dim_;
-}
 
 template<typename T>
 uint SimpleMatrix<T>::dim(size_t idx) const{
@@ -293,7 +288,7 @@ size_t SimpleMatrix<T>::maxIndex() const{
 // =================================== //
 
 template<typename T>
-template<typename Other, std::enable_if_t<std::is_convertible_v<Other, SimpleMatrix<typename Other::type>>, bool>>
+template<typename Other, std::enable_if_t<std::is_base_of_v<MatrixBase, Other>, bool>>
 typename std::common_type_t<T, typename Other::type> SimpleMatrix<T>::dot(const Other& M) const{
     if (this->size() != M.size()){
         throw MatrixSizeException("Cannot get the dot product A.B, size mismatch. A has " 

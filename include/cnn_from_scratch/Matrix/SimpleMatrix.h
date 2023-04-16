@@ -9,8 +9,8 @@
 #include <stdexcept>
 #include <type_traits>
 
-#include "cnn_from_scratch/Matrix/dim.h"
 #include "cnn_from_scratch/exceptions.h"
+#include "cnn_from_scratch/Matrix/MatrixBase.h"
 #include "cnn_from_scratch/Matrix/SubMatrixView.h"
 
 namespace my_cnn{
@@ -36,7 +36,7 @@ namespace my_cnn{
     }
 
 template<typename T>  
-class SimpleMatrix : public std::valarray<T>{
+class SimpleMatrix : public std::valarray<T>, public MatrixBase{
     // Make all temlplates of SimpleMatrix friends
     template <typename Other>
     friend class SimpleMatrix;
@@ -55,7 +55,7 @@ public:
     SimpleMatrix() = default;
 
     // From a Matrix-like object
-    template<typename MatrixType>
+    template<typename MatrixType, std::enable_if_t<std::is_base_of_v<MatrixBase, MatrixType>, bool> = true>
     SimpleMatrix(const MatrixType& M);
 
     // Initial value based constructor
@@ -68,7 +68,7 @@ public:
     SimpleMatrix(dim3 dim, std::gslice_array<T>&& vals);
 
     // Type conversion constructor
-    template<typename Other, typename = std::enable_if_t<not std::is_same_v<T, Other>>>
+    template<typename Other, std::enable_if_t<not std::is_same_v<T, Other>, bool> = true>
     SimpleMatrix(const SimpleMatrix<Other>& M); 
 
     // Copy constructors
@@ -156,7 +156,7 @@ public:
     ADD_MATRIX_MODIFYING_OPERATOR(*=);
     ADD_MATRIX_MODIFYING_OPERATOR(/=);
 
-    template<typename Other, std::enable_if_t<std::is_convertible_v<Other, SimpleMatrix<typename Other::type>>, bool> = true>
+    template<typename Other, std::enable_if_t<std::is_base_of_v<MatrixBase, Other>, bool> = true>
     typename std::common_type_t<T, typename Other::type> dot(const Other& M) const;
 
     template<typename Other>
@@ -164,8 +164,9 @@ public:
 
     /* === Dimension === */
 
-    const dim3& dim() const;
+    size_t size() const {return static_cast<const MatrixBase&>(*this).size();}
     const dim3& dims() const;
+    using MatrixBase::dim;
     uint dim(size_t idx) const;
 
     void reshape(int x, int y, int z);
@@ -187,11 +188,9 @@ public:
     SubMatrixView<const SimpleMatrix<T>> slices(int idx, int num) const;
     SubMatrixView<const SimpleMatrix<T>> slice(int idx) const;
 
-protected:
-    dim3 dim_;
 };
 
-template<typename MatrixType, std::enable_if_t<std::is_convertible_v<MatrixType, SimpleMatrix<typename MatrixType::type>>, bool> = true>
+template<typename MatrixType, std::enable_if_t<std::is_base_of_v<MatrixBase, MatrixType>, bool> = true>
 std::ostream& operator<<(std::ostream& os, const MatrixType& M){
     using T = typename MatrixType::type;
 

@@ -37,22 +37,14 @@ SimpleMatrix<type<MatrixType>> SubMatrixView<MatrixType>::matrix() const{
 }
 
 template<typename MatrixType>
-template<typename Other, 
-    std::enable_if_t<
-        std::is_convertible_v<Other, type<MatrixType>> 
-        && not std::is_const_v<MatrixType>,
-    bool>>
+template<typename Other, std::enable_if_t<std::is_convertible_v<Other, type<MatrixType>>,bool>>
 SubMatrixView<MatrixType>& SubMatrixView<MatrixType>::operator=(const Other& o){
     std::fill(begin(), end(), o);
     return *this;
 }
 
 template<typename MatrixType>
-template<typename Other, 
-    std::enable_if_t<
-        std::is_convertible_v<Other, SimpleMatrix<type<MatrixType>>> 
-        && not std::is_const_v<MatrixType>, 
-    bool>>
+template<typename Other, std::enable_if_t<std::is_base_of_v<MatrixBase, Other>, bool>>
 SubMatrixView<MatrixType>& SubMatrixView<MatrixType>::operator=(const Other& o){
     std::copy(std::begin(o), std::end(o), std::begin(*this));
     return *this;

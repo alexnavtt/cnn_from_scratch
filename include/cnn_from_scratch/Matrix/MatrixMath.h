@@ -2,7 +2,7 @@
 
 #include <type_traits>
 #include <functional>
-#include "cnn_from_scratch/Matrix/dim.h"
+#include "cnn_from_scratch/Matrix/MatrixBase.h"
 
 namespace my_cnn{
     
@@ -13,12 +13,14 @@ class SimpleMatrix;
 // Matrix - Matrix math result
 // ================================================================================================
 
-template<typename MatrixType1, typename MatrixType2, class BinaryOp>
-class MatrixOperationResult{
+template<typename MatrixType1, typename MatrixType2, class BinaryOp, 
+    typename = std::enable_if_t<std::is_base_of_v<MatrixBase, MatrixType1> && std::is_base_of_v<MatrixBase, MatrixType2>>>
+class MatrixOperationResult : public MatrixBase{
 public:
     using type = typename std::common_type_t<typename MatrixType1::type, typename MatrixType2::type>;
 
     MatrixOperationResult(const MatrixType1& M1, const MatrixType2& M2, BinaryOp Op) :
+    MatrixBase(M1.dim()),
     m1_(&M1), m2_(&M2), op(Op) 
     {
         checkSize(M1, M2);
@@ -26,10 +28,6 @@ public:
 
     type operator()(const dim3& idx) const{
         return std::invoke(op, *m1_, *m2_, idx);
-    }
-
-    dim3 dim() const{
-        return m1_->dim();
     }
 
 private:
@@ -89,20 +87,17 @@ auto operator/(const MatrixType1& M1, const MatrixType2& M2){
 
 template<typename MatrixType, typename ScalarType, class BinaryOp,
     typename = std::enable_if_t<std::is_arithmetic_v<ScalarType>>>
-class ScalarOperationResult{
+class ScalarOperationResult : public MatrixBase{
 public:
     using type = typename std::common_type_t<typename MatrixType::type, ScalarType>;
 
     ScalarOperationResult(const MatrixType& M, ScalarType S, BinaryOp Op) :
+    MatrixBase(M.dim()),
     m_(&M), s_(S), op(Op) 
     {}
 
     type operator()(dim3 idx) const{
         return std::invoke(op, *m_, s_, idx);
-    }
-
-    dim3 dim() const{
-        return m_->dim();
     }
 
 private:
