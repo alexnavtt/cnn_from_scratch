@@ -55,20 +55,6 @@ public:
             std::enable_if_t<std::is_base_of_v<MatrixBase, Other>, bool> = true >
     SubMatrixView<MatrixType>& operator=(const Other& o);
 
-    // All operator functions look the same, so we'll assign them via macro
-    #define ADD_MODIFYING_OPERATOR(op)                                                                                             \
-    template<typename Other, std::enable_if_t<std::is_convertible_v<Other, type> && not std::is_const_v<MatrixType>, bool> = true >   \
-    SubMatrixView<MatrixType>& operator op(const Other& o);                                                                      \
-    template<typename Other, std::enable_if_t<std::is_convertible_v<Other, type> && not std::is_const_v<MatrixType>, bool> = true>    \
-    SubMatrixView<MatrixType>& operator op(const SimpleMatrix<Other>& o);                                                        \
-    template<typename Other, std::enable_if_t<std::is_convertible_v<Other, type> && not std::is_const_v<MatrixType>, bool> = true>    \
-    SubMatrixView<MatrixType>& operator op(const SubMatrixView<Other>& o);  
-
-    ADD_MODIFYING_OPERATOR(+=);
-    ADD_MODIFYING_OPERATOR(-=);
-    ADD_MODIFYING_OPERATOR(*=);
-    ADD_MODIFYING_OPERATOR(/=);
-
     // Iterators
     SubMatrixIterator<MatrixType> begin() {
         return SubMatrixIterator<MatrixType>(this, dim3(0, 0, 0));

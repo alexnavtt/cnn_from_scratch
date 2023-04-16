@@ -10,6 +10,70 @@ template<typename T>
 class SimpleMatrix;
 
 // ================================================================================================
+// Self modification math
+// ================================================================================================
+
+template<typename MatrixType, typename Other, std::enable_if_t<std::is_convertible_v<Other, typename MatrixType::type>, bool> = true>
+MatrixType& operator+=(MatrixType&& M, const Other& other){
+    std::for_each(std::begin(M), std::end(M), [&](auto& val){val += other;});
+    return M;
+}
+
+template<typename MatrixType, typename Other, std::enable_if_t<std::is_base_of_v<MatrixBase, Other>, bool> = true>
+MatrixType& operator+=(MatrixType&& M, const Other& other){
+    checkSize(M, other);
+    for (DimIterator<3> idx(M.dim(), {0, 0, 0}); idx.idx.z < M.dim().z; idx++){
+        M(idx.idx) += other(idx.idx);
+    }
+    return M;
+}
+
+template<typename MatrixType, typename Other, std::enable_if_t<std::is_convertible_v<Other, typename MatrixType::type>, bool> = true>
+MatrixType& operator-=(MatrixType&& M, const Other& other){
+    std::for_each(std::begin(M), std::end(M), [&](auto& val){val -= other;});
+    return M;
+}
+
+template<typename MatrixType, typename Other, std::enable_if_t<std::is_base_of_v<MatrixBase, Other>, bool> = true>
+MatrixType& operator-=(MatrixType&& M, const Other& other){
+    checkSize(M, other);
+    for (DimIterator<3> idx(M.dim(), {0, 0, 0}); idx.idx.z < M.dim().z; idx++){
+        M(idx.idx) -= other(idx.idx);
+    }
+    return M;
+}
+
+template<typename MatrixType, typename Other, std::enable_if_t<std::is_convertible_v<Other, typename MatrixType::type>, bool> = true>
+MatrixType& operator*=(MatrixType&& M, const Other& other){
+    std::for_each(std::begin(M), std::end(M), [&](auto& val){val *= other;});
+    return M;
+}
+
+template<typename MatrixType, typename Other, std::enable_if_t<std::is_base_of_v<MatrixBase, Other>, bool> = true>
+MatrixType& operator*=(MatrixType&& M, const Other& other){
+    checkSize(M, other);
+    for (DimIterator<3> idx(M.dim(), {0, 0, 0}); idx.idx.z < M.dim().z; idx++){
+        M(idx.idx) *= other(idx.idx);
+    }
+    return M;
+}
+
+template<typename MatrixType, typename Other, std::enable_if_t<std::is_convertible_v<Other, typename MatrixType::type>, bool> = true>
+MatrixType& operator/=(MatrixType&& M, const Other& other){
+    std::for_each(std::begin(M), std::end(M), [&](auto& val){val /= other;});
+    return M;
+}
+
+template<typename MatrixType, typename Other, std::enable_if_t<std::is_base_of_v<MatrixBase, Other>, bool> = true>
+MatrixType& operator/=(MatrixType&& M, const Other& other){
+    checkSize(M, other);
+    for (DimIterator<3> idx(M.dim(), {0, 0, 0}); idx.idx.z < M.dim().z; idx++){
+        M(idx.idx) /= other(idx.idx);
+    }
+    return M;
+}
+
+// ================================================================================================
 // Matrix - Matrix math result
 // ================================================================================================
 

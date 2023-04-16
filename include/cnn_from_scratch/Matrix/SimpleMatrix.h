@@ -25,16 +25,6 @@ namespace my_cnn{
        throw MatrixSizeException(ss.str()); \
 }
 
-#define ADD_MATRIX_MODIFYING_OPERATOR(op) \
-    template<typename Other> \
-    SimpleMatrix<T>& operator op(const Other& other){ \
-        using namespace std::literals; \
-        if (not sizeCheck(other)) \
-            throw MatrixSizeException("my_cnn::SimpleMatrix: Failure in operator \""s + #op + "\", size mismatch"s); \
-        static_cast<std::valarray<T>&>(*this) op other; \
-        return *this; \
-    }
-
 template<typename T>  
 class SimpleMatrix : public std::valarray<T>, public MatrixBase{
     // Make all temlplates of SimpleMatrix friends
@@ -150,11 +140,6 @@ public:
     SubMatrixView<const SimpleMatrix<T>> subMatView(dim3 idx, dim3 sub_dim) const;
 
     /* === Arithmetic === */
-
-    ADD_MATRIX_MODIFYING_OPERATOR(+=);
-    ADD_MATRIX_MODIFYING_OPERATOR(-=);
-    ADD_MATRIX_MODIFYING_OPERATOR(*=);
-    ADD_MATRIX_MODIFYING_OPERATOR(/=);
 
     template<typename Other, std::enable_if_t<std::is_base_of_v<MatrixBase, Other>, bool> = true>
     typename std::common_type_t<T, typename Other::type> dot(const Other& M) const;
