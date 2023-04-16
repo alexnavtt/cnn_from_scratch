@@ -32,6 +32,7 @@ public:
     SubMatrixView(const SubMatrixView<MatrixType>& other_view, dim3 start, dim3 dim) : mat_ptr_(other_view.mat_ptr_), start_(other_view.start_ + start), dim_(dim) {}
 
     size_t size() const noexcept {return dim_.x * dim_.y * dim_.z;}
+    dim3 dim() const {return dim_;}
 
     // Indexing - const
     const type& operator()(dim3 idx) const;
@@ -67,17 +68,6 @@ public:
     ADD_MODIFYING_OPERATOR(-=);
     ADD_MODIFYING_OPERATOR(*=);
     ADD_MODIFYING_OPERATOR(/=);
-
-    #define ADD_OUTPUT_OPERATOR(op)                                                                         \
-    template<typename Other, std::enable_if_t<std::is_convertible_v<Other, type>, bool> = true >               \
-    SimpleMatrix<typename std::common_type_t<type, Other>> operator op(const Other& o) const;                  \
-    template<typename Other, std::enable_if_t<std::is_convertible_v<Other, SimpleMatrix<type>>, bool> = true>  \
-    SimpleMatrix<typename std::common_type_t<type, Other>> operator op(const Other& o) const;  
-
-    ADD_OUTPUT_OPERATOR(+);
-    ADD_OUTPUT_OPERATOR(-);
-    ADD_OUTPUT_OPERATOR(*);
-    ADD_OUTPUT_OPERATOR(/);
 
     // Iterators
     SubMatrixIterator<MatrixType> begin() {

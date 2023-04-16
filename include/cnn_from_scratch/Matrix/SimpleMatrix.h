@@ -25,25 +25,6 @@ namespace my_cnn{
        throw MatrixSizeException(ss.str()); \
 }
 
-#define ADD_MATRIX_CONST_OPERATOR(op) \
-    template<typename Other> \
-    SimpleMatrix<T> operator op(const Other& other) const{ \
-        using namespace std::literals; \
-        if (not sizeCheck(other)) \
-            throw MatrixSizeException("my_cnn::SimpleMatrix: Failure in operator \""s + #op + "\", size mismatch"s); \
-        SimpleMatrix<T> out; \
-        auto& out_varr = static_cast<std::valarray<T>&>(out); \
-        auto& curr_varr = static_cast<const std::valarray<T>&>(*this);  \
-        out_varr = curr_varr op other; \
-        out.dim_ = dim_; \
-        return out; \
-    } \
-    \
-    template<typename Other> \
-    friend SimpleMatrix<T> operator op(const Other& other, const SimpleMatrix<T>& M){ \
-        return M.operator op(other); \
-    }
-
 #define ADD_MATRIX_MODIFYING_OPERATOR(op) \
     template<typename Other> \
     SimpleMatrix<T>& operator op(const Other& other){ \
@@ -166,11 +147,6 @@ public:
 
     /* === Arithmetic === */
 
-    ADD_MATRIX_CONST_OPERATOR(+);
-    ADD_MATRIX_CONST_OPERATOR(-);
-    ADD_MATRIX_CONST_OPERATOR(*);
-    ADD_MATRIX_CONST_OPERATOR(/);
-
     ADD_MATRIX_MODIFYING_OPERATOR(+=);
     ADD_MATRIX_MODIFYING_OPERATOR(-=);
     ADD_MATRIX_MODIFYING_OPERATOR(*=);
@@ -211,23 +187,24 @@ protected:
     dim3 dim_;
 };
 
-template<typename T>
-std::ostream& operator<<(std::ostream& os, const SimpleMatrix<T>& M){
+template<typename MatrixType, std::enable_if_t<std::is_convertible_v<MatrixType, SimpleMatrix<typename MatrixType::type>>, bool> = true>
+std::ostream& operator<<(std::ostream& os, const MatrixType& M){
+    using T = typename MatrixType::type;
+
     int default_precision = std::cout.precision();
-    const T max = abs(M).max();
-    int max_width = ceil(log10(max));
+    int max_width = 4;
     
     if constexpr (std::is_floating_point_v<T>){
         std::cout << std::setprecision(2) << std::fixed;
         max_width += 3;
     }
 
-    for (int i = 0; i < M.dim(0); i++){
-        for (int k = 0; k < M.dim(2); k++){
+    for (int i = 0; i < M.dim().x; i++){
+        for (int k = 0; k < M.dim().z; k++){
             os << "[";
-            for (int j = 0; j < M.dim(1); j++){
-                const auto& val = M(i, j, k);
-                os << (val < 0 ? "-" : " ") << std::setw(max_width) << abs(val) << (j == M.dim(1) - 1 ? "]" : ",");
+            for (int j = 0; j < M.dim().y; j++){
+                const auto& val = M({i, j, k});
+                os << (val < 0 ? "-" : " ") << std::setw(max_width) << abs(val) << (j == M.dim().y - 1 ? "]" : ",");
             }
             os << "   ";
         }
@@ -243,5 +220,6 @@ std::ostream& operator<<(std::ostream& os, const SimpleMatrix<T>& M){
 
 } // namespace my_cnn
 
+#include <cnn_from_scratch/Matrix/MatrixMath.h>
 #include <SubMatrixView.tpp>
 #include <SimpleMatrix.tpp>

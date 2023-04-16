@@ -73,4 +73,32 @@ auto matrixAdd(const MatrixType1& M1, const MatrixType2& M2){
     return MatrixOperationResult(M1, M2, binaryAdd<T1, T2>);
 }
 
+template<typename MatrixType1, typename MatrixType2>
+auto operator+(const MatrixType1& M1, const MatrixType2& M2){
+    using T1 = typename MatrixType1::type;
+    using T2 = typename MatrixType2::type;
+    return MatrixOperationResult(M1, M2, binaryAdd<T1, T2>);
+}
+
+template<typename MatrixType1, typename MatrixType2>
+auto operator-(const MatrixType1& M1, const MatrixType2& M2){
+    using T1 = typename MatrixType1::type;
+    using T2 = typename MatrixType2::type;
+    return MatrixOperationResult(M1, M2, binarySubtract<T1, T2>);
+}
+
+template<typename MatrixType1, typename MatrixType2>
+auto operator*(const MatrixType1& M1, const MatrixType2& M2){
+    using T1 = typename MatrixType1::type;
+    using T2 = typename MatrixType2::type;
+    return MatrixOperationResult(M1, M2, binaryMultiply<T1, T2>);
+}
+
+template<typename MatrixType1, typename MatrixType2>
+auto operator/(const MatrixType1& M1, const MatrixType2& M2){
+    using T1 = typename MatrixType1::type;
+    using T2 = typename MatrixType2::type;
+    return MatrixOperationResult(M1, M2, binaryDivide<T1, T2>);
+}
+
 } // namespace my_cnn

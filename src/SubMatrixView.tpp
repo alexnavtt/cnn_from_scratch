@@ -105,35 +105,4 @@ DEFINE_MODIFYING_OPERATOR(-=);
 DEFINE_MODIFYING_OPERATOR(*=);
 DEFINE_MODIFYING_OPERATOR(/=);
 
-#define DEFINE_OUTPUT_OPERATOR(op)                                                                               \
-                                                                                                                 \
-template<typename MatrixType>                                                                                    \
-template<typename Other, std::enable_if_t<std::is_convertible_v<Other, type<MatrixType>>, bool>>                 \
-SimpleMatrix<typename std::common_type_t<type<MatrixType>, Other>>                                               \
-SubMatrixView<MatrixType>::operator op(const Other& o) const {                                                   \
-    using U = typename std::common_type_t<type, Other>;                                                          \
-    SimpleMatrix<U> out = *this;                                                                                 \
-    out op##= o;                                                                                                 \
-    return out;                                                                                                  \
-}                                                                                                                \
-                                                                                                                 \
-template<typename MatrixType>                                                                                    \
-template<typename Other, std::enable_if_t<std::is_convertible_v<Other, SimpleMatrix<type<MatrixType>>>, bool>>   \
-SimpleMatrix<typename std::common_type_t<type<MatrixType>, Other>>                                               \
-SubMatrixView<MatrixType>::operator op(const Other& o) const {                                                   \
-    using U = typename std::common_type_t<type, Other>;                                                          \
-    SimpleMatrix<U> out(dim_);                                                                                   \
-    auto it1 = std::begin(*this);                                                                                \
-    auto it2 = std::begin(o);                                                                                    \
-    auto it3 = std::begin(out);                                                                                  \
-    for (; it1 != std::end(*this); it1++, it2++, it3++){                                                         \
-        *it3 = *it1 op *it2;                                                                                     \
-    }                                                                                                            \
-}
-
-DEFINE_OUTPUT_OPERATOR(+);
-DEFINE_OUTPUT_OPERATOR(-);
-DEFINE_OUTPUT_OPERATOR(*);
-DEFINE_OUTPUT_OPERATOR(/);
-
 } // namespace my_cnn
