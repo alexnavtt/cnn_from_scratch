@@ -85,6 +85,14 @@ struct Dim{
         }
         return result;
     }
+
+    size_t flatIdx() const{
+        size_t out = 0; 
+        for (auto i = 0; i < N; i++){
+            out *= data[i];
+        }
+        return out;
+    }
 };  
 
 typedef Dim<3> dim3;
