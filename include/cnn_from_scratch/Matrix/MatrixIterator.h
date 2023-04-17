@@ -17,7 +17,11 @@ public:
     using pointer = std::conditional_t<std::is_const_v<MatrixType> || std::is_const_v<typename MatrixType::type>, const value_type*, value_type*>;
     using reference = decltype(std::declval<MatrixType>().operator()(std::declval<dim3>()));
 
-    MatrixIterator(MatrixType* parent, dim3 idx) : parent_(parent), dim_it_(parent->dim(), idx) {}
+    MatrixIterator(MatrixType* parent, dim3 idx) : 
+    parent_(parent), 
+    dim_it_(parent->dim(), idx),
+    scalar_idx_(idx.z*dim_it_.dim.x*dim_it_.dim.y + idx.y*dim_it_.dim.x + idx.x) {}
+
     reference operator*() {
         if constexpr (is_pure_matrix)
             return parent_->values_[scalar_idx_];
@@ -62,7 +66,7 @@ private:
     std::conditional_t<std::is_const_v<MatrixType>, const MatrixType*, MatrixType*> parent_;
     DimIterator<3> dim_it_;
     size_t scalar_idx_ = 0;
-    static constexpr bool is_pure_matrix = std::is_same_v<MatrixType, SimpleMatrix<typename MatrixType::type>>;
+    static constexpr bool is_pure_matrix = std::is_same_v<typename std::remove_const_t<MatrixType>, SimpleMatrix<typename MatrixType::type>>;
 };
     
 } // namespace my_cnn
