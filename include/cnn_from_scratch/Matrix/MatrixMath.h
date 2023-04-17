@@ -286,7 +286,19 @@ auto operator+(const MatrixType1& M1, const Scalar& S){
 
 template<typename MatrixType1, typename Scalar,
     std::enable_if_t<std::is_arithmetic_v<Scalar>, bool> = true>
+auto operator+(const Scalar& S, const MatrixType1& M1){
+    return ScalarOperationResult(M1, S, scalarAdd<MatrixType1, Scalar>);
+}
+
+template<typename MatrixType1, typename Scalar,
+    std::enable_if_t<std::is_arithmetic_v<Scalar>, bool> = true>
 auto operator-(const MatrixType1& M1, const Scalar& S){
+    return ScalarOperationResult(M1, S, scalarSubtract<MatrixType1, Scalar>);
+}
+
+template<typename MatrixType1, typename Scalar,
+    std::enable_if_t<std::is_arithmetic_v<Scalar>, bool> = true>
+auto operator-(const Scalar& S, const MatrixType1& M1){
     return ScalarOperationResult(M1, S, scalarSubtract<MatrixType1, Scalar>);
 }
 
@@ -298,7 +310,20 @@ auto operator*(const MatrixType1& M1, const Scalar& S){
 
 template<typename MatrixType1, typename Scalar,
     std::enable_if_t<std::is_arithmetic_v<Scalar>, bool> = true>
+auto operator*(const Scalar& S, const MatrixType1& M1){
+    return ScalarOperationResult(M1, S, scalarMultiply<MatrixType1, Scalar>);
+}
+
+
+template<typename MatrixType1, typename Scalar,
+    std::enable_if_t<std::is_arithmetic_v<Scalar>, bool> = true>
 auto operator/(const MatrixType1& M1, const Scalar& S){
+    return ScalarOperationResult(M1, S, scalarDivide<MatrixType1, Scalar>);
+}
+
+template<typename MatrixType1, typename Scalar,
+    std::enable_if_t<std::is_arithmetic_v<Scalar>, bool> = true>
+auto operator/(const Scalar& S, const MatrixType1& M1){
     return ScalarOperationResult(M1, S, scalarDivide<MatrixType1, Scalar>);
 }
 
