@@ -30,9 +30,7 @@ SimpleMatrix<T>::SimpleMatrix(const MatrixType& M) :
 MatrixBase(M.dim()),
 values_(M.size())
 {
-    for (DimIterator<3> idx(dim_, {0, 0, 0}); idx.idx.z < dim_.z; idx++){
-        (*this)(idx.idx) = M(idx.idx);
-    }
+    std::copy(M.begin(), M.end(), begin());
 }
 
 // Full matrix description constructor
@@ -42,16 +40,6 @@ MatrixBase(dim),
 values_(size())
 {
     setEntries(std::forward<std::vector<T>>(vals));
-}
-
-// Type conversion constructor
-template<typename T>
-template<typename Other, std::enable_if_t<not std::is_same_v<T, Other>, bool>>
-SimpleMatrix<T>::SimpleMatrix(const SimpleMatrix<Other>& M) : 
-MatrixBase(M.dim_),
-values_(M.dim_.x*M.dim_.y*M.dim_.z)
-{
-    std::copy(M.values_.begin(), M.values_.end(), values_.begin());
 }
 
 // ================================== //

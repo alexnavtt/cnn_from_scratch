@@ -48,6 +48,12 @@ public:
     // Default constructor
     SimpleMatrix() = default;
 
+    // Copy constructor
+    SimpleMatrix(const SimpleMatrix<T>& other) = default;
+
+    // Move constructor
+    SimpleMatrix(SimpleMatrix<T>&& other) = default;
+
     // From a Matrix-like object
     template<typename MatrixType, std::enable_if_t<std::is_base_of_v<MatrixBase, MatrixType>, bool> = true>
     SimpleMatrix(const MatrixType& M);
@@ -57,10 +63,6 @@ public:
 
     // Full matrix description constructor
     SimpleMatrix(dim3 dim, std::vector<T>&& vals);
-
-    // Type conversion constructor
-    template<typename Other, std::enable_if_t<not std::is_same_v<T, Other>, bool> = true>
-    SimpleMatrix(const SimpleMatrix<Other>& M); 
 
     /* === Size Checking === */
 
@@ -101,6 +103,9 @@ public:
 
     // Default
     SimpleMatrix<T>& operator=(const SimpleMatrix<T>& M) = default;
+
+    // Move assignment
+    SimpleMatrix<T>& operator=(SimpleMatrix<T>&& other) = default;
 
     // Value setting
     SimpleMatrix<T>& operator=(std::vector<T>&& v);
