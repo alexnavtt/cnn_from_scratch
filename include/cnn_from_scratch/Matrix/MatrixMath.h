@@ -95,6 +95,10 @@ public:
         return std::invoke(op, *m1_, *m2_, idx);
     }
 
+    type operator()(uint x, uint y, uint z) const{
+        return operator()(dim3(x,y,z));
+    }
+
     auto begin() {return MatrixIterator<MatrixOperationResult<MatrixType1, MatrixType2, BinaryOp>>(this, {0, 0, 0});}
     auto end() {return MatrixIterator<MatrixOperationResult<MatrixType1, MatrixType2, BinaryOp>>(this, {0, 0, dim_.z});}
     auto begin() const {return MatrixIterator<const MatrixOperationResult<MatrixType1, MatrixType2, BinaryOp>>(this, {0, 0, 0});}
@@ -198,6 +202,10 @@ public:
         return sum;
     }
 
+    type operator()(uint x, uint y, uint z) const{
+        return operator()(dim3(x,y,z));
+    }
+
     auto begin() {return MatrixIterator<MatrixMultiplyResult<MatrixType1, MatrixType2>>(this, {0, 0, 0});}
     auto end() {return MatrixIterator<MatrixMultiplyResult<MatrixType1, MatrixType2>>(this, {0, 0, dim_.z});}
     auto begin() const {return MatrixIterator<const MatrixMultiplyResult<MatrixType1, MatrixType2>>(this, {0, 0, 0});}
@@ -245,6 +253,10 @@ public:
 
     type operator()(dim3 idx) const{
         return std::invoke(op, *m_, s_, idx);
+    }
+
+    type operator()(uint x, uint y, uint z) const{
+        return operator()(dim3(x,y,z));
     }
 
     auto begin() {return MatrixIterator<ScalarOperationResult<MatrixType, ScalarType, BinaryOp>>(this, {0, 0, 0});}
@@ -335,6 +347,10 @@ auto operator/(const Scalar& S, const MatrixType1& M1){
 template<typename MatrixType, class UnaryOp>
 class UnaryOperationResult : public MatrixBase{
 public:
+
+    template<typename T1>
+    friend auto transpose(const T1&);
+
     using type = typename std::remove_const_t<typename MatrixType::type>;
 
     UnaryOperationResult(const MatrixType& M, UnaryOp Op) :
@@ -344,6 +360,10 @@ public:
 
     type operator()(dim3 idx) const{
         return std::invoke(op, *m_, idx);
+    }
+
+    type operator()(uint x, uint y, uint z) const{
+        return operator()(dim3(x,y,z));
     }
 
     auto begin() {return MatrixIterator<UnaryOperationResult<MatrixType, UnaryOp>>(this, {0, 0, 0});}
@@ -378,6 +398,14 @@ auto exp(const MatrixType& M){
     using input_type = typename MatrixType::type;
     using return_type = decltype(std::exp(input_type{}));
     return apply<MatrixType, return_type(*)(input_type)>(M, std::exp);
+}
+
+template<typename MatrixType>
+auto transpose(const MatrixType& M){
+    auto ret_val = UnaryOperationResult(M, [](const MatrixType& M, const dim3& idx){return M(dim3(idx.y, idx.x, idx.z));});
+    ret_val.dim_.x = M.dim().y;
+    ret_val.dim_.y = M.dim().x;
+    return ret_val;
 }
 
 // ================================================================================================
