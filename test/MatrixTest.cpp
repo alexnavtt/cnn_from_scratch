@@ -86,8 +86,8 @@ TEST(Constructor, copyConstructor){
          16, 17, 18});
 
     my_cnn::SimpleMatrix<float> M2 = M1;
-    for (size_t i = 0; i < 18; i++){
-        EXPECT_EQ(M1[i], M2[i]);
+    for (auto it = M1.begin(); it != M1.end(); it++){
+        EXPECT_EQ(*it, M2(it.idx()));
     }
 }
 
@@ -103,8 +103,8 @@ TEST(Constructor, moveConstructor){
 
     my_cnn::SimpleMatrix<float> M2 = M1;
     my_cnn::SimpleMatrix<float> M3 = std::move(M1);
-    for (size_t i = 0; i < 18; i++){
-        EXPECT_EQ(M2[i], M3[i]);
+    for (auto it = M2.begin(); it != M2.end(); it++){
+        EXPECT_EQ(*it, M3(it.idx()));
     }
     EXPECT_NE(M3.size(), M1.size());
 }
@@ -120,8 +120,8 @@ TEST(Constructor, moveConstructorDiffType){
          16, 17, 18});
 
     my_cnn::SimpleMatrix<int> M2 = std::move(M1);
-    for (size_t i = 0; i < 18; i++){
-        EXPECT_EQ(M1[i], M2[i]);
+    for (auto it = M1.begin(); it != M1.end(); it++){
+        EXPECT_EQ(*it, M2(it.idx()));
     }
     EXPECT_EQ(M1.size(), M2.size());
 }
@@ -130,15 +130,15 @@ TEST(Constructor, typeConversion){
     my_cnn::SimpleMatrix<int> M({4, 2, 3}, 3);
     my_cnn::SimpleMatrix<unsigned> M2 = M;
 
-    for (size_t i = 0; i < M.size(); i++){
-        EXPECT_EQ(M[i], M2[i]);
+    for (auto it = M.begin(); it != M.end(); it++){
+        EXPECT_EQ(*it, M2(it.idx()));
     }
 
     M(0, 0, 0) = -5;
     my_cnn::SimpleMatrix<unsigned> M3(M);
-    EXPECT_NE(M[0], M2[0]);
-    for (size_t i = 1; i < M.size(); i++){
-        EXPECT_EQ(M[i], M2[i]);
+    EXPECT_NE(M({0, 0, 0}), M2({0, 0, 0}));
+    for (auto it = ++M.begin(); it != M.end(); it++){
+        EXPECT_EQ(*it, M2(it.idx()));
     }
 }
 
@@ -193,8 +193,8 @@ TEST(Assignment, default){
     my_cnn::SimpleMatrix<int> M2;
     M2 = M1;
 
-    for (size_t i = 0; i < M1.size(); i++){
-        EXPECT_EQ(M1[i], M2[i]);
+    for (auto it = M1.begin(); it != M1.end(); it++){
+        EXPECT_EQ(*it, M2(it.idx()));
     }
 }
 
@@ -208,11 +208,13 @@ TEST(Assignment, value){
     my_cnn::SimpleMatrix<int> M2({3, 2, 1});
     M2 = {1, 3, 5, 2, 4, 6};
 
+    std::cout << M2 << M1 << "\n";
+
     // Size mismatch
     EXPECT_THROW((M2 = {1,2,3}), my_cnn::MatrixSizeException);
 
-    for (size_t i = 0; i < M1.size(); i++){
-        EXPECT_EQ(M1[i], M2[i]);
+    for (auto it = M1.begin(); it != M1.end(); it++){
+        EXPECT_EQ(*it, M2(it.idx()));
     }
 }
 
@@ -226,8 +228,8 @@ TEST(Assignment, valueMatrix){
     my_cnn::SimpleMatrix<int> M2({3, 2, 1});
     M2.setEntries({1, 2, 3, 4, 5, 6});
 
-    for (size_t i = 0; i < M1.size(); i++){
-        EXPECT_EQ(M1[i], M2[i]);
+    for (auto it = M1.begin(); it != M1.end(); it++){
+        EXPECT_EQ(*it, M2(it.idx()));
     }
 }
 
@@ -241,8 +243,8 @@ TEST(Assignment, typeConversion){
     my_cnn::SimpleMatrix<int> M2({3, 2, 1});
     M2 = M1;
 
-    for (size_t i = 0; i < M1.size(); i++){
-        EXPECT_EQ((int)M1[i], M2[i]);
+    for (auto it = M1.begin(); it != M1.end(); it++){
+        EXPECT_EQ((int)*it, M2(it.idx()));
     }
 }
 
@@ -302,9 +304,9 @@ TEST(SizeCheck, matrix){
 
 TEST(SizeCheck, valarray){
     my_cnn::SimpleMatrix<float> M1({1, 2, 3});
-    EXPECT_TRUE(M1.sizeCheck(std::valarray<float>{0, 5, 3, 6, 3, 5}));
-    EXPECT_FALSE(M1.sizeCheck(std::valarray<float>{1, 2, 3}));
-    EXPECT_TRUE(M1.sizeCheck(std::valarray<char>{1, 2, 3, 4, 5, 6}));
+    EXPECT_TRUE(M1.sizeCheck(std::vector<float>{0, 5, 3, 6, 3, 5}));
+    EXPECT_FALSE(M1.sizeCheck(std::vector<float>{1, 2, 3}));
+    EXPECT_TRUE(M1.sizeCheck(std::vector<char>{1, 2, 3, 4, 5, 6}));
 }
 
 TEST(SizeCheck, numeric){
@@ -330,15 +332,17 @@ TEST(Indexing, writeSingle){
     M(3, 2, 1) = 10;
     size_t flat_idx = M.getIndex(3, 2, 1);
 
-    for (size_t i = 0; i < M.size(); i++){
-        if (i == flat_idx) EXPECT_EQ(M[i], 10);
-        else EXPECT_EQ(M[i], 0);
+    for (auto it = M.begin(); it != M.end(); it++){
+        if (it.idx() == my_cnn::dim3(3, 2, 1))
+            EXPECT_EQ(*it, 10);
+        else
+            EXPECT_EQ(*it, 0);
     }
 }
 
 TEST(Indexing, readSingle){
     my_cnn::SimpleMatrix<float> M({5, 5, 2});
-    M[10] = 10;
+    M(0, 2, 0) = 10;
     EXPECT_EQ(M(0, 2, 0), 10);
 }
 
@@ -386,52 +390,6 @@ TEST(Indexing, readRange){
     EXPECT_EQ(MSubRange(0, 1, 0), 31);
     EXPECT_EQ(MSubRange(1, 1, 0), 32);
     EXPECT_EQ(MSubRange(2, 1, 0), 33);
-}
-
-TEST(Indexing, writeMask){
-    my_cnn::SimpleMatrix<int> M({5, 5, 2});
-    for (size_t i = 0; i < M.dim(0); i++){
-        for (size_t j = 0; j < M.dim(1); j++){
-            for (size_t k = 0; k < M.dim(2); k++){
-                M(i, j, k) = i + 10*j + 100*k;
-            }
-        }
-    }
-    M[M < 100] = -1;
-
-    for (size_t i = 0; i < M.dim(0); i++){
-        for (size_t j = 0; j < M.dim(1); j++){
-            for (size_t k = 0; k < M.dim(2); k++){
-                auto& val = M(i, j, k);
-                if (k == 0) EXPECT_EQ(val, -1);
-                else EXPECT_EQ(val, i + 10*j + 100*k);
-            }
-        }
-    }
-}
-
-TEST(Indexing, readMask){
-    my_cnn::SimpleMatrix<int> M({5, 5, 2});
-    for (size_t i = 0; i < M.dim(0); i++){
-        for (size_t j = 0; j < M.dim(1); j++){
-            for (size_t k = 0; k < M.dim(2); k++){
-                M(i, j, k) = i + 10*j + 100*k;
-            }
-        }
-    }
-    M[M < 100] = -1;
-    
-    my_cnn::SimpleMatrix<bool> M2(M.dims(), M < 0);
-
-    for (size_t i = 0; i < M.dim(0); i++){
-        for (size_t j = 0; j < M.dim(1); j++){
-            for (size_t k = 0; k < M.dim(2); k++){
-                auto& val = M2(i, j, k);
-                if (k == 0) EXPECT_TRUE(val);
-                else        EXPECT_FALSE(val);
-            }
-        }
-    }
 }
 
 TEST(Arithmetic, scalarAdd){
@@ -496,12 +454,11 @@ TEST(Arithmetic, rangeMatrixModify){
                                               5, 2,
                                               4, 1});
 
-    for (int i : {0, 1, 2}){
-        EXPECT_EQ(M1[i], i+1);
-    }
-    for (int i : {3, 4, 5, 6, 7, 8}){
-        EXPECT_EQ(M1[i], 10);
-    }
+    my_cnn::SimpleMatrix<float> expected({3, 3, 1});
+    expected.setEntries({1, 10, 10,
+                         2, 10, 10,
+                         3, 10, 10});
+    EXPECT_EQ(expected, M1);
 }
 
 TEST(Arithmetic, rangeScalarModify){
@@ -515,12 +472,11 @@ TEST(Arithmetic, rangeScalarModify){
     my_cnn::dim3 sub_dim{3, 2, 1};
     M1.subMatView({0, 1, 0}, sub_dim) -= 2;
 
-    for (int i : {0, 1, 2}){
-        EXPECT_EQ(M1[i], i+1);
-    }
-    for (int i : {3, 4, 5, 6, 7, 8}){
-        EXPECT_EQ(M1[i], i-1);
-    }
+    my_cnn::SimpleMatrix<float> expected({3, 3, 1});
+    expected.setEntries({1, 2, 5,
+                         2, 3, 6,
+                         3, 4, 7});
+    EXPECT_EQ(expected, M1);
 }
 
 TEST(Arithmetic, squareMatMul){
