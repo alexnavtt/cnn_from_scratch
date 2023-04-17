@@ -208,8 +208,6 @@ TEST(Assignment, value){
     my_cnn::SimpleMatrix<int> M2({3, 2, 1});
     M2 = {1, 3, 5, 2, 4, 6};
 
-    std::cout << M2 << M1 << "\n";
-
     // Size mismatch
     EXPECT_THROW((M2 = {1,2,3}), my_cnn::MatrixSizeException);
 
@@ -256,7 +254,6 @@ TEST(Assignment, transpose){
     
     // setEntries takes care of reordering
     my_cnn::SimpleMatrix<float> M2 = M1.transpose();
-    std::cout << M2 << "\n";
 
     for (size_t i = 0; i < M1.dim(0); i++){
         for (size_t j = 0; j < M1.dim(1); j++){
@@ -277,7 +274,6 @@ TEST(Assignment, transposeFat){
     
     // setEntries takes care of reordering
     my_cnn::SimpleMatrix<float> M2 = M1.transpose();
-    std::cout << M2 << "\n";
 
     for (size_t k = 0; k < M1.dim(2); k++){
         for (size_t i = 0; i < M1.dim(0); i++){
