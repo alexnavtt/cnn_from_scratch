@@ -40,7 +40,7 @@ struct Dim{
 
     Dim<N>& operator =(const Dim<N>& other) = default;
 
-    Dim<N>& operator =(const Dim<N>&& other){
+    Dim<N>& operator =(Dim<N>&& other){
         *this = other;
         std::memset(other.data, 0x00, sizeof(Dim<N>));
         return *this;
