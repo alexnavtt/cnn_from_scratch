@@ -253,7 +253,7 @@ TEST(Assignment, transpose){
          -5.3, 6.255});
     
     // setEntries takes care of reordering
-    my_cnn::SimpleMatrix<float> M2 = M1.transpose();
+    my_cnn::SimpleMatrix<float> M2 = transpose(M1);
 
     for (size_t i = 0; i < M1.dim(0); i++){
         for (size_t j = 0; j < M1.dim(1); j++){
@@ -273,12 +273,12 @@ TEST(Assignment, transposeFat){
          16, 17, 18});
     
     // setEntries takes care of reordering
-    my_cnn::SimpleMatrix<float> M2 = M1.transpose();
+    auto M2 = transpose(M1);
 
-    for (size_t k = 0; k < M1.dim(2); k++){
-        for (size_t i = 0; i < M1.dim(0); i++){
-            for (size_t j = 0; j < M1.dim(1); j++){
-                EXPECT_EQ(M1(i, j, k), M2(j, i, k));
+    for (size_t k = 0; k < M1.dim().z; k++){
+        for (size_t i = 0; i < M1.dim().x; i++){
+            for (size_t j = 0; j < M1.dim().y; j++){
+                EXPECT_EQ((M1(i, j, k)), (M2(j, i, k)));
             }
         }
     }
