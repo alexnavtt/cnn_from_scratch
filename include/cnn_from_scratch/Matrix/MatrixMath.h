@@ -1,5 +1,6 @@
 #pragma once
 
+#include <numeric>
 #include <type_traits>
 #include <functional>
 #include "cnn_from_scratch/Matrix/MatrixBase.h"
@@ -126,25 +127,25 @@ auto elementWiseSubtract(const MatrixType1& M1, const MatrixType2& M2, const dim
 }
 
 template<typename MatrixType1, typename MatrixType2,
-    std::enable_if_t<std::is_convertible_v<MatrixType2, SimpleMatrix<typename MatrixType2::type>>, bool> = true>
+    std::enable_if_t<std::is_base_of_v<MatrixBase, MatrixType1> && std::is_base_of_v<MatrixBase, MatrixType2>, bool> = true>
 auto operator+(const MatrixType1& M1, const MatrixType2& M2){
     return MatrixOperationResult(M1, M2, elementWiseAdd<MatrixType1, MatrixType2>);
 }
 
 template<typename MatrixType1, typename MatrixType2,
-    std::enable_if_t<std::is_convertible_v<MatrixType2, SimpleMatrix<typename MatrixType2::type>>, bool> = true>
+    std::enable_if_t<std::is_base_of_v<MatrixBase, MatrixType1> && std::is_base_of_v<MatrixBase, MatrixType2>, bool> = true>
 auto operator-(const MatrixType1& M1, const MatrixType2& M2){
     return MatrixOperationResult(M1, M2, elementWiseSubtract<MatrixType1, MatrixType2>);
 }
 
 template<typename MatrixType1, typename MatrixType2,
-    std::enable_if_t<std::is_convertible_v<MatrixType2, SimpleMatrix<typename MatrixType2::type>>, bool> = true>
+    std::enable_if_t<std::is_base_of_v<MatrixBase, MatrixType1> && std::is_base_of_v<MatrixBase, MatrixType2>, bool> = true>
 auto operator*(const MatrixType1& M1, const MatrixType2& M2){
     return MatrixOperationResult(M1, M2, elementWiseMultiply<MatrixType1, MatrixType2>);
 }
 
 template<typename MatrixType1, typename MatrixType2,
-    std::enable_if_t<std::is_convertible_v<MatrixType2, SimpleMatrix<typename MatrixType2::type>>, bool> = true>
+    std::enable_if_t<std::is_base_of_v<MatrixBase, MatrixType1> && std::is_base_of_v<MatrixBase, MatrixType2>, bool> = true>
 auto operator/(const MatrixType1& M1, const MatrixType2& M2){
     return MatrixOperationResult(M1, M2, elementWiseDivide<MatrixType1, MatrixType2>);
 }
@@ -158,6 +159,74 @@ bool operator==(const MatrixType1& M1, const MatrixType2& M2){
         equal = equal && (*it == M2(it.idx()));
     }
     return equal;
+}
+
+template<typename MatrixType1, typename MatrixType2>
+auto dot(const MatrixType1& M1, const MatrixType2& M2){
+    // Dot is only valid if both a row/column vectors of the same size
+    if (M1.size() != M2.size() 
+    || (M1.dim().z != 1) 
+    || (M2.dim().z != 1) 
+    || (M1.dim().x != 1 && M1.dim().y != 1)
+    || (M2.dim().x != 1 && M2.dim().y != 1))
+    {
+        std::stringstream ss;
+        ss << "Cannot get dot product between matrices of size " << M1.dim() << " and " << M2.dim();
+        throw MatrixSizeException(ss.str());
+    }
+
+    return std::inner_product(M1.begin(), M1.end(), M2.begin(), 0);
+}
+
+template<typename MatrixType1, typename MatrixType2>
+class MatrixMultiplyResult : public MatrixBase{
+
+    template<typename T1, typename T2>
+    friend auto matrixMultiply(const T1&, const T2&);
+
+public:
+
+    using type = typename std::common_type_t<typename MatrixType1::type, typename MatrixType2::type>;
+    type operator()(const dim3& idx) const{
+        dim3 row_start_idx(idx.x, 0, idx.z);
+        const dim3 col_start_idx(0, idx.y, idx.z);
+        auto matrix_2_it = MatrixIterator<const MatrixType2>(m2_, col_start_idx);
+        type sum{};
+        for (size_t i = 0; i < row_size_; ++i, ++row_start_idx.y, ++matrix_2_it){
+            sum += *matrix_2_it * m1_->operator()(row_start_idx);
+        }
+        return sum;
+    }
+
+    auto begin() {return MatrixIterator<MatrixMultiplyResult<MatrixType1, MatrixType2>>(this, {0, 0, 0});}
+    auto end() {return MatrixIterator<MatrixMultiplyResult<MatrixType1, MatrixType2>>(this, {0, 0, dim_.z});}
+    auto begin() const {return MatrixIterator<const MatrixMultiplyResult<MatrixType1, MatrixType2>>(this, {0, 0, 0});}
+    auto end() const {return MatrixIterator<const MatrixMultiplyResult<MatrixType1, MatrixType2>>(this, {0, 0, dim_.z});}
+
+private:
+    const MatrixType1* m1_;
+    const MatrixType2* m2_;
+    size_t row_size_;
+
+    static auto makeMatrixMultiplyResult(const MatrixType1& M1, const MatrixType2& M2){
+        return MatrixMultiplyResult(M1, M2);
+    }
+
+    MatrixMultiplyResult(const MatrixType1& M1, const MatrixType2& M2) :
+    MatrixBase({M1.dim().x, M2.dim().y, M1.dim().z}),
+    m1_(&M1), m2_(&M2), row_size_(M1.dim().y)
+    {}
+};
+
+template<typename MatrixType1, typename MatrixType2>
+auto matrixMultiply(const MatrixType1& M1, const MatrixType2& M2){
+    if ((M1.dim().z != M2.dim().z) || (M1.dim().y != M2.dim().x)){
+        std::stringstream ss;
+        ss << "Cannot perform matrix multiplication between matrices of size " << M1.dim() << " and " << M2.dim();
+        throw MatrixSizeException(ss.str());
+    }
+
+    return MatrixMultiplyResult<MatrixType1, MatrixType2>::makeMatrixMultiplyResult(M1, M2);
 }
 
 // ================================================================================================
