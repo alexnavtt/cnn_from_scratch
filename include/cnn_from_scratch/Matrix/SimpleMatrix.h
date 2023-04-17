@@ -122,6 +122,9 @@ public:
     T& operator()(dim3 idx);
     const T& operator()(dim3 idx) const;
 
+    T& operator[](size_t idx){return values_[idx];}
+    const T& operator[](size_t idx) const{return values_[idx];}
+
     SimpleMatrix<T> subMatCopy(dim3 idx, dim3 sub_dim) const;
 
     SubMatrixView<T> subMatView(dim3 idx, dim3 sub_dim);
