@@ -11,7 +11,7 @@ namespace my_cnn{
 template <typename T>
 class SimpleMatrix;
 
-template <typename MatrixType>
+template <typename T>
 class SubMatrixView : public MatrixBase {
 
     // Declare friends
@@ -19,14 +19,16 @@ class SubMatrixView : public MatrixBase {
     friend class SimpleMatrix;
 
     template<typename A>
-    friend class SubMatrixIterator;
-
-    template<typename A>
-    friend class SubMatrixConstIterator;
+    friend class MatrixIterator;
 
 public:
 
-    using type = typename MatrixType::type;
+    using MatrixType = std::conditional_t<
+        std::is_const_v<T>, 
+        const SimpleMatrix<typename std::remove_const_t<T>>, 
+        SimpleMatrix<typename std::remove_const_t<T>>
+    >;
+    using type = T;
 
     SubMatrixView(MatrixType& mat, dim3 start, dim3 dim) : 
     MatrixBase(dim), mat_ptr_(&mat), start_(start) {}
@@ -35,39 +37,39 @@ public:
     MatrixBase(dim), mat_ptr_(other_view.mat_ptr_), start_(other_view.start_ + start) {}
 
     // Indexing - const
-    const type& operator()(dim3 idx) const;
-    const type& at(dim3 idx) const;
-    // Indexing - non-const using const_cast
-    type& operator()(dim3 idx){return const_cast<type&>(const_cast<const SubMatrixView<MatrixType>&>(*this).operator()(idx));}
-    type& at(dim3 idx){return const_cast<type&>(const_cast<const SubMatrixView<MatrixType>&>(*this).operator()(idx));}
+    const type& operator()(const dim3& idx) const;
+    const type& at(const dim3& idx) const;
+    // Indexing - non-const
+    type& operator()(const dim3& idx);
+    type& at(const dim3& idx);
 
     // Convert to SimpleMatrix
-    operator SimpleMatrix<type>() const;
-    SimpleMatrix<type> matrix() const;
+    operator SimpleMatrix<std::remove_const_t<T>>() const;
+    SimpleMatrix<std::remove_const_t<T>> matrix() const;
 
     // Assign to a contained type
     template<typename Other, 
             std::enable_if_t<std::is_convertible_v<Other, type>, bool> = true >
-    SubMatrixView<MatrixType>& operator=(const Other& o);
+    SubMatrixView<T>& operator=(const Other& o);
 
     // Assign to a matrix-like object
     template<typename Other, 
             std::enable_if_t<std::is_base_of_v<MatrixBase, Other>, bool> = true >
-    SubMatrixView<MatrixType>& operator=(const Other& o);
+    SubMatrixView<T>& operator=(const Other& o);
 
     // Iterators
-    SubMatrixIterator<MatrixType> begin() {
-        return SubMatrixIterator<MatrixType>(this, dim3(0, 0, 0));
+    auto begin() {
+        return MatrixIterator<SubMatrixView<T>>(this, dim3(0, 0, 0));
     }
-    SubMatrixIterator<MatrixType> end() {
-        SubMatrixIterator<MatrixType> it(this, dim_ - dim3(1));
+    auto end() {
+        MatrixIterator<SubMatrixView<T>> it(this, dim_ - dim3(1));
         return ++it;
     }
-    SubMatrixConstIterator<MatrixType> begin() const {
-        return SubMatrixConstIterator<MatrixType>(this, dim3(0, 0, 0));
+    auto begin() const {
+        return MatrixIterator<const SubMatrixView<T>>(this, dim3(0, 0, 0));
     }
-    SubMatrixConstIterator<MatrixType> end() const {
-        SubMatrixConstIterator<MatrixType> it(this, dim_ - dim3(1));
+    auto end() const {
+        MatrixIterator<const SubMatrixView<T>> it(this, dim_ - dim3(1));
         return ++it;
     }
 

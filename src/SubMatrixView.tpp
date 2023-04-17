@@ -9,43 +9,58 @@ namespace my_cnn{
 template<typename MatrixType>
 using type = typename MatrixType::type;
 
-template<typename MatrixType>
-const type<MatrixType>& SubMatrixView<MatrixType>::operator()(dim3 idx) const{
+template<typename T>
+const T& SubMatrixView<T>::operator()(const dim3& idx) const{
     return mat_ptr_->operator()(start_ + idx);
 }
 
-template<typename MatrixType>
-const type<MatrixType>& SubMatrixView<MatrixType>::at(dim3 idx) const{
+template<typename T>
+const T& SubMatrixView<T>::at(const dim3& idx) const{
     if (idx.x >= dim_.x || idx.y >= dim_.y || idx.z >= dim_.z){
         std::stringstream ss;
         ss << "Failed to index SubMatrixView of size " << dim_ << " with index " << idx;
         throw std::out_of_range(ss.str());
     }
-    return this->operator[](idx);
+    return this->operator()(idx);
 }
 
-template<typename MatrixType>
-SubMatrixView<MatrixType>::operator SimpleMatrix<SubMatrixView<MatrixType>::type>() const{
-    SimpleMatrix<SubMatrixView<MatrixType>::type> mat(this->dim_);
+template<typename T>
+T& SubMatrixView<T>::operator()(const dim3& idx) {
+    return mat_ptr_->operator()(start_ + idx);
+}
+
+template<typename T>
+T& SubMatrixView<T>::at(const dim3& idx) {
+    if (idx.x >= dim_.x || idx.y >= dim_.y || idx.z >= dim_.z){
+        std::stringstream ss;
+        ss << "Failed to index SubMatrixView of size " << dim_ << " with index " << idx;
+        throw std::out_of_range(ss.str());
+    }
+    return this->operator()(idx);
+}
+
+template<typename T>
+SubMatrixView<T>::operator SimpleMatrix<typename std::remove_const_t<T>>() const{
+    SimpleMatrix<typename std::remove_const_t<T>> mat(this->dim_);
     std::copy(begin(), end(), std::begin(mat));
     return mat;
 }
 
-template<typename MatrixType>
-SimpleMatrix<type<MatrixType>> SubMatrixView<MatrixType>::matrix() const{
+template<typename T>
+SimpleMatrix<typename std::remove_const_t<T>> SubMatrixView<T>::matrix() const{
     return *this;
 }
 
-template<typename MatrixType>
-template<typename Other, std::enable_if_t<std::is_convertible_v<Other, type<MatrixType>>,bool>>
-SubMatrixView<MatrixType>& SubMatrixView<MatrixType>::operator=(const Other& o){
+template<typename T>
+template<typename Other, std::enable_if_t<std::is_convertible_v<Other, T>,bool>>
+SubMatrixView<T>& SubMatrixView<T>::operator=(const Other& o){
     std::fill(begin(), end(), o);
     return *this;
 }
 
-template<typename MatrixType>
+template<typename T>
 template<typename Other, std::enable_if_t<std::is_base_of_v<MatrixBase, Other>, bool>>
-SubMatrixView<MatrixType>& SubMatrixView<MatrixType>::operator=(const Other& o){
+SubMatrixView<T>& SubMatrixView<T>::operator=(const Other& o){
     std::copy(std::begin(o), std::end(o), std::begin(*this));
     return *this;
 }
