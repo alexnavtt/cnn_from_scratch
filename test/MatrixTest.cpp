@@ -542,8 +542,8 @@ TEST(Arithmetic, mixedTypeMatMul){
     M2.setEntries({1.0f, 2.0f, 3.0f,
                    1.0f, 2.0f, 3.0f});
 
-    auto M3 = M1.matMul(M2);
-    EXPECT_TRUE((std::is_same_v<decltype(M3), my_cnn::SimpleMatrix<float>>));
+    auto M3 = matrixMultiply(M1, M2);
+    EXPECT_TRUE((std::is_same_v<decltype(M3)::type, float>));
 
     my_cnn::SimpleMatrix<float> M3_expected({3, 3, 1});
     M3_expected.setEntries({5.0f, 10.0f, 15.0f,
