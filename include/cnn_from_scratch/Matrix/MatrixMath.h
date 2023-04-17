@@ -13,7 +13,7 @@ class SimpleMatrix;
 // Self modification math
 // ================================================================================================
 
-template<typename MatrixType, typename Other, std::enable_if_t<std::is_convertible_v<Other, typename MatrixType::type>, bool> = true>
+template<typename MatrixType, typename Other, std::enable_if_t<std::is_convertible_v<Other, typename std::remove_reference_t<MatrixType>::type>, bool> = true>
 MatrixType& operator+=(MatrixType&& M, const Other& other){
     std::for_each(std::begin(M), std::end(M), [&](auto& val){val += other;});
     return M;
@@ -28,7 +28,7 @@ MatrixType& operator+=(MatrixType&& M, const Other& other){
     return M;
 }
 
-template<typename MatrixType, typename Other, std::enable_if_t<std::is_convertible_v<Other, typename MatrixType::type>, bool> = true>
+template<typename MatrixType, typename Other, std::enable_if_t<std::is_convertible_v<Other, typename std::remove_reference_t<MatrixType>::type>, bool> = true>
 MatrixType& operator-=(MatrixType&& M, const Other& other){
     std::for_each(std::begin(M), std::end(M), [&](auto& val){val -= other;});
     return M;
@@ -43,7 +43,7 @@ MatrixType& operator-=(MatrixType&& M, const Other& other){
     return M;
 }
 
-template<typename MatrixType, typename Other, std::enable_if_t<std::is_convertible_v<Other, typename MatrixType::type>, bool> = true>
+template<typename MatrixType, typename Other, std::enable_if_t<std::is_convertible_v<Other, typename std::remove_reference_t<MatrixType>::type>, bool> = true>
 MatrixType& operator*=(MatrixType&& M, const Other& other){
     std::for_each(std::begin(M), std::end(M), [&](auto& val){val *= other;});
     return M;
@@ -58,7 +58,7 @@ MatrixType& operator*=(MatrixType&& M, const Other& other){
     return M;
 }
 
-template<typename MatrixType, typename Other, std::enable_if_t<std::is_convertible_v<Other, typename MatrixType::type>, bool> = true>
+template<typename MatrixType, typename Other, std::enable_if_t<std::is_convertible_v<Other, typename std::remove_reference_t<MatrixType>::type>, bool> = true>
 MatrixType& operator/=(MatrixType&& M, const Other& other){
     std::for_each(std::begin(M), std::end(M), [&](auto& val){val /= other;});
     return M;
@@ -144,6 +144,16 @@ auto operator/(const MatrixType1& M1, const MatrixType2& M2){
     return MatrixOperationResult(M1, M2, elementWiseDivide<MatrixType1, MatrixType2>);
 }
 
+template<typename MatrixType1, typename MatrixType2,
+    std::enable_if_t<std::is_base_of_v<MatrixBase, MatrixType1> && std::is_base_of_v<MatrixBase, MatrixType2>, bool> = true>
+bool operator==(const MatrixType1& M1, const MatrixType2& M2){
+    if (M1.dim() != M2.dim()) return false;
+    bool equal = true;
+    for (auto it = std::begin(M1); it != std::end(M1) && equal; it++){
+        equal = equal && (*it == M2(it.idx()));
+    }
+    return equal;
+}
 
 // ================================================================================================
 // Matrix - Scalar math result
