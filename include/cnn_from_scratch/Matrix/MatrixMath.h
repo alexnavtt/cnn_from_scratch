@@ -279,50 +279,50 @@ auto scalarSubtract(const MatrixType1& M1, const Scalar& S, const dim3& idx){
 }
 
 template<typename MatrixType1, typename Scalar,
-    std::enable_if_t<std::is_arithmetic_v<Scalar>, bool> = true>
+    std::enable_if_t<std::is_arithmetic_v<Scalar> && std::is_base_of_v<MatrixBase, MatrixType1>, bool> = true>
 auto operator+(const MatrixType1& M1, const Scalar& S){
     return ScalarOperationResult(M1, S, scalarAdd<MatrixType1, Scalar>);
 }
 
 template<typename MatrixType1, typename Scalar,
-    std::enable_if_t<std::is_arithmetic_v<Scalar>, bool> = true>
+    std::enable_if_t<std::is_arithmetic_v<Scalar> && std::is_base_of_v<MatrixBase, MatrixType1>, bool> = true>
 auto operator+(const Scalar& S, const MatrixType1& M1){
     return ScalarOperationResult(M1, S, scalarAdd<MatrixType1, Scalar>);
 }
 
 template<typename MatrixType1, typename Scalar,
-    std::enable_if_t<std::is_arithmetic_v<Scalar>, bool> = true>
+    std::enable_if_t<std::is_arithmetic_v<Scalar> && std::is_base_of_v<MatrixBase, MatrixType1>, bool> = true>
 auto operator-(const MatrixType1& M1, const Scalar& S){
     return ScalarOperationResult(M1, S, scalarSubtract<MatrixType1, Scalar>);
 }
 
 template<typename MatrixType1, typename Scalar,
-    std::enable_if_t<std::is_arithmetic_v<Scalar>, bool> = true>
+    std::enable_if_t<std::is_arithmetic_v<Scalar> && std::is_base_of_v<MatrixBase, MatrixType1>, bool> = true>
 auto operator-(const Scalar& S, const MatrixType1& M1){
     return ScalarOperationResult(M1, S, scalarSubtract<MatrixType1, Scalar>);
 }
 
 template<typename MatrixType1, typename Scalar,
-    std::enable_if_t<std::is_arithmetic_v<Scalar>, bool> = true>
+    std::enable_if_t<std::is_arithmetic_v<Scalar> && std::is_base_of_v<MatrixBase, MatrixType1>, bool> = true>
 auto operator*(const MatrixType1& M1, const Scalar& S){
     return ScalarOperationResult(M1, S, scalarMultiply<MatrixType1, Scalar>);
 }
 
 template<typename MatrixType1, typename Scalar,
-    std::enable_if_t<std::is_arithmetic_v<Scalar>, bool> = true>
+    std::enable_if_t<std::is_arithmetic_v<Scalar> && std::is_base_of_v<MatrixBase, MatrixType1>, bool> = true>
 auto operator*(const Scalar& S, const MatrixType1& M1){
     return ScalarOperationResult(M1, S, scalarMultiply<MatrixType1, Scalar>);
 }
 
 
 template<typename MatrixType1, typename Scalar,
-    std::enable_if_t<std::is_arithmetic_v<Scalar>, bool> = true>
+    std::enable_if_t<std::is_arithmetic_v<Scalar> && std::is_base_of_v<MatrixBase, MatrixType1>, bool> = true>
 auto operator/(const MatrixType1& M1, const Scalar& S){
     return ScalarOperationResult(M1, S, scalarDivide<MatrixType1, Scalar>);
 }
 
 template<typename MatrixType1, typename Scalar,
-    std::enable_if_t<std::is_arithmetic_v<Scalar>, bool> = true>
+    std::enable_if_t<std::is_arithmetic_v<Scalar> && std::is_base_of_v<MatrixBase, MatrixType1>, bool> = true>
 auto operator/(const Scalar& S, const MatrixType1& M1){
     return ScalarOperationResult(M1, S, scalarDivide<MatrixType1, Scalar>);
 }
@@ -357,13 +357,13 @@ private:
 };
 
 template<typename MatrixType, typename UnaryOp>
-auto unaryOperation(const MatrixType& M, const dim3& idx, UnaryOp op){
-    return std::invoke(op, M(idx));
+auto apply(const MatrixType& M, UnaryOp op){
+    return UnaryOperationResult(M, [op](const MatrixType& M_, const dim3& idx_){return std::invoke(op, M_(idx_));});
 }
 
 template<typename MatrixType, typename UnaryOp>
-auto apply(const MatrixType& M, UnaryOp op){
-    return UnaryOperationResult(M, [op](const MatrixType& M_, const dim3& idx_){return std::invoke(op, M_(idx_));});
+void modify(MatrixType& M, UnaryOp op){
+    std::for_each(M.begin(), M.end(), [&](auto& in){in = op(in);});
 }
 
 template<typename MatrixType>
@@ -371,6 +371,47 @@ auto abs(const MatrixType& M){
     using input_type = typename MatrixType::type;
     using return_type = decltype(std::abs(input_type{}));
     return apply<MatrixType, return_type(*)(input_type)>(M, std::abs);
+}
+
+template<typename MatrixType>
+auto exp(const MatrixType& M){
+    using input_type = typename MatrixType::type;
+    using return_type = decltype(std::exp(input_type{}));
+    return apply<MatrixType, return_type(*)(input_type)>(M, std::exp);
+}
+
+// ================================================================================================
+// Matrix reduction operations
+// ================================================================================================
+
+template<typename MatrixType>
+auto sum(const MatrixType& M){
+    return std::accumulate(M.begin(), M.end(), 0);
+}
+
+template<typename MatrixType>
+auto mean(const MatrixType& M){
+    return sum(M) / M.size();
+}
+
+template<typename MatrixType>
+auto max(const MatrixType& M){
+    return *std::max_element(M.begin(), M.end());
+}
+
+template<typename MatrixType>
+auto min(const MatrixType& M){
+    return *std::min_element(M.begin(), M.end());
+}
+
+template<typename MatrixType>
+auto minIndex(const MatrixType& M){
+    return std::min_element(M.begin(), M.end()).idx();
+}
+
+template<typename MatrixType>
+auto maxIndex(const MatrixType& M){
+    return std::max_element(M.begin(), M.end()).idx();
 }
 
 // ================================================================================================
