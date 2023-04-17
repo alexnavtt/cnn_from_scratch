@@ -26,7 +26,7 @@ namespace my_cnn{
 }
 
 template<typename T>  
-class SimpleMatrix : public std::valarray<T>, public MatrixBase{
+class SimpleMatrix : public MatrixBase{
     // Make all temlplates of SimpleMatrix friends
     template <typename Other>
     friend class SimpleMatrix;
@@ -34,6 +34,10 @@ class SimpleMatrix : public std::valarray<T>, public MatrixBase{
     // Make SubMatrixView a friend
     template <typename MatrixType>
     friend class SubMatrixView;
+
+    // Make MatrixIterator a friend
+    template<typename MatrixType>
+    friend class MatrixIterator;
     
 public:
 
@@ -52,18 +56,11 @@ public:
     SimpleMatrix(dim3 dim, T initial_val=T{});
 
     // Full matrix description constructor
-    SimpleMatrix(dim3 dim, std::valarray<T>&& vals);
-
-    // From a gslice_array
-    SimpleMatrix(dim3 dim, std::gslice_array<T>&& vals);
+    SimpleMatrix(dim3 dim, std::vector<T>&& vals);
 
     // Type conversion constructor
     template<typename Other, std::enable_if_t<not std::is_same_v<T, Other>, bool> = true>
     SimpleMatrix(const SimpleMatrix<Other>& M); 
-
-    // Copy constructors
-    SimpleMatrix(const SimpleMatrix& M);
-    SimpleMatrix(SimpleMatrix<T>&& M);
 
     /* === Size Checking === */
 
@@ -85,17 +82,12 @@ public:
         return false;
     }
 
-    // Check against a valarray or gslice_array
-    template <typename ValarrayLike, std::enable_if_t<
-        std::is_convertible_v<
-            ValarrayLike, 
-            std::valarray<typename ValarrayLike::value_type>>, 
-        bool> = true>
-    bool sizeCheck(const ValarrayLike& v) const {
-        using U = typename ValarrayLike::value_type;
-        if(static_cast<std::valarray<U>>(v).size() == this->size()) return true;
+    // Check against a vector
+    template<typename Other>
+    bool sizeCheck(const std::vector<Other>&& v) const {
+        if(v.size() == this->values_.size()) return true;
         printf("Size mismatch (Valarray/gslice_array): Compared sizes are (%u, %u, %u) (i.e. size %zd) for this and %zd for other\n", 
-                dim_.x, dim_.y, dim_.z, this->size(), static_cast<std::valarray<U>>(v).size());
+                dim_.x, dim_.y, dim_.z, this->size(), v.size());
         return false;
     }
 
@@ -111,16 +103,13 @@ public:
     SimpleMatrix<T>& operator=(const SimpleMatrix<T>& M) = default;
 
     // Value setting
-    SimpleMatrix<T>& operator=(std::valarray<T>&& v);
-
-    // Value setting
-    SimpleMatrix<T>& operator=(std::gslice_array<T>&& v);
+    SimpleMatrix<T>& operator=(std::vector<T>&& v);
 
     // Type conversion
     template<typename Other>
     SimpleMatrix<T>& operator=(const SimpleMatrix<Other>& M);
 
-    void setEntries(std::valarray<T>&& v);
+    void setEntries(std::vector<T>&& v);
 
     /* === Indexing === */
 
@@ -135,9 +124,13 @@ public:
 
     SimpleMatrix<T> subMatCopy(dim3 idx, dim3 sub_dim) const;
 
-    SubMatrixView<SimpleMatrix<T>> subMatView(dim3 idx, dim3 sub_dim);
+    SubMatrixView<T> subMatView(dim3 idx, dim3 sub_dim);
+    SubMatrixView<const T> subMatView(dim3 idx, dim3 sub_dim) const;
 
-    SubMatrixView<const SimpleMatrix<T>> subMatView(dim3 idx, dim3 sub_dim) const;
+    auto begin() {return MatrixIterator<SimpleMatrix<T>>(this, {0, 0, 0});}
+    auto end() {return MatrixIterator<SimpleMatrix<T>>(this, {0, 0, dim_.z});}
+    auto begin() const {return MatrixIterator<const SimpleMatrix<T>>(this, {0, 0, 0});}
+    auto end() const {return MatrixIterator<const SimpleMatrix<T>>(this, {0, 0, dim_.z});}
 
     /* === Arithmetic === */
 
@@ -149,7 +142,6 @@ public:
 
     /* === Dimension === */
 
-    size_t size() const {return static_cast<const MatrixBase&>(*this).size();}
     const dim3& dims() const;
     using MatrixBase::dim;
     uint dim(size_t idx) const;
@@ -161,18 +153,17 @@ public:
 
     /* === Other Math === */
 
-    bool operator ==(const SimpleMatrix<T>& other) const;
-
     SimpleMatrix<T> abs() const;
 
     size_t minIndex() const;
     size_t maxIndex() const;
 
-    SubMatrixView<SimpleMatrix<T>> slices(int idx, int num);
-    SubMatrixView<SimpleMatrix<T>> slice(int idx);
-    SubMatrixView<const SimpleMatrix<T>> slices(int idx, int num) const;
-    SubMatrixView<const SimpleMatrix<T>> slice(int idx) const;
-
+    SubMatrixView<T> slices(int idx, int num);
+    SubMatrixView<T> slice(int idx);
+    SubMatrixView<T> slices(int idx, int num) const;
+    SubMatrixView<T> slice(int idx) const;
+private:
+    std::vector<T> values_;
 };
 
 template<typename MatrixType, std::enable_if_t<std::is_base_of_v<MatrixBase, MatrixType>, bool> = true>
@@ -187,11 +178,12 @@ std::ostream& operator<<(std::ostream& os, const MatrixType& M){
         max_width += 3;
     }
 
+    os << "\n";
     for (int i = 0; i < M.dim().x; i++){
         for (int k = 0; k < M.dim().z; k++){
             os << "[";
             for (int j = 0; j < M.dim().y; j++){
-                const auto& val = M({i, j, k});
+                const T& val = M({i, j, k});
                 os << (val < 0 ? "-" : " ") << std::setw(max_width) << abs(val) << (j == M.dim().y - 1 ? "]" : ",");
             }
             os << "   ";

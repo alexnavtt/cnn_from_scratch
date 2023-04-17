@@ -19,16 +19,16 @@ namespace my_cnn{
 // Initial value based constructor
 template<typename T>
 SimpleMatrix<T>::SimpleMatrix(dim3 dim, T initial_val):
-std::valarray<T>(initial_val, dim.x*dim.y*dim.z),
-MatrixBase(dim)
+MatrixBase(dim),
+values_(dim.x*dim.y*dim.z, initial_val)
 {}
 
 // From a Matrix-like object
 template<typename T>
 template<typename MatrixType, std::enable_if_t<std::is_base_of_v<MatrixBase, MatrixType>, bool>>
 SimpleMatrix<T>::SimpleMatrix(const MatrixType& M) : 
-std::valarray<T>(M.dim().x*M.dim().y*M.dim().z), 
-MatrixBase(M.dim())
+MatrixBase(M.dim()),
+values_(M.size())
 {
     for (DimIterator<3> idx(dim_, {0, 0, 0}); idx.idx.z < dim_.z; idx++){
         (*this)(idx.idx) = M(idx.idx);
@@ -37,64 +37,32 @@ MatrixBase(M.dim())
 
 // Full matrix description constructor
 template<typename T>
-SimpleMatrix<T>::SimpleMatrix(dim3 dim, std::valarray<T>&& vals):
-std::valarray<T>(dim.x*dim.y*dim.z),
-MatrixBase(dim)
+SimpleMatrix<T>::SimpleMatrix(dim3 dim, std::vector<T>&& vals):
+MatrixBase(dim),
+values_(size())
 {
-    setEntries(std::forward<std::valarray<T>>(vals));
+    setEntries(std::forward<std::vector<T>>(vals));
 }
-
-// From a gslice_array
-template<typename T>
-SimpleMatrix<T>::SimpleMatrix(dim3 dim, std::gslice_array<T>&& vals):
-std::valarray<T>(vals),
-MatrixBase(dim)
-{}
 
 // Type conversion constructor
 template<typename T>
 template<typename Other, std::enable_if_t<not std::is_same_v<T, Other>, bool>>
 SimpleMatrix<T>::SimpleMatrix(const SimpleMatrix<Other>& M) : 
-std::valarray<T>(M.dim_.x*M.dim_.y*M.dim_.z),
-MatrixBase(M.dim_)
+MatrixBase(M.dim_),
+values_(M.dim_.x*M.dim_.y*M.dim_.z)
 {
-    std::copy(std::begin(M), std::end(M), std::begin(*this));
+    std::copy(M.values_.begin(), M.values_.end(), values_.begin());
 }
-
-// Copy constructor
-template<typename T>
-SimpleMatrix<T>::SimpleMatrix(const SimpleMatrix<T>& M) : 
-std::valarray<T>(M), 
-MatrixBase(M.dim_) 
-{}
-
-// Move copy constructor
-template<typename T>
-SimpleMatrix<T>::SimpleMatrix(SimpleMatrix<T>&& M) : 
-std::valarray<T>(std::forward<std::valarray<T>>(M)), 
-MatrixBase(M.dim_) 
-{}
 
 // ================================== //
 // =========== ASSIGNMENT =========== //
 // ================================== //
 
-// Valarray setting
+// Vector setting
 template<typename T>
-SimpleMatrix<T>& SimpleMatrix<T>::operator=(std::valarray<T>&& v){
-    if (v.size() == this->size())
-        static_cast<std::valarray<T>&>(*this) = std::forward<std::valarray<T>>(v);
-    else
-        throw MatrixSizeException("Cannot assign value to matrix, size mismatch");
-    return *this;
-}
-
-// Gslice setting
-template<typename T>
-SimpleMatrix<T>& SimpleMatrix<T>::operator=(std::gslice_array<T>&& v){
-    std::valarray<T> arr(v);
-    if (arr.size() == this->size())
-        static_cast<std::valarray<T>&>(*this) = arr;
+SimpleMatrix<T>& SimpleMatrix<T>::operator=(std::vector<T>&& v){
+    if (v.size() == values_.size())
+        values_ = std::forward<std::vector<T>>(v);
     else
         throw MatrixSizeException("Cannot assign value to matrix, size mismatch");
     return *this;
@@ -105,22 +73,24 @@ template<typename T>
 template<typename Other>
 SimpleMatrix<T>& SimpleMatrix<T>::operator=(const SimpleMatrix<Other>& M){
     dim_ = M.dim_;
-    std::valarray<T>::resize(dim_.x*dim_.y*dim_.z);
-    std::copy(std::begin(M), std::end(M), std::begin(*this));
+    values_.resize(dim_.x*dim_.y*dim_.z);
+    std::copy(M.values_.begin(), M.values_.end(), values_.begin());
     return *this;
 }
 
 // Set entries via array
 template<typename T>
-void SimpleMatrix<T>::setEntries(std::valarray<T>&& v){
-    if (v.size() == this->size())
-        static_cast<std::valarray<T>&>(*this) = v[
-            std::gslice(
-                0, 
-                {dim_.z, dim_.y, dim_.x},
-                {dim_.x*dim_.y, 1, dim_.y}
-            )
-        ];
+void SimpleMatrix<T>::setEntries(std::vector<T>&& v){
+    if (v.size() == values_.size()){
+        auto val= v.begin();
+        for (uint layer = 0; layer < dim_.z; layer++){
+            for (uint row = 0; row < dim_.x; row++){
+                for (uint col = 0; col < dim_.y; col++){
+                    (*this)(row, col, layer) = *val++;
+                }
+            }
+        }
+    }
     else
         throw MatrixSizeException("Cannot assign value to matrix, size mismatch");
 }
@@ -153,13 +123,11 @@ template<typename T>
 SimpleMatrix<T> SimpleMatrix<T>::transpose(){
     dim3 new_dim(dim_.y, dim_.x, dim_.z);
     SimpleMatrix<T> output(new_dim);
-    static_cast<std::valarray<T>&>(output) = (*this)[
-        std::gslice(
-            0, 
-            {dim_.z, dim_.x, dim_.y},
-            {dim_.x*dim_.y, 1, dim_.x}
-        )
-    ];
+    auto it = begin();
+    for (; it != end(); it++){
+        dim3 transpose_idx(it.idx().y, it.idx().x, it.idx().z);
+        output(transpose_idx) = *it;
+    }
     return output;
 }
 
@@ -179,89 +147,62 @@ size_t SimpleMatrix<T>::getIndex(dim3 dim) const{
 
 template<typename T>
 const T& SimpleMatrix<T>::operator()(size_t x_idx, size_t y_idx, size_t z_idx) const {
-    // return data_[getIndex(x_idx, y_idx, z_idx)];
-    return std::valarray<T>::operator[](getIndex(x_idx, y_idx, z_idx));
+    return values_[getIndex(x_idx, y_idx, z_idx)];
 }
 
 template<typename T>
 T& SimpleMatrix<T>::operator()(size_t x_idx, size_t y_idx, size_t z_idx) {
-    // return data_[getIndex(x_idx, y_idx, z_idx)];
-    return std::valarray<T>::operator[](getIndex(x_idx, y_idx, z_idx));
+    return values_[getIndex(x_idx, y_idx, z_idx)];
 }
 
 template<typename T>
 const T& SimpleMatrix<T>::operator()(dim3 idx) const {
-    // return data_[getIndex(idx.x, idx.y, idx.z)];
-    return std::valarray<T>::operator[](getIndex(idx.x, idx.y, idx.z));
+    return values_[getIndex(idx.x, idx.y, idx.z)];
 }
 
 template<typename T>
 T& SimpleMatrix<T>::operator()(dim3 idx) {
-    // return data_[getIndex(idx.x, idx.y, idx.z)];
-    return std::valarray<T>::operator[](getIndex(idx.x, idx.y, idx.z));
+    return values_[getIndex(idx.x, idx.y, idx.z)];
 }
     
 template<typename T>
 SimpleMatrix<T> SimpleMatrix<T>::subMatCopy(dim3 idx, dim3 sub_dim) const{
-    // Verify that this is a valid submatrix
-    if (idx.x-1 + sub_dim.x >= dim_.x || 
-        idx.y-1 + sub_dim.y >= dim_.y || 
-        idx.z-1 + sub_dim.z >= dim_.z)
-        THROW_SUB_SIZE_EXCEPTION;
-
-    SimpleMatrix<T> sub_mat(sub_dim);
-    static_cast<std::valarray<T>&>(sub_mat) = this->operator[](
-        std::gslice(
-            getIndex(idx.x, idx.y, idx.z), 
-            {sub_dim.z, sub_dim.y, sub_dim.x}, 
-            {dim_.y*dim_.x, dim_.x, 1}
-        )
-    );
-    return sub_mat;
+    return static_cast<SimpleMatrix<T>>(subMatView(idx, sub_dim));
 }
 
 template<typename T>
-SubMatrixView<SimpleMatrix<T>> SimpleMatrix<T>::subMatView(dim3 idx, dim3 sub_dim){
-    return SubMatrixView(*this, idx, sub_dim);
+SubMatrixView<T> SimpleMatrix<T>::subMatView(dim3 idx, dim3 sub_dim){
+    return SubMatrixView<T>(*this, idx, sub_dim);
 }
 
 template<typename T>
-SubMatrixView<const SimpleMatrix<T>> SimpleMatrix<T>::subMatView(dim3 idx, dim3 sub_dim) const{
-    return SubMatrixView(*this, idx, sub_dim);
+SubMatrixView<const T> SimpleMatrix<T>::subMatView(dim3 idx, dim3 sub_dim) const{
+    return SubMatrixView<const T>(*this, idx, sub_dim);
 }
 
 template<typename T>
-SubMatrixView<SimpleMatrix<T>> SimpleMatrix<T>::slices(int idx, int num){
-    return SubMatrixView(*this, {0, 0, idx}, {dim_.x, dim_.y, num});
+SubMatrixView<T> SimpleMatrix<T>::slices(int idx, int num){
+    return SubMatrixView<T>(*this, {0, 0, idx}, {dim_.x, dim_.y, num});
 }
 
 template<typename T>
-SubMatrixView<SimpleMatrix<T>> SimpleMatrix<T>::slice(int idx) {
+SubMatrixView<T> SimpleMatrix<T>::slice(int idx) {
     return slices(idx, 1);
 }
 
 template<typename T>
-SubMatrixView<const SimpleMatrix<T>> SimpleMatrix<T>::slices(int idx, int num) const{
-    return SubMatrixView(*this, {0, 0, idx}, {dim_.x, dim_.y, num});
+SubMatrixView<T> SimpleMatrix<T>::slices(int idx, int num) const {
+    return SubMatrixView<const T>(*this, {0, 0, idx}, {dim_.x, dim_.y, num});
 }
 
 template<typename T>
-SubMatrixView<const SimpleMatrix<T>> SimpleMatrix<T>::slice(int idx) const {
+SubMatrixView<T> SimpleMatrix<T>::slice(int idx) const {
     return slices(idx, 1);
 }
 
 // =================================== //
 // ======== ELEMENT WISE MATH ======== //
 // =================================== //
-
-template<typename T>
-bool SimpleMatrix<T>::operator ==(const SimpleMatrix<T>& other) const{
-    if (dim_ != other.dim_) return false;
-    for (size_t i = 0; i < this->size(); i++){
-        if (this->operator[](i) != other[i]) return false;
-    }
-    return true;
-}
 
 template<typename T>
 SimpleMatrix<T> SimpleMatrix<T>::abs() const {
