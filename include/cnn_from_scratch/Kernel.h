@@ -2,7 +2,7 @@
 
 #include <random>
 #include <chrono>
-#include "cnn_from_scratch/SimpleMatrix.h"
+#include "cnn_from_scratch/Matrix/SimpleMatrix.h"
 #include "cnn_from_scratch/imageUtil.h"
 #include "cnn_from_scratch/ModelLayer.h"
 
@@ -69,16 +69,21 @@ public:
 
                 // For each filter layer, apply the convolution process to this sub-region
                 for (uint filter_layer = 0; filter_layer < biases.size(); filter_layer++){
-                    // Get the index for the weights that need to be applied to this layer
-                    // auto layer_weight_idx = weights.slices(filter_layer*dim_.z, dim_.z);
                     // Multiply by the weights
-                    SimpleMatrix<float> layer_sub_region = sub_region;
-                    layer_sub_region *= weights.slices(filter_layer*dim_.z, dim_.z);
-                    // Sum the resulting matrices and add the biases
-                    float z_val = layer_sub_region.sum() + biases[filter_layer];
-                    // Apply the activation function
+
+                    output({idx.x, idx.y, filter_layer}) = 
+                        sum(sub_region * weights.slices(filter_layer*dim_.z, dim_.z))
+                      + biases[filter_layer];
+
+                    // SimpleMatrix<float> layer_sub_region = sub_region;
+                    // layer_sub_region *= weights.slices(filter_layer*dim_.z, dim_.z);
+                    // // Sum the resulting matrices and add the biases
+                    // float z_val = sum(layer_sub_region) + biases[filter_layer];
+                    
+                    
+                    
                     // Set the value in the output layer
-                    output(idx.x, idx.y, filter_layer) = z_val;
+                    // output(idx.x, idx.y, filter_layer) = z_val;
                 }
             }
         }

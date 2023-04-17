@@ -1,16 +1,18 @@
 #pragma once
 
-#include "cnn_from_scratch/SimpleMatrix.h"
+#include "cnn_from_scratch/Matrix/SimpleMatrix.h"
 
 namespace my_cnn{
     
-template <typename T>
-void printImageBWImpl(const SimpleMatrix<T>& M, T max_val){
-    T min = M.min();
+template <typename MatrixType>
+void printImageBWImpl(const MatrixType& M, typename MatrixType::type max_val){
+    using T = typename MatrixType::type;
+    T min = my_cnn::min(M);
     T range = max_val - min;
-    for (size_t row = 0; row < M.dims().x; row++){
-        for (size_t col = 0; col < M.dims().y; col++){
-            const T& val = M(row, col, 0);
+    dim3 idx;
+    for (idx.x = 0; idx.x < M.dim().x; idx.x++){
+        for (idx.y = 0; idx.y < M.dim().y; idx.y++){
+            const T& val = M(idx);
             float dist = max_val - val;
             float mapped_val = max_val * (1 - dist/range);
             unsigned char code = std::min(static_cast<float>(mapped_val)/max_val * 255, 255.0f);
@@ -20,14 +22,16 @@ void printImageBWImpl(const SimpleMatrix<T>& M, T max_val){
     }
 }
 
-template <typename T>
-void printImageColorImpl(const SimpleMatrix<T>& M, T max_val){
-    for (size_t row = 0; row < M.dims().x; row++){
-        for (size_t col = 0; col < M.dims().y; col++){
+template <typename MatrixType>
+void printImageColorImpl(const MatrixType& M, typename MatrixType::type max_val){
+    using T = typename MatrixType::type;
+    dim3 idx;
+    for (idx.x = 0; idx.x < M.dim().x; idx.x++){
+        for (idx.y = 0; idx.y < M.dim().y; idx.y++){
             std::stringstream ss;
             ss << "\033[48;2";
-            for (size_t channel = 0; channel < 3; channel++){
-                const T& val = M(row, col, channel);
+            for (idx.z = 0; idx.z < 3; idx.z++){
+                const T& val = M(idx);
                 unsigned char code = std::min(static_cast<float>(val)/max_val * 255, 255.0f);
                 ss << ";" << +code;
             }
@@ -38,14 +42,15 @@ void printImageColorImpl(const SimpleMatrix<T>& M, T max_val){
     }
 }
 
-template<typename T>
-void printImage(const SimpleMatrix<T>& M){
-    T max = (std::is_integral_v<T> ? std::numeric_limits<unsigned char>::max() : M.max());
+template<typename MatrixType>
+void printImage(const MatrixType& M){
+    using T = typename MatrixType::type;
+    T max = (std::is_integral_v<T> ? std::numeric_limits<unsigned char>::max() : my_cnn::max(M));
 
-    if (M.dim(2) == 3)
-        printImageColorImpl<T>(M, max); 
+    if (M.dim().z == 3)
+        printImageColorImpl<MatrixType>(M, max); 
     else
-        printImageBWImpl<T>(M, max);
+        printImageBWImpl<MatrixType>(M, max);
 }
 
 } // namespace my_cnn

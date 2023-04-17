@@ -28,13 +28,13 @@ void ModelDescription<InputDataType, OutputDataType>::addConnectedLayer
     (size_t output_size, std::string_view name)
 {
     flow.indices.push_back(connected_layers.size());
-    ConnectedLayer& layer = connected_layers.emplace_back(output_size);
+    connected_layers.emplace_back(output_size);
     flow.stages.push_back(ModelFlowMode::FULLY_CONNECTED);
     flow.names.push_back(name);
 }
 
 template<typename InputDataType, typename OutputDataType>
-float ModelDescription<InputDataType, OutputDataType>::lossFcn(const std::valarray<float>& probabilities, const OutputDataType& true_label) const{
+float ModelDescription<InputDataType, OutputDataType>::lossFcn(const SimpleMatrix<float>& probabilities, const OutputDataType& true_label) const{
     switch (loss_function){
         default:
         case CROSS_ENTROPY:
@@ -52,7 +52,7 @@ ModelResults<OutputDataType> ModelDescription<InputDataType, OutputDataType>::fo
 
     std::cout << "Input image is \n";
     for (uint layer = 0; layer < active_data.dim(2); layer++){
-        printImage(active_data.sliceCopy(layer));
+        printImage(active_data.slice(layer));
     }
 
     // Create the output struct and store the input
@@ -89,7 +89,7 @@ ModelResults<OutputDataType> ModelDescription<InputDataType, OutputDataType>::fo
 
         std::cout << "After applying layer " << flow.names[i] << "\n";
         for (uint layer = 0; layer < active_data.dim(2); layer++){
-            printImage(active_data.sliceCopy(layer));
+            printImage(active_data.slice(layer));
         }
     }
 
@@ -97,12 +97,12 @@ ModelResults<OutputDataType> ModelDescription<InputDataType, OutputDataType>::fo
     assert(active_data.size() == output_labels.size());
 
     // Apply softmax to the output and store that as well
-    active_data = std::exp(active_data - active_data.max());
-    active_data /= active_data.sum();
+    active_data = exp(active_data - max(active_data));
+    active_data /= sum(active_data);
     result.layer_inputs.push_back(active_data);
 
     // Find the maximum probability
-    float* max_idx = std::max_element(std::begin(active_data), std::end(active_data));
+    auto max_idx = std::max_element(std::begin(active_data), std::end(active_data));
 
     // Construct the output data
     result.label_idx = std::distance(std::begin(active_data), max_idx);
@@ -119,14 +119,14 @@ void ModelDescription<InputDataType, OutputDataType>::backwardsPropagation(const
 
     int ii = 0;
     for (const SimpleMatrix<float>& M : result.layer_inputs){
-        std::cout << "Stored result for layer " << ii++ << "\n";
+        std::cout << "Stored input for layer " << ii << ": " << flow.names[ii++] << "\n";
         for (size_t layer = 0; layer < M.dim(2); layer++){
-            printImage(M.sliceCopy(layer));
+            printImage(M.slice(layer));
         }
     }
 
     // For each of the layers, calculate the corresponding gradient and adjust the weights accordingly
-    for (int i = result.layer_inputs.size()-1; i >= 0; i--){
+    for (int i = result.layer_inputs.size()-2; i >= 0; i--){
         const SimpleMatrix<float>& layer_input = result.layer_inputs[i];
         size_t idx = flow.indices[i];
 

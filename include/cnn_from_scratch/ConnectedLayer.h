@@ -4,7 +4,7 @@
 #include <valarray>
 #include "cnn_from_scratch/exceptions.h"
 #include "cnn_from_scratch/ModelLayer.h"
-#include "cnn_from_scratch/SimpleMatrix.h"
+#include "cnn_from_scratch/Matrix/SimpleMatrix.h"
 
 namespace my_cnn{
     
@@ -38,15 +38,15 @@ public:
                 std::to_string(input_data.size()) + " and this layer has size " + std::to_string(weights.dim(0)));
         }
 
-        SimpleMatrix<float> output = weights.matMul(input_data) + biases;
+        SimpleMatrix<float> output = matrixMultiply(weights, input_data) + biases;
         activate(output);
         return output;
     }
 
     SimpleMatrix<float> propagateBackward(const SimpleMatrix<float>& input_data, const SimpleMatrix<float>& output_grad, float learning_rate) override{
-        const SimpleMatrix<float>   dLdW = output_grad.matMul(input_data);
+        const SimpleMatrix<float>   dLdW = matrixMultiply(output_grad, input_data);
         const SimpleMatrix<float>&  dLdB = output_grad;
-        const SimpleMatrix<float>&& dXdZ = weights.transpose().matMul(output_grad);
+        const SimpleMatrix<float>&& dXdZ = matrixMultiply(weights.transpose(), output_grad);
         weights -= learning_rate * dLdW;
         biases  -= learning_rate * dLdB;
         return dXdZ;

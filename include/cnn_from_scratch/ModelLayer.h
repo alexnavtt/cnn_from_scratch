@@ -1,7 +1,7 @@
 #pragma once
 
 #include <valarray>
-#include <cnn_from_scratch/SimpleMatrix.h>
+#include <cnn_from_scratch/Matrix/SimpleMatrix.h>
 
 namespace my_cnn{
 
@@ -16,25 +16,25 @@ enum ModelActivationFunction{
 class ModelLayer{
 public:
     SimpleMatrix<float> weights;
-    std::valarray<float> biases;
+    SimpleMatrix<float> biases;
     bool initialized = false;
     ModelActivationFunction activation = LINEAR;
 
     ModelLayer() = default;
 
     ModelLayer(unsigned num_outputs, dim3 weights_dim = dim3{}) :
-    biases(num_outputs),
+    biases(dim3(num_outputs, 1, 1)),
     weights(weights_dim)
     {}
 
     void activate(SimpleMatrix<float>& output_data) const{
         switch (activation){
             case RELU:
-                std::for_each(std::begin(output_data), std::end(output_data), [](float& f){f = f > 0 ? f : 0;});
+                modify(output_data, [](float f){return f > 0 ? f : 0;});
                 break;
 
             case SIGMOID:
-                std::for_each(std::begin(output_data), std::end(output_data), [](float& f){f = 1.0f/(1 + expf(f));});
+                modify(output_data, [](float f){return 1.0f/(1 + expf(f));});
                 break;
 
             default:
@@ -42,11 +42,11 @@ public:
                 break;
 
             case TANGENT:
-                output_data = std::tanh(output_data);
+                modify(output_data, (float(*)(float))std::tanh);
                 break;
                 
             case LEAKY_RELU:
-                std::for_each(std::begin(output_data), std::end(output_data), [](float& f){f = std::max(0.1f*f, f);});
+                modify(output_data, [](float f){return std::max(0.1f*f, f);});
                 break;
         }
     }

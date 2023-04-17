@@ -4,20 +4,22 @@
 #include <iomanip>
 #include <assert.h>
 #include <iostream>
+#include "cnn_from_scratch/Matrix/SimpleMatrix.h"
+#include "cnn_from_scratch/Matrix/MatrixMath.h"
 #include "cnn_from_scratch/Kernel.h"
 #include "cnn_from_scratch/Pooling.h"
 #include "cnn_from_scratch/imageUtil.h"
 #include "cnn_from_scratch/ModelDescription.h"
 
-int main(int argc, char* argv[]){
+int main(int argc, char* argv[]){ 
 
     // Grayscale image for testing
     my_cnn::SimpleMatrix<unsigned char> input_image({28, 28, 1});
     
     // Let's make it a 4 for fun
-    input_image[input_image.subMatIdx({ 5,  4,  0}, {10,  2,  1})] = 255;
-    input_image[input_image.subMatIdx({15,  4,  0}, { 2, 12,  1})] = 255;
-    input_image[input_image.subMatIdx({ 7, 12,  0}, {15,  1,  1})] = 255;
+    input_image.subMatView({ 5,  4,  0}, {10,  2,  1}) = 255;
+    input_image.subMatView({15,  4,  0}, { 2, 12,  1}) = 255;
+    input_image.subMatView({ 7, 12,  0}, {15,  1,  1}) = 255;
 
     // Create a model to put the image through
     my_cnn::ModelDescription<unsigned char, std::string> model;

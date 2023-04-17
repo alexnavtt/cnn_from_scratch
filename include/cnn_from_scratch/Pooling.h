@@ -2,7 +2,7 @@
 
 #include "cnn_from_scratch/imageUtil.h"
 #include "cnn_from_scratch/ModelLayer.h"
-#include "cnn_from_scratch/SimpleMatrix.h"
+#include "cnn_from_scratch/Matrix/SimpleMatrix.h"
 
 namespace my_cnn{
 
@@ -31,38 +31,34 @@ public:
         affected_indices_.reserve(output.dim(0) * output.dim(1) * output.dim(2));
 
         const dim3 pool_size{dim_.x, dim_.y, 1};
-        for (unsigned z = 0; z < input.dim(2); z++){
-            dim3 in_idx{0, 0, z};
-            dim3 out_idx{0, 0, z};
+        for (auto out_it = output.begin(); out_it != output.end(); ++out_it){
+            dim3 in_idx(out_it.idx().x*stride_.x, out_it.idx().y*stride_.y, out_it.idx().z);
+            const auto AoI = input.subMatView(in_idx, pool_size);
 
-            for (in_idx.y = 0, out_idx.y = 0; in_idx.y < input.dim(1) - dim_.y + 1; in_idx.y += stride_.y, out_idx.y++){
-                for (in_idx.x = 0, out_idx.x = 0; in_idx.x < input.dim(0) - dim_.x + 1; in_idx.x += stride_.x, out_idx.x++){
-                    const auto AoI = input.subMatCopy(in_idx, pool_size);
-
-                    switch (type_){
-                        case MIN:
-                        {
-                            const dim3 min_index = AoI.minIndex();
-                            const dim3 min_index_global = in_idx + min_index;
-                            const size_t affected_index = input.getIndex(min_index_global);
-                            affected_indices_.push_back(affected_index);
-                            output(out_idx) = AoI[affected_index];
-                            break;
-                        }
-
-                        case MAX: 
-                            const dim3 max_index = AoI.maxIndex();
-                            const dim3 max_index_global = in_idx + max_index;
-                            const size_t affected_index = input.getIndex(max_index_global);
-                            affected_indices_.push_back(affected_index);
-                            output(out_idx) = AoI[affected_index];
-                            break;
-
-                        case AVG:
-                            output(out_idx) = AoI.sum() / AoI.size();
-                            break;
-                    }
+            switch (type_){
+                case MIN:
+                {
+                    const dim3 min_index = minIndex(AoI);
+                    const dim3 min_index_global = in_idx + min_index;
+                    const size_t affected_index = input.getIndex(min_index_global);
+                    affected_indices_.push_back(affected_index);
+                    *out_it = AoI(min_index);
+                    break;
                 }
+
+                case MAX: 
+                {
+                    const dim3 max_index = maxIndex(AoI);
+                    const dim3 max_index_global = in_idx + max_index;
+                    const size_t affected_index = input.getIndex(max_index_global);
+                    affected_indices_.push_back(affected_index);
+                    *out_it = AoI(max_index);
+                    break;
+                }
+
+                case AVG:
+                    *out_it = mean(AoI);
+                    break;
             }
         }
         return output;
