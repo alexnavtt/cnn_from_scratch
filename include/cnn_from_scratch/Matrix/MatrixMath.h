@@ -94,6 +94,11 @@ public:
         return std::invoke(op, *m1_, *m2_, idx);
     }
 
+    auto begin() {return MatrixIterator<MatrixOperationResult<MatrixType1, MatrixType2, BinaryOp>>(this, {0, 0, 0});}
+    auto end() {return MatrixIterator<MatrixOperationResult<MatrixType1, MatrixType2, BinaryOp>>(this, {0, 0, dim_.z});}
+    auto begin() const {return MatrixIterator<const MatrixOperationResult<MatrixType1, MatrixType2, BinaryOp>>(this, {0, 0, 0});}
+    auto end() const {return MatrixIterator<const MatrixOperationResult<MatrixType1, MatrixType2, BinaryOp>>(this, {0, 0, dim_.z});}
+
 private:
     const MatrixType1* m1_;
     const MatrixType2* m2_;
@@ -159,8 +164,7 @@ bool operator==(const MatrixType1& M1, const MatrixType2& M2){
 // Matrix - Scalar math result
 // ================================================================================================
 
-template<typename MatrixType, typename ScalarType, class BinaryOp,
-    typename = std::enable_if_t<std::is_arithmetic_v<ScalarType>>>
+template<typename MatrixType, typename ScalarType, class BinaryOp>
 class ScalarOperationResult : public MatrixBase{
 public:
     using type = typename std::common_type_t<typename MatrixType::type, ScalarType>;
@@ -173,6 +177,11 @@ public:
     type operator()(dim3 idx) const{
         return std::invoke(op, *m_, s_, idx);
     }
+
+    auto begin() {return MatrixIterator<ScalarOperationResult<MatrixType, ScalarType, BinaryOp>>(this, {0, 0, 0});}
+    auto end() {return MatrixIterator<ScalarOperationResult<MatrixType, ScalarType, BinaryOp>>(this, {0, 0, dim_.z});}
+    auto begin() const {return MatrixIterator<const ScalarOperationResult<MatrixType, ScalarType, BinaryOp>>(this, {0, 0, 0});}
+    auto end() const {return MatrixIterator<const ScalarOperationResult<MatrixType, ScalarType, BinaryOp>>(this, {0, 0, dim_.z});}
 
 private:
     const MatrixType* m_;
