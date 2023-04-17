@@ -490,7 +490,7 @@ TEST(Arithmetic, squareMatMul){
                    1, 2, 3,
                    1, 2, 3});
 
-    my_cnn::SimpleMatrix<int> M3 = M1.matMul(M2);
+    my_cnn::SimpleMatrix<int> M3 = my_cnn::matrixMultiply(M1, M2);
 
     my_cnn::SimpleMatrix<int> M3_expected({3, 3, 1});
     M3_expected.setEntries({12, 24, 36,
@@ -510,7 +510,7 @@ TEST(Arithmetic, longMatMul){
     M2.setEntries({1, 2, 3,
                    1, 2, 3});
 
-    my_cnn::SimpleMatrix<int> M3 = M1.matMul(M2);
+    my_cnn::SimpleMatrix<int> M3 = my_cnn::matrixMultiply(M1, M2);
 
     my_cnn::SimpleMatrix<int> M3_expected({3, 3, 1});
     M3_expected.setEntries({5, 10, 15,
@@ -530,7 +530,7 @@ TEST(Arithmetic, badMatMul){
                    1, 2, 3});
 
     EXPECT_THROW(
-        M2.matMul(M1),
+        (my_cnn::matrixMultiply(M2, M1)),
         my_cnn::MatrixSizeException
     );
 }

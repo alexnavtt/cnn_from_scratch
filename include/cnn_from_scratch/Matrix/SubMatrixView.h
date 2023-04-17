@@ -3,7 +3,7 @@
 #include <string>
 #include <iterator>
 #include "cnn_from_scratch/Matrix/MatrixBase.h"
-#include "cnn_from_scratch/Matrix/SubMatrixViewIterator.h"
+#include "cnn_from_scratch/Matrix/MatrixIterator.h"
 
 namespace my_cnn{
 
