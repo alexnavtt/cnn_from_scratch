@@ -114,6 +114,10 @@ public:
     template<typename Other>
     SimpleMatrix<T>& operator=(const SimpleMatrix<Other>& M);
 
+    // Assign to matrix like
+    template<typename MatrixType, std::enable_if_t<std::is_base_of_v<MatrixBase, MatrixType>, bool> = true>
+    SimpleMatrix<T>& operator=(const MatrixType& M);
+
     void setEntries(std::vector<T>&& v);
 
     /* === Indexing === */
@@ -140,14 +144,6 @@ public:
     auto begin() const {return MatrixIterator<const SimpleMatrix<T>>(this, {0, 0, 0});}
     auto end() const {return MatrixIterator<const SimpleMatrix<T>>(this, {0, 0, dim_.z});}
 
-    /* === Arithmetic === */
-
-    template<typename Other, std::enable_if_t<std::is_base_of_v<MatrixBase, Other>, bool> = true>
-    typename std::common_type_t<T, typename Other::type> dot(const Other& M) const;
-
-    template<typename Other>
-    SimpleMatrix<typename std::common_type<T, Other>::type> matMul(const SimpleMatrix<Other> M) const;
-
     /* === Dimension === */
 
     const dim3& dims() const;
@@ -168,8 +164,8 @@ public:
 
     SubMatrixView<T> slices(int idx, int num);
     SubMatrixView<T> slice(int idx);
-    SubMatrixView<T> slices(int idx, int num) const;
-    SubMatrixView<T> slice(int idx) const;
+    SubMatrixView<const T> slices(int idx, int num) const;
+    SubMatrixView<const T> slice(int idx) const;
 private:
     std::vector<T> values_;
 };

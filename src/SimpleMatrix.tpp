@@ -83,6 +83,16 @@ void SimpleMatrix<T>::setEntries(std::vector<T>&& v){
         throw MatrixSizeException("Cannot assign value to matrix, size mismatch");
 }
 
+// Assign to matrix like
+template<typename T>
+template<typename MatrixType, std::enable_if_t<std::is_base_of_v<MatrixBase, MatrixType>, bool>>
+SimpleMatrix<T>& SimpleMatrix<T>::operator=(const MatrixType& M){
+    dim_ = M.dim();
+    values_.resize(size());
+    std::copy(M.begin(), M.end(), begin());
+    return *this;
+}
+
 // ================================== //
 // =========== DIMENSIONS =========== //
 // ================================== //
@@ -179,12 +189,12 @@ SubMatrixView<T> SimpleMatrix<T>::slice(int idx) {
 }
 
 template<typename T>
-SubMatrixView<T> SimpleMatrix<T>::slices(int idx, int num) const {
+SubMatrixView<const T> SimpleMatrix<T>::slices(int idx, int num) const {
     return SubMatrixView<const T>(*this, {0, 0, idx}, {dim_.x, dim_.y, num});
 }
 
 template<typename T>
-SubMatrixView<T> SimpleMatrix<T>::slice(int idx) const {
+SubMatrixView<const T> SimpleMatrix<T>::slice(int idx) const {
     return slices(idx, 1);
 }
 
@@ -210,60 +220,6 @@ size_t SimpleMatrix<T>::minIndex() const{
 template<typename T>
 size_t SimpleMatrix<T>::maxIndex() const{
     return std::distance(std::begin(*this), std::max_element(std::begin(*this), std::end(*this)));
-}
-
-// =================================== //
-// =========== MATRIX MATH =========== //
-// =================================== //
-
-template<typename T>
-template<typename Other, std::enable_if_t<std::is_base_of_v<MatrixBase, Other>, bool>>
-typename std::common_type_t<T, typename Other::type> SimpleMatrix<T>::dot(const Other& M) const{
-    if (this->size() != M.size()){
-        throw MatrixSizeException("Cannot get the dot product A.B, size mismatch. A has " 
-            + std::to_string(this->size()) + " elements and B has " + std::to_string(M.size()) + " elements");
-    }
-
-    if constexpr (std::is_same_v<Other, SimpleMatrix<T>>){
-        return (static_cast<const std::valarray<T>&>(*this) * static_cast<const std::valarray<T>&>(M)).sum();
-    }else{
-        std::common_type_t<T, typename Other::type> sum{};
-        auto this_it = std::begin(*this);
-        auto other_it = std::begin(M);
-        for (; this_it != std::end(*this); this_it++, other_it++){
-            sum += *this_it * *other_it;
-        }
-        return sum;
-    }
-}
-
-template<typename T>
-template<typename Other>
-SimpleMatrix<typename std::common_type<T, Other>::type> SimpleMatrix<T>::matMul(const SimpleMatrix<Other> M) const{
-    if (dim_.z != M.dim_.z){
-        std::cout << "Matrix multiply error: Differing number of layers. ";
-        std::cout << "This has " << dim_.z << " layers and the other has " << M.dim_.z << "\n";
-        throw MatrixSizeException("Multiplication layer mismatch");
-    }else if(dim_.y != M.dim_.x){
-        std::cout << "Matrix multiply error: Incompatible matrix dimensions ";
-        std::cout << dim_ << " and " << M.dim_ << "\n";
-        throw MatrixSizeException("Multiplication dimension mismatch");
-    }
-
-    SimpleMatrix<typename std::common_type<T, Other>::type> out({dim_.x, M.dim_.y, dim_.z});
-    for (uint row = 0; row < out.dim_.x; row++){
-        for (uint col = 0; col < out.dim_.y; col++){
-            for (uint layer = 0; layer < dim_.z; layer++){
-
-                out(row, col, layer) = 
-                    this->subMatCopy({row, 0, layer}, {1, dim_.y, 1})
-                        .dot(M.subMatView({0, col, layer}, {M.dim_.x, 1, 1}));
-
-            }
-        }
-    }
-
-    return out;
 }
 
 } // namespace my_cnn
