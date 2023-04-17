@@ -153,8 +153,6 @@ public:
     void reshape(int x, int y, int z);
     void reshape(dim3 new_dim){this->reshape(new_dim.x, new_dim.y, new_dim.z);}
 
-    SimpleMatrix<T> transpose();
-
     /* === Other Math === */
 
     SimpleMatrix<T> abs() const;

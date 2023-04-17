@@ -117,18 +117,6 @@ void SimpleMatrix<T>::reshape(int x, int y, int z){
     dim_ = dim3(x, y, z);
 }
 
-template<typename T>
-SimpleMatrix<T> SimpleMatrix<T>::transpose(){
-    dim3 new_dim(dim_.y, dim_.x, dim_.z);
-    SimpleMatrix<T> output(new_dim);
-    auto it = begin();
-    for (; it != end(); it++){
-        dim3 transpose_idx(it.idx().y, it.idx().x, it.idx().z);
-        output(transpose_idx) = *it;
-    }
-    return output;
-}
-
 // ================================== //
 // ============ INDEXING ============ //
 // ================================== //
