@@ -20,7 +20,7 @@ struct Dim{
     Dim() = default;
 
     Dim(int val) {
-        std::fill(data, data + N*sizeof(*data), val);
+        std::fill(data, data + sizeof(Dim<N>), val);
     }
 
     template<typename... ValSet>
@@ -29,6 +29,21 @@ struct Dim{
         static_assert(sizeof...(vals) <= N);
         size_t i = 0; 
         (void(data[i++] = vals), ...);
+    }
+
+    Dim(Dim<N>&& other){
+        *this = other;
+        std::memset(other.data, 0x00, sizeof(Dim<N>));
+    }
+
+    Dim(const Dim<N>& other) = default;
+
+    Dim<N>& operator =(const Dim<N>& other) = default;
+
+    Dim<N>& operator =(const Dim<N>&& other){
+        *this = other;
+        std::memset(other.data, 0x00, sizeof(Dim<N>));
+        return *this;
     }
 
     friend std::ostream& operator << (std::ostream& os, const Dim<N>& dim){
