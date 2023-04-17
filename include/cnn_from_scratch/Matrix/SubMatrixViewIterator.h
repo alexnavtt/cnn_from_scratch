@@ -15,9 +15,9 @@ public:
     using difference_type = std::ptrdiff_t;
     using value_type = typename MatrixType::type;
     using pointer = std::conditional_t<std::is_const_v<MatrixType> || std::is_const_v<typename MatrixType::type>, const value_type*, value_type*>;
-    using reference = decltype(*pointer{});
+    using reference = decltype(std::declval<MatrixType>().operator()(std::declval<dim3>()));
 
-    MatrixIterator(MatrixType* parent, dim3 idx) : parent_(parent), dim_it_(parent->dim_, idx) {}
+    MatrixIterator(MatrixType* parent, dim3 idx) : parent_(parent), dim_it_(parent->dim(), idx) {}
     reference operator*() {return parent_->operator()(dim_it_.idx);}
     pointer operator->() {return &parent_->operator()(dim_it_.idx);}
 
