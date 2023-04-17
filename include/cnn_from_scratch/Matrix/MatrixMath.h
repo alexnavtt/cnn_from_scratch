@@ -226,6 +226,51 @@ auto operator/(const MatrixType1& M1, const Scalar& S){
 
 
 // ================================================================================================
+// Matrix unary operation
+// ================================================================================================
+
+template<typename MatrixType, class UnaryOp>
+class UnaryOperationResult : public MatrixBase{
+public:
+    using type = typename std::remove_const_t<typename MatrixType::type>;
+
+    UnaryOperationResult(const MatrixType& M, UnaryOp Op) :
+    MatrixBase(M.dim()),
+    m_(&M), op(Op) 
+    {}
+
+    type operator()(dim3 idx) const{
+        return std::invoke(op, *m_, idx);
+    }
+
+    auto begin() {return MatrixIterator<UnaryOperationResult<MatrixType, UnaryOp>>(this, {0, 0, 0});}
+    auto end() {return MatrixIterator<UnaryOperationResult<MatrixType, UnaryOp>>(this, {0, 0, dim_.z});}
+    auto begin() const {return MatrixIterator<const UnaryOperationResult<MatrixType, UnaryOp>>(this, {0, 0, 0});}
+    auto end() const {return MatrixIterator<const UnaryOperationResult<MatrixType, UnaryOp>>(this, {0, 0, dim_.z});}
+
+private:
+    const MatrixType* m_;
+    UnaryOp op;
+};
+
+template<typename MatrixType, typename UnaryOp>
+auto unaryOperation(const MatrixType& M, const dim3& idx, UnaryOp op){
+    return std::invoke(op, M(idx));
+}
+
+template<typename MatrixType, typename UnaryOp>
+auto apply(const MatrixType& M, UnaryOp op){
+    return UnaryOperationResult(M, [op](const MatrixType& M_, const dim3& idx_){return std::invoke(op, M_(idx_));});
+}
+
+template<typename MatrixType>
+auto abs(const MatrixType& M){
+    using input_type = typename MatrixType::type;
+    using return_type = decltype(std::abs(input_type{}));
+    return apply<MatrixType, return_type(*)(input_type)>(M, std::abs);
+}
+
+// ================================================================================================
 // 
 // ================================================================================================
 
