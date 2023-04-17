@@ -10,6 +10,11 @@ template<typename MatrixType>
 using type = typename MatrixType::type;
 
 template<typename T>
+const T& SubMatrixView<T>::operator()(uint x, uint y, uint z) const{
+    return mat_ptr_->operator()(start_.x + x, start_.y + y, start_.z + z);
+}
+
+template<typename T>
 const T& SubMatrixView<T>::operator()(const dim3& idx) const{
     return mat_ptr_->operator()(start_ + idx);
 }
@@ -22,6 +27,11 @@ const T& SubMatrixView<T>::at(const dim3& idx) const{
         throw std::out_of_range(ss.str());
     }
     return this->operator()(idx);
+}
+
+template<typename T>
+T& SubMatrixView<T>::operator()(uint x, uint y, uint z) {
+    return mat_ptr_->operator()(start_.x + x, start_.y + y, start_.z + z);
 }
 
 template<typename T>

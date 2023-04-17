@@ -38,9 +38,11 @@ public:
 
     // Indexing - const
     const type& operator()(const dim3& idx) const;
+    const type& operator()(uint x, uint y, uint z) const;
     const type& at(const dim3& idx) const;
     // Indexing - non-const
     type& operator()(const dim3& idx);
+    type& operator()(uint x, uint y, uint z);
     type& at(const dim3& idx);
 
     // Convert to SimpleMatrix
