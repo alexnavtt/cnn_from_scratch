@@ -8,6 +8,10 @@ namespace my_cnn{
 template<typename>
 class SimpleMatrix;
 
+struct empty_{
+    empty_(int){};
+};
+
 template<typename MatrixType>
 class MatrixIterator{
 public:
@@ -65,8 +69,8 @@ public:
 private:
     std::conditional_t<std::is_const_v<MatrixType>, const MatrixType*, MatrixType*> parent_;
     DimIterator<3> dim_it_;
-    size_t scalar_idx_ = 0;
     static constexpr bool is_pure_matrix = std::is_same_v<typename std::remove_const_t<MatrixType>, SimpleMatrix<typename MatrixType::type>>;
+    std::conditional_t<is_pure_matrix, size_t, empty_> scalar_idx_;
 };
     
 } // namespace my_cnn
