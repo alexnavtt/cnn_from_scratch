@@ -1,5 +1,6 @@
 #pragma once
 
+#include <array>
 #include <cstring>
 #include <ostream>
 
@@ -13,14 +14,12 @@ struct Dim{
             int y;
             int z;
         };
-        int data[std::max(N, 3)] = {0};
+        std::array<int, std::max(N, 3)> data;
     };
     static const int n = N;
 
-    Dim() = default;
-
-    Dim(int val) {
-        std::fill(data, data + sizeof(Dim<N>), val);
+    Dim(int val = 0) {
+        std::fill(data.begin(), data.end(), val);
     }
 
     template<typename... ValSet>
@@ -33,7 +32,7 @@ struct Dim{
 
     Dim(Dim<N>&& other){
         *this = other;
-        std::memset(other.data, 0x00, sizeof(Dim<N>));
+        std::memset(other.data.begin(), 0x00, sizeof(Dim<N>));
     }
 
     Dim(const Dim<N>& other) = default;
@@ -42,7 +41,7 @@ struct Dim{
 
     Dim<N>& operator =(Dim<N>&& other){
         *this = other;
-        std::memset(other.data, 0x00, sizeof(Dim<N>));
+        std::memset(other.data.begin(), 0x00, sizeof(Dim<N>));
         return *this;
     }
 
@@ -59,11 +58,7 @@ struct Dim{
     }
 
     bool operator==(const Dim<N>& other) const{
-        bool equal = true;
-        for (size_t i = 0; (i < N) && equal; i++){
-            equal = equal && data[i] == other.data[i];
-        }
-        return equal;
+        return data == other.data;
     }
 
     bool operator!=(const Dim<N>& other) const{
@@ -86,10 +81,20 @@ struct Dim{
         return result;
     }
 
-    size_t flatIdx() const{
+    size_t size() const{
         size_t out = 0; 
         for (auto i = 0; i < N; i++){
             out *= data[i];
+        }
+        return out;
+    }
+
+    size_t getFlatIdx(const Dim<N>& other) const{
+        size_t out = 0; 
+        size_t prod = 1;
+        for (auto i = 0; i < N; i++){
+            out += other.data[i]*prod;
+            prod *= data[i];
         }
         return out;
     }
