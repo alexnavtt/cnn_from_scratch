@@ -44,12 +44,9 @@ public:
     }
 
     SimpleMatrix<float> propagateBackward(const SimpleMatrix<float>& input_data, const SimpleMatrix<float>& output_grad, float learning_rate) override{
-        const auto dLdW = matrixMultiply(output_grad, transpose(input_data));
-        const auto dLdB = output_grad;
-        const auto dXdZ = matrixMultiply(transpose(weights), output_grad);
-        weights -= learning_rate * dLdW;
-        biases  -= learning_rate * dLdB;
-        return dXdZ;
+        weights -= learning_rate * matrixMultiply(output_grad, transpose(input_data));
+        biases  -= learning_rate * output_grad;
+        return matrixMultiply(transpose(weights), output_grad);
     }
 };
 
