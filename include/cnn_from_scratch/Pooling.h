@@ -28,7 +28,7 @@ public:
 
         // Reset the affected indices vector
         affected_indices_.clear();
-        affected_indices_.reserve(output.dim(0) * output.dim(1) * output.dim(2));
+        affected_indices_.reserve(output.size());
 
         const dim3 pool_size{dim_.x, dim_.y, 1};
         for (auto out_it = output.begin(); out_it != output.end(); ++out_it){
@@ -65,12 +65,31 @@ public:
     }
 
     SimpleMatrix<float> propagateBackward(const SimpleMatrix<float>& input, const SimpleMatrix<float>& output_grad, [[maybe_unused]] float learning_rate) override{
-        SimpleMatrix<float> dLdz(input.dims(), 0);
-        size_t out_idx = 0;
-        for (size_t in_idx : affected_indices_){
-            dLdz[in_idx] = output_grad[out_idx++];
+        SimpleMatrix<float> dLdx(input.dims(), 0);
+        switch(type_){
+            case MIN:
+            case MAX:
+            {
+                size_t out_idx = 0;
+                for (size_t in_idx : affected_indices_){
+                    dLdx[in_idx] += output_grad[out_idx++];
+                }
+                break;
+            }
+
+            case AVG:
+            {
+                const dim3 pool_size{dim_.x, dim_.y, 1};
+                const size_t size = dim_.size();
+                for (auto out_it = output_grad.begin(); out_it != output_grad.end(); ++out_it){
+                    dim3 in_idx(out_it.idx().x*stride_.x, out_it.idx().y*stride_.y, out_it.idx().z);
+                    dLdx.subMatView(in_idx, pool_size) += (*out_it)/size;
+                }
+                break;
+            }
         }
-        return dLdz;
+
+        return dLdx;
     }
 
 private:
