@@ -408,6 +408,35 @@ auto transpose(const MatrixType& M){
     return ret_val;
 }
 
+template<size_t NumSteps, typename MatrixType>
+auto rotate(const MatrixType& M){
+    static_assert(NumSteps > 0 && NumSteps < 4);
+    if (not M.isSquare()){
+        std::stringstream ss;
+        ss << "Cannot rotate matrix of size " << M.dim() << " because it is not square";
+        throw MatrixTransformException(ss.str());
+    }
+
+    auto rotatedIndex = [](const MatrixType& M, const dim3& idx){
+        dim3 new_idx;
+        new_idx.z = idx.z;
+        if constexpr (NumSteps == 1){
+            new_idx.x = M.dim().y - idx.y - 1;
+            new_idx.y = idx.x;
+        }else if (NumSteps == 2){
+            new_idx.x = M.dim().x - idx.x - 1;
+            new_idx.y = M.dim().y - idx.y - 1;
+        }else if (NumSteps == 3){
+            new_idx.x = idx.y;
+            new_idx.y = M.dim().x - idx.x - 1;
+        }
+
+        return M(new_idx);
+    };
+
+    return UnaryOperationResult(M, rotatedIndex);
+}
+
 // ================================================================================================
 // Matrix reduction operations
 // ================================================================================================
