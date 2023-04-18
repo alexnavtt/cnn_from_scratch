@@ -18,9 +18,9 @@ find_package(GTest REQUIRED)
 
 add_executable(main src/main.cpp)
 target_compile_options(main PRIVATE -g)
-target_link_libraries(main "-fsanitize=address")
+target_link_libraries(main -fsanitize=address)
 
 include(GoogleTest)
 add_executable(MatrixTest test/MatrixTest.cpp)
-target_link_libraries(MatrixTest GTest::gtest GTest::gtest_main "-fsanitize=address")
+target_link_libraries(MatrixTest GTest::gtest GTest::gtest_main -fsanitize=address)
 gtest_discover_tests(MatrixTest)
