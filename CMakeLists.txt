@@ -2,7 +2,7 @@ cmake_minimum_required(VERSION 3.16 FATAL_ERROR)
 project(cnn_from_scratch)
 set(version 1.0)
 
-add_compile_options(-std=c++17)
+add_compile_options(-std=c++17 -fsanitize=address -fno-omit-frame-pointer)
 
 include_directories(
     include
@@ -14,8 +14,9 @@ find_package(GTest REQUIRED)
 
 add_executable(main src/main.cpp)
 target_compile_options(main PRIVATE -g)
+target_link_libraries(main "-fsanitize=address")
 
 include(GoogleTest)
 add_executable(MatrixTest test/MatrixTest.cpp)
-target_link_libraries(MatrixTest GTest::gtest GTest::gtest_main)
+target_link_libraries(MatrixTest GTest::gtest GTest::gtest_main "-fsanitize=address")
 gtest_discover_tests(MatrixTest)
