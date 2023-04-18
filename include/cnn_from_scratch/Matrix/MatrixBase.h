@@ -9,6 +9,10 @@ public:
     MatrixBase() = default;
     MatrixBase(const dim3& dim) : dim_(dim) {}
 
+    bool isSquare() const{
+        return dim_.x == dim_.y;
+    }
+
     size_t size() const{
         return dim_.x*dim_.y*dim_.z;
     }
