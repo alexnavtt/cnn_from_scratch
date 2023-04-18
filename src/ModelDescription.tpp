@@ -117,10 +117,9 @@ void ModelDescription<InputDataType, OutputDataType>::backwardsPropagation(const
     SimpleMatrix<float> dLdz = result.layer_inputs.back();
     dLdz[result.label_idx] -= 1;
 
-    int ii = -1;
-    for (const SimpleMatrix<float>& M : result.layer_inputs){
-        if (ii == -1) {ii++; continue;}
-        std::cout << "Stored input for layer " << ii << ": " << flow.names.at(ii++) << "\n";
+    for (size_t i = 0; i < flow.names.size(); i++){
+        std::cout << "Stored input for layer " << i << ": " << flow.names.at(i) << "\n";
+        const auto& M = result.layer_inputs[i];
         for (size_t layer = 0; layer < M.dim(2); layer++){
             printImage(M.slice(layer));
         }
