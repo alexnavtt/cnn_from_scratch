@@ -422,6 +422,60 @@ TEST(Arithmetic, matrixAdd){
     }
 }
 
+TEST(Arithmetic, matrixSub){
+    my_cnn::SimpleMatrix<float> M1({3, 3, 1});
+    my_cnn::SimpleMatrix<float> M2({3, 3, 1});
+
+    M1.setEntries({1, 2, 3,
+                   4, 5, 6,
+                   7, 8, 9});
+
+    M2.setEntries({2, 3, 4,
+                   5, 6, 7,
+                   8, 9,10});
+
+    my_cnn::SimpleMatrix<float> M3 = M2 - M1;
+    for (auto& v : M3){
+        EXPECT_EQ(v,1.0f);
+    }
+}
+
+TEST(Arithmetic, matrixElementwiseMul){
+    my_cnn::SimpleMatrix<float> M1({3, 3, 1});
+    my_cnn::SimpleMatrix<float> M2({3, 3, 1});
+
+    M1.setEntries({1, 2, 3,
+                   4, 5, 6,
+                   7, 8, 9});
+
+    M2.setEntries({2520, 1260, 840,
+                    630,  504, 420,
+                    360,  315, 280});
+
+    my_cnn::SimpleMatrix<float> M3 = M2 * M1;
+    for (auto& v : M3){
+        EXPECT_EQ(v,2520.0f);
+    }
+}
+
+TEST(Arithmetic, matrixElementwiseDiv){
+    my_cnn::SimpleMatrix<float> M1({3, 3, 1});
+    my_cnn::SimpleMatrix<float> M2({3, 3, 1});
+
+    M1.setEntries({1, 2, 3,
+                   4, 5, 6,
+                   7, 8, 9});
+
+    M2.setEntries({1, 2, 3,
+                   4, 5, 6,
+                   7, 8, 9});
+
+    my_cnn::SimpleMatrix<float> M3 = M2 / M1;
+    for (auto& v : M3){
+        EXPECT_EQ(v, 1.0f);
+    }
+}
+
 TEST(Arithmetic, scalarModify){
     my_cnn::SimpleMatrix<float> M1({3, 3, 1});
 
@@ -473,6 +527,40 @@ TEST(Arithmetic, rangeScalarModify){
                          2, 3, 6,
                          3, 4, 7});
     EXPECT_EQ(expected, M1);
+}
+
+TEST(Arithmetic, matrixViewAdd){
+    my_cnn::SimpleMatrix<float> M1({2, 2, 1});
+    my_cnn::SimpleMatrix<float> M2({3, 3, 1});
+
+    M1.setEntries({1, 2,
+                   4, 5});
+
+    M2.setEntries({9, 8, 7,
+                   6, 5, 4,
+                   3, 2, 1});
+
+    my_cnn::SimpleMatrix<float> M3 = M1 + M2.subMatView({0, 0, 0}, {2, 2, 1});
+    for (auto& v : M3){
+        EXPECT_EQ(v,10.0f);
+    }
+}
+
+TEST(Arithmetic, matrixCompoundedAdd){
+    my_cnn::SimpleMatrix<float> M1({2, 2, 1});
+    my_cnn::SimpleMatrix<float> M2({3, 3, 1});
+
+    M1.setEntries({1, 2,
+                   4, 5});
+
+    M2.setEntries({9, 8, 7,
+                   6, 5, 5,
+                   3, 5, 5});
+
+    my_cnn::SimpleMatrix<float> M3 = M1 + M2.subMatView({0, 0, 0}, {2, 2, 1}) + M2.subMatView({1, 1, 0}, {2, 2, 1});
+    for (auto& v : M3){
+        EXPECT_EQ(v,15.0f);
+    }
 }
 
 TEST(Arithmetic, squareMatMul){
@@ -550,7 +638,7 @@ TEST(Arithmetic, mixedTypeMatMul){
                             7.0f, 14.0f, 21.0f,
                             9.0f, 18.0f, 27.0f});
     
-    EXPECT_EQ(M3, M3_expected);
+    EXPECT_EQ(std::move(M3), M3_expected);
 }
 
 int main(int argc, char* argv[]){

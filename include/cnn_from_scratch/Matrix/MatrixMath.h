@@ -1,5 +1,6 @@
 #pragma once
 
+#include <assert.h>
 #include <numeric>
 #include <type_traits>
 #include <functional>
@@ -79,88 +80,138 @@ MatrixType& operator/=(MatrixType&& M, const Other& other){
 // ================================================================================================
 
 template<typename MatrixType1, typename MatrixType2, class BinaryOp, 
-    typename = std::enable_if_t<std::is_base_of_v<MatrixBase, MatrixType1> && std::is_base_of_v<MatrixBase, MatrixType2>>>
+    typename = std::enable_if_t<
+        std::is_base_of_v<MatrixBase, std::remove_reference_t<MatrixType1>> 
+     && std::is_base_of_v<MatrixBase, std::remove_reference_t<MatrixType2>>
+    >>
 class MatrixOperationResult : public MatrixBase{
 public:
-    using type = typename std::common_type_t<typename MatrixType1::type, typename MatrixType2::type>;
+    using this_type = MatrixOperationResult<MatrixType1, MatrixType2, BinaryOp, std::enable_if_t<
+        std::is_base_of_v<MatrixBase, std::remove_reference_t<MatrixType1>> 
+     && std::is_base_of_v<MatrixBase, std::remove_reference_t<MatrixType2>>
+    >>;
 
-    MatrixOperationResult(const MatrixType1& M1, const MatrixType2& M2, BinaryOp Op) :
+    using MT1 = typename std::remove_reference_t<MatrixType1>;
+    using MT2 = typename std::remove_reference_t<MatrixType2>;
+
+    using type = typename std::common_type_t<typename MT1::type, typename MT2::type>;
+
+    template<typename = std::enable_if_t<std::is_reference_v<MatrixType1> && std::is_reference_v<MatrixType2>>>
+    MatrixOperationResult(MatrixType1 M1, MatrixType2 M2, BinaryOp Op) :
     MatrixBase(M1.dim()),
     m1_(&M1), m2_(&M2), op(Op) 
     {
         checkSize(M1, M2);
     }
 
-    type operator()(const dim3& idx) const{
-        return std::invoke(op, *m1_, *m2_, idx);
+    type operator()(const dim3& idx) && {
+        return std::invoke(op, std::forward<MatrixType1>(*m1_), std::forward<MatrixType2>(*m2_), idx);
     }
 
-    type operator()(uint x, uint y, uint z) const{
+    type operator()(uint x, uint y, uint z) && {
         return operator()(dim3(x,y,z));
     }
 
-    auto begin() {return MatrixIterator<MatrixOperationResult<MatrixType1, MatrixType2, BinaryOp>>(this, {0, 0, 0});}
-    auto end() {return MatrixIterator<MatrixOperationResult<MatrixType1, MatrixType2, BinaryOp>>(this, {0, 0, dim_.z});}
-    auto begin() const {return MatrixIterator<const MatrixOperationResult<MatrixType1, MatrixType2, BinaryOp>>(this, {0, 0, 0});}
-    auto end() const {return MatrixIterator<const MatrixOperationResult<MatrixType1, MatrixType2, BinaryOp>>(this, {0, 0, dim_.z});}
+    template<typename U>
+    type operator()(U) const &{
+        static_assert(not std::is_same_v<U, dim3>, R"|||(
+            MATRIX ACCESS ERROR
+            You tried to use MatrixOperationResult as an lvalue.
+            This can lead to dangling references and so it has been disabled.
+            If you really know what you're doing, you can use std::move to access members
+            )|||");
+        static_assert(std::is_same_v<U, dim3>);
+    }
+
+    auto begin() && {return MatrixIterator<this_type&&>(std::move(*this), {0, 0, 0});}
+    auto end() && {return MatrixIterator<this_type&&>(std::move(*this), {0, 0, dim_.z});}
+    auto begin() const && {return MatrixIterator<const this_type&&>(*this, {0, 0, 0});}
+    auto end() const && {return MatrixIterator<const this_type&&>(*this, {0, 0, dim_.z});}
+
 
 private:
-    const MatrixType1* m1_;
-    const MatrixType2* m2_;
+    MT1* m1_;
+    MT2* m2_;
     BinaryOp op;
 };
 
 template<typename MatrixType1, typename MatrixType2>
-auto elementWiseAdd(const MatrixType1& M1, const MatrixType2& M2, const dim3& idx){
-    return M1(idx) + M2(idx);
+auto elementWiseAdd(MatrixType1&& M1, MatrixType2&& M2, const dim3& idx){
+    return std::forward<MatrixType1>(M1)(idx) + std::forward<MatrixType2>(M2)(idx);
 }
 
 template<typename MatrixType1, typename MatrixType2>
-auto elementWiseMultiply(const MatrixType1& M1, const MatrixType2& M2, const dim3& idx){
-    return M1(idx) * M2(idx);
+auto elementWiseMultiply(MatrixType1&& M1, MatrixType2&& M2, const dim3& idx){
+    return std::forward<MatrixType1>(M1)(idx) * std::forward<MatrixType2>(M2)(idx);
 }
 
 template<typename MatrixType1, typename MatrixType2>
-auto elementWiseDivide(const MatrixType1& M1, const MatrixType2& M2, const dim3& idx){
-    return M1(idx) / M2(idx);
+auto elementWiseDivide(MatrixType1&& M1, MatrixType2&& M2, const dim3& idx){
+    return std::forward<MatrixType1>(M1)(idx) / std::forward<MatrixType2>(M2)(idx);
 }
 
 template<typename MatrixType1, typename MatrixType2>
-auto elementWiseSubtract(const MatrixType1& M1, const MatrixType2& M2, const dim3& idx){
-    return M1(idx) - M2(idx);
+auto elementWiseSubtract(MatrixType1&& M1, MatrixType2&& M2, const dim3& idx){
+    return std::forward<MatrixType1>(M1)(idx) - std::forward<MatrixType2>(M2)(idx);
 }
 
 template<typename MatrixType1, typename MatrixType2,
-    std::enable_if_t<std::is_base_of_v<MatrixBase, MatrixType1> && std::is_base_of_v<MatrixBase, MatrixType2>, bool> = true>
-auto operator+(const MatrixType1& M1, const MatrixType2& M2){
-    return MatrixOperationResult(M1, M2, elementWiseAdd<MatrixType1, MatrixType2>);
+    std::enable_if_t<
+        std::is_base_of_v<MatrixBase, std::remove_reference_t<MatrixType1>> 
+     && std::is_base_of_v<MatrixBase, std::remove_reference_t<MatrixType2>>, bool> = true>
+auto operator+(MatrixType1&& M1, MatrixType2&& M2){
+    return MatrixOperationResult<
+        decltype(std::forward<MatrixType1>(M1)),
+        decltype(std::forward<MatrixType2>(M2)),
+        decltype(&elementWiseAdd<MatrixType1, MatrixType2>)>
+    (std::forward<MatrixType1>(M1), std::forward<MatrixType2>(M2), elementWiseAdd<MatrixType1, MatrixType2>);
 }
 
 template<typename MatrixType1, typename MatrixType2,
-    std::enable_if_t<std::is_base_of_v<MatrixBase, MatrixType1> && std::is_base_of_v<MatrixBase, MatrixType2>, bool> = true>
-auto operator-(const MatrixType1& M1, const MatrixType2& M2){
-    return MatrixOperationResult(M1, M2, elementWiseSubtract<MatrixType1, MatrixType2>);
+    std::enable_if_t<
+        std::is_base_of_v<MatrixBase, std::remove_reference_t<MatrixType1>> 
+     && std::is_base_of_v<MatrixBase, std::remove_reference_t<MatrixType2>>, bool> = true>
+auto operator-(MatrixType1&& M1, MatrixType2&& M2){
+    return MatrixOperationResult<
+        decltype(std::forward<MatrixType1>(M1)),
+        decltype(std::forward<MatrixType2>(M2)),
+        decltype(&elementWiseSubtract<MatrixType1, MatrixType2>)>
+    (std::forward<MatrixType1>(M1), std::forward<MatrixType2>(M2), elementWiseSubtract<MatrixType1, MatrixType2>);
 }
 
 template<typename MatrixType1, typename MatrixType2,
-    std::enable_if_t<std::is_base_of_v<MatrixBase, MatrixType1> && std::is_base_of_v<MatrixBase, MatrixType2>, bool> = true>
-auto operator*(const MatrixType1& M1, const MatrixType2& M2){
-    return MatrixOperationResult(M1, M2, elementWiseMultiply<MatrixType1, MatrixType2>);
+    std::enable_if_t<
+        std::is_base_of_v<MatrixBase, std::remove_reference_t<MatrixType1>> 
+     && std::is_base_of_v<MatrixBase, std::remove_reference_t<MatrixType2>>, bool> = true>
+auto operator*(MatrixType1&& M1, MatrixType2&& M2){
+    return MatrixOperationResult<
+        decltype(std::forward<MatrixType1>(M1)),
+        decltype(std::forward<MatrixType2>(M2)),
+        decltype(&elementWiseMultiply<MatrixType1, MatrixType2>)>
+    (std::forward<MatrixType1>(M1), std::forward<MatrixType2>(M2), elementWiseMultiply<MatrixType1, MatrixType2>);
 }
 
 template<typename MatrixType1, typename MatrixType2,
-    std::enable_if_t<std::is_base_of_v<MatrixBase, MatrixType1> && std::is_base_of_v<MatrixBase, MatrixType2>, bool> = true>
-auto operator/(const MatrixType1& M1, const MatrixType2& M2){
-    return MatrixOperationResult(M1, M2, elementWiseDivide<MatrixType1, MatrixType2>);
+    std::enable_if_t<
+        std::is_base_of_v<MatrixBase, std::remove_reference_t<MatrixType1>> 
+     && std::is_base_of_v<MatrixBase, std::remove_reference_t<MatrixType2>>, bool> = true>
+auto operator/(MatrixType1&& M1, MatrixType2&& M2){
+    return MatrixOperationResult<
+        decltype(std::forward<MatrixType1>(M1)),
+        decltype(std::forward<MatrixType2>(M2)),
+        decltype(&elementWiseDivide<MatrixType1, MatrixType2>)>
+    (std::forward<MatrixType1>(M1), std::forward<MatrixType2>(M2), elementWiseDivide<MatrixType1, MatrixType2>);
 }
 
 template<typename MatrixType1, typename MatrixType2,
-    std::enable_if_t<std::is_base_of_v<MatrixBase, MatrixType1> && std::is_base_of_v<MatrixBase, MatrixType2>, bool> = true>
-bool operator==(const MatrixType1& M1, const MatrixType2& M2){
+    std::enable_if_t<
+        std::is_base_of_v<MatrixBase, std::remove_reference_t<MatrixType1>> 
+     && std::is_base_of_v<MatrixBase, std::remove_reference_t<MatrixType2>>, bool> = true>
+bool operator==(MatrixType1&& M1, MatrixType2&& M2){
     if (M1.dim() != M2.dim()) return false;
     bool equal = true;
-    for (auto it = std::begin(M1); it != std::end(M1) && equal; it++){
-        equal = equal && (*it == M2(it.idx()));
+    for (auto it = std::forward<MatrixType1>(M1).begin(); it != std::forward<MatrixType1>(M1).end() && equal; it++){
+        equal = equal && (*it == std::forward<MatrixType2>(M2)(it.idx()));
     }
     return equal;
 }
@@ -189,12 +240,12 @@ class MatrixMultiplyResult : public MatrixBase{
     friend auto matrixMultiply(const T1&, const T2&);
 
 public:
-
     using type = typename std::common_type_t<typename MatrixType1::type, typename MatrixType2::type>;
+
     type operator()(const dim3& idx) const{
         dim3 row_start_idx(idx.x, 0, idx.z);
         const dim3 col_start_idx(0, idx.y, idx.z);
-        auto matrix_2_it = MatrixIterator<const MatrixType2>(m2_, col_start_idx);
+        auto matrix_2_it = MatrixIterator<const MatrixType2&>(*m2_, col_start_idx);
         type sum{};
         for (size_t i = 0; i < row_size_; ++i, ++row_start_idx.y, ++matrix_2_it){
             sum += *matrix_2_it * m1_->operator()(row_start_idx);
@@ -206,10 +257,10 @@ public:
         return operator()(dim3(x,y,z));
     }
 
-    auto begin() {return MatrixIterator<MatrixMultiplyResult<MatrixType1, MatrixType2>>(this, {0, 0, 0});}
-    auto end() {return MatrixIterator<MatrixMultiplyResult<MatrixType1, MatrixType2>>(this, {0, 0, dim_.z});}
-    auto begin() const {return MatrixIterator<const MatrixMultiplyResult<MatrixType1, MatrixType2>>(this, {0, 0, 0});}
-    auto end() const {return MatrixIterator<const MatrixMultiplyResult<MatrixType1, MatrixType2>>(this, {0, 0, dim_.z});}
+    auto begin() {return MatrixIterator<MatrixMultiplyResult<MatrixType1, MatrixType2>&>(*this, {0, 0, 0});}
+    auto end() {return MatrixIterator<MatrixMultiplyResult<MatrixType1, MatrixType2>&>(*this, {0, 0, dim_.z});}
+    auto begin() const {return MatrixIterator<const MatrixMultiplyResult<MatrixType1, MatrixType2>&>(*this, {0, 0, 0});}
+    auto end() const {return MatrixIterator<const MatrixMultiplyResult<MatrixType1, MatrixType2>&>(*this, {0, 0, dim_.z});}
 
 private:
     const MatrixType1* m1_;
@@ -259,10 +310,10 @@ public:
         return operator()(dim3(x,y,z));
     }
 
-    auto begin() {return MatrixIterator<ScalarOperationResult<MatrixType, ScalarType, BinaryOp>>(this, {0, 0, 0});}
-    auto end() {return MatrixIterator<ScalarOperationResult<MatrixType, ScalarType, BinaryOp>>(this, {0, 0, dim_.z});}
-    auto begin() const {return MatrixIterator<const ScalarOperationResult<MatrixType, ScalarType, BinaryOp>>(this, {0, 0, 0});}
-    auto end() const {return MatrixIterator<const ScalarOperationResult<MatrixType, ScalarType, BinaryOp>>(this, {0, 0, dim_.z});}
+    auto begin() {return MatrixIterator<ScalarOperationResult<MatrixType, ScalarType, BinaryOp>&>(*this, {0, 0, 0});}
+    auto end() {return MatrixIterator<ScalarOperationResult<MatrixType, ScalarType, BinaryOp>&>(*this, {0, 0, dim_.z});}
+    auto begin() const {return MatrixIterator<const ScalarOperationResult<MatrixType, ScalarType, BinaryOp>&>(*this, {0, 0, 0});}
+    auto end() const {return MatrixIterator<const ScalarOperationResult<MatrixType, ScalarType, BinaryOp>&>(*this, {0, 0, dim_.z});}
 
 private:
     const MatrixType* m_;
@@ -366,10 +417,10 @@ public:
         return operator()(dim3(x,y,z));
     }
 
-    auto begin() {return MatrixIterator<UnaryOperationResult<MatrixType, UnaryOp>>(this, {0, 0, 0});}
-    auto end() {return MatrixIterator<UnaryOperationResult<MatrixType, UnaryOp>>(this, {0, 0, dim_.z});}
-    auto begin() const {return MatrixIterator<const UnaryOperationResult<MatrixType, UnaryOp>>(this, {0, 0, 0});}
-    auto end() const {return MatrixIterator<const UnaryOperationResult<MatrixType, UnaryOp>>(this, {0, 0, dim_.z});}
+    auto begin() {return MatrixIterator<UnaryOperationResult<MatrixType, UnaryOp>&>(*this, {0, 0, 0});}
+    auto end() {return MatrixIterator<UnaryOperationResult<MatrixType, UnaryOp>&>(*this, {0, 0, dim_.z});}
+    auto begin() const {return MatrixIterator<const UnaryOperationResult<MatrixType, UnaryOp>&>(*this, {0, 0, 0});}
+    auto end() const {return MatrixIterator<const UnaryOperationResult<MatrixType, UnaryOp>&>(*this, {0, 0, dim_.z});}
 
 private:
     const MatrixType* m_;

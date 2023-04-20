@@ -25,12 +25,12 @@ values_(dim.x*dim.y*dim.z, initial_val)
 
 // From a Matrix-like object
 template<typename T>
-template<typename MatrixType, std::enable_if_t<std::is_base_of_v<MatrixBase, MatrixType>, bool>>
-SimpleMatrix<T>::SimpleMatrix(const MatrixType& M) : 
+template<typename MatrixType, std::enable_if_t<std::is_base_of_v<MatrixBase, std::remove_reference_t<MatrixType>>, bool>>
+SimpleMatrix<T>::SimpleMatrix(MatrixType&& M) : 
 MatrixBase(M.dim()),
 values_(M.size())
 {
-    std::copy(M.begin(), M.end(), begin());
+    std::copy(std::forward<MatrixType>(M).begin(), std::forward<MatrixType>(M).end(), begin());
 }
 
 // Full matrix description constructor

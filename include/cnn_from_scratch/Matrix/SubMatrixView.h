@@ -61,17 +61,17 @@ public:
 
     // Iterators
     auto begin() {
-        return MatrixIterator<SubMatrixView<T>>(this, dim3(0, 0, 0));
+        return MatrixIterator<SubMatrixView<T>&>(*this, dim3(0, 0, 0));
     }
     auto end() {
-        MatrixIterator<SubMatrixView<T>> it(this, dim_ - dim3(1));
+        MatrixIterator<SubMatrixView<T>&> it(*this, dim_ - dim3(1));
         return ++it;
     }
     auto begin() const {
-        return MatrixIterator<const SubMatrixView<T>>(this, dim3(0, 0, 0));
+        return MatrixIterator<const SubMatrixView<T>&>(*this, dim3(0, 0, 0));
     }
     auto end() const {
-        MatrixIterator<const SubMatrixView<T>> it(this, dim_ - dim3(1));
+        MatrixIterator<const SubMatrixView<T>&> it(*this, dim_ - dim3(1));
         return ++it;
     }
 

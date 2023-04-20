@@ -55,8 +55,8 @@ public:
     SimpleMatrix(SimpleMatrix<T>&& other) = default;
 
     // From a Matrix-like object
-    template<typename MatrixType, std::enable_if_t<std::is_base_of_v<MatrixBase, MatrixType>, bool> = true>
-    SimpleMatrix(const MatrixType& M);
+    template<typename MatrixType, std::enable_if_t<std::is_base_of_v<MatrixBase, std::remove_reference_t<MatrixType>>, bool> = true>
+    SimpleMatrix(MatrixType&& M);
 
     // Initial value based constructor
     SimpleMatrix(dim3 dim, T initial_val=T{});
@@ -139,10 +139,10 @@ public:
     SubMatrixView<T> subMatView(dim3 idx, dim3 sub_dim);
     SubMatrixView<const T> subMatView(dim3 idx, dim3 sub_dim) const;
 
-    auto begin() {return MatrixIterator<SimpleMatrix<T>>(this, {0, 0, 0});}
-    auto end() {return MatrixIterator<SimpleMatrix<T>>(this, {0, 0, dim_.z});}
-    auto begin() const {return MatrixIterator<const SimpleMatrix<T>>(this, {0, 0, 0});}
-    auto end() const {return MatrixIterator<const SimpleMatrix<T>>(this, {0, 0, dim_.z});}
+    auto begin() {return MatrixIterator<SimpleMatrix<T>&>(*this, {0, 0, 0});}
+    auto end() {return MatrixIterator<SimpleMatrix<T>&>(*this, {0, 0, dim_.z});}
+    auto begin() const {return MatrixIterator<const SimpleMatrix<T>&>(*this, {0, 0, 0});}
+    auto end() const {return MatrixIterator<const SimpleMatrix<T>&>(*this, {0, 0, dim_.z});}
 
     /* === Dimension === */
 
@@ -185,7 +185,7 @@ std::ostream& operator<<(std::ostream& os, const MatrixType& M){
         for (int k = 0; k < M.dim().z; k++){
             os << "[";
             for (int j = 0; j < M.dim().y; j++){
-                const T& val = M({i, j, k});
+                const T& val = M(dim3(i, j, k));
                 os << (val < 0 ? "-" : " ") << std::setw(max_width) << abs(val) << (j == M.dim().y - 1 ? "]" : ",");
             }
             os << "   ";
