@@ -85,11 +85,11 @@ void SimpleMatrix<T>::setEntries(std::vector<T>&& v){
 
 // Assign to matrix like
 template<typename T>
-template<typename MatrixType, std::enable_if_t<std::is_base_of_v<MatrixBase, MatrixType>, bool>>
-SimpleMatrix<T>& SimpleMatrix<T>::operator=(const MatrixType& M){
+template<typename MatrixType, std::enable_if_t<std::is_base_of_v<MatrixBase, std::remove_reference_t<MatrixType>>, bool>>
+SimpleMatrix<T>& SimpleMatrix<T>::operator=(MatrixType&& M){
     dim_ = M.dim();
     values_.resize(size());
-    std::copy(M.begin(), M.end(), begin());
+    std::copy(std::forward<MatrixType>(M).begin(), std::forward<MatrixType>(M).end(), begin());
     return *this;
 }
 

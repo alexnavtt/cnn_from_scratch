@@ -273,7 +273,7 @@ TEST(Assignment, transposeFat){
          16, 17, 18});
     
     // setEntries takes care of reordering
-    auto M2 = transpose(M1);
+    my_cnn::SimpleMatrix<float> M2 = transpose(M1);
 
     for (size_t k = 0; k < M1.dim().z; k++){
         for (size_t i = 0; i < M1.dim().x; i++){
@@ -560,6 +560,22 @@ TEST(Arithmetic, matrixCompoundedAdd){
     my_cnn::SimpleMatrix<float> M3 = M1 + M2.subMatView({0, 0, 0}, {2, 2, 1}) + M2.subMatView({1, 1, 0}, {2, 2, 1});
     for (auto& v : M3){
         EXPECT_EQ(v,15.0f);
+    }
+}
+
+TEST(Arithmetic, matrixCompoundedOperations){
+    const my_cnn::SimpleMatrix<float> M1({2, 2, 1},
+       {1, 2,
+        4, 5});
+    const my_cnn::SimpleMatrix<float> M2({3, 3, 1},
+                  {9, 8, 7,
+                   6, 5, 5,
+                   3, 5, 5});
+    const my_cnn::SimpleMatrix<float> M3 = M2.subMatCopy({1, 1, 0}, {2, 2, 1});
+    my_cnn::SimpleMatrix<float> M4 = (M1 + M2.subMatView({0, 0, 0}, {2, 2, 1})) * transpose(M3);
+    
+    for (auto& v : M4){
+        EXPECT_EQ(v, 50.0f);
     }
 }
 

@@ -115,8 +115,8 @@ public:
     SimpleMatrix<T>& operator=(const SimpleMatrix<Other>& M);
 
     // Assign to matrix like
-    template<typename MatrixType, std::enable_if_t<std::is_base_of_v<MatrixBase, MatrixType>, bool> = true>
-    SimpleMatrix<T>& operator=(const MatrixType& M);
+    template<typename MatrixType, std::enable_if_t<std::is_base_of_v<MatrixBase, std::remove_reference_t<MatrixType>>, bool> = true>
+    SimpleMatrix<T>& operator=(MatrixType&& M);
 
     void setEntries(std::vector<T>&& v);
 
