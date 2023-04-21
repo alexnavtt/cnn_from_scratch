@@ -1,7 +1,7 @@
 #pragma once
 
 #include <vector>
-#include <string_view>
+#include <string>
 
 namespace my_cnn{
 
@@ -15,7 +15,7 @@ enum ModelFlowMode{
 struct ModelFlow{
     std::vector<ModelFlowMode> stages;
     std::vector<size_t> indices;
-    std::vector<std::string_view> names;
+    std::vector<std::string> names;
 };
 
 } // namespace my_cnn

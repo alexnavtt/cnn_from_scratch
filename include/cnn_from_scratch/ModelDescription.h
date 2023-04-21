@@ -2,7 +2,8 @@
 
 #include <vector>
 #include <string>
-#include <string_view>
+#include <string>
+#include "cpp_timer/Timer.h"
 #include "cnn_from_scratch/Kernel.h"
 #include "cnn_from_scratch/Pooling.h"
 #include "cnn_from_scratch/ModelFlow.h"
@@ -32,17 +33,20 @@ public:
     std::vector<OutputDataType> output_labels;
     ModelFlow flow;
     LossFunction loss_function;
+    cpp_timer::Timer timer;
 
     bool saveModel(std::string filename);
     bool loadModel(std::string filename);
-    void addKernel(Kernel kernel, std::string_view name = "");
-    void addPooling(Pooling pool, std::string_view name = "");
-    void addConnectedLayer(size_t output_size, std::string_view name = "");
+    void addKernel(Kernel kernel, std::string name = "");
+    void addPooling(Pooling pool, std::string name = "");
+    void addConnectedLayer(size_t output_size, std::string name = "");
     void setOutputLabels(std::vector<OutputDataType> labels) {output_labels = labels;}
     result_t forwardPropagation(SimpleMatrix<InputDataType> input, OutputDataType* true_label = nullptr);
     void backwardsPropagation(const result_t& result, float learning_rate);
     float lossFcn(const SimpleMatrix<float>& probabilities, const OutputDataType& true_label) const;
 };
+
+#define TIMER_INSTANCE timer
 
 } // end namespace my_cnn
 

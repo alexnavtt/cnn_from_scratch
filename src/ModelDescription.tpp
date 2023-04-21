@@ -5,7 +5,7 @@ namespace my_cnn{
     
 template<typename InputDataType, typename OutputDataType>
 void ModelDescription<InputDataType, OutputDataType>::addKernel
-    (Kernel kernel, std::string_view name)
+    (Kernel kernel, std::string name)
 {
     flow.indices.push_back(kernels.size());
     kernels.push_back(kernel);
@@ -15,7 +15,7 @@ void ModelDescription<InputDataType, OutputDataType>::addKernel
 
 template<typename InputDataType, typename OutputDataType>
 void ModelDescription<InputDataType, OutputDataType>::addPooling
-    (Pooling pool, std::string_view name)
+    (Pooling pool, std::string name)
 {
     flow.indices.push_back(pools.size());
     pools.push_back(pool);
@@ -25,7 +25,7 @@ void ModelDescription<InputDataType, OutputDataType>::addPooling
 
 template<typename InputDataType, typename OutputDataType>
 void ModelDescription<InputDataType, OutputDataType>::addConnectedLayer
-    (size_t output_size, std::string_view name)
+    (size_t output_size, std::string name)
 {
     flow.indices.push_back(connected_layers.size());
     connected_layers.emplace_back(output_size);
@@ -50,10 +50,10 @@ ModelResults<OutputDataType> ModelDescription<InputDataType, OutputDataType>::fo
     // If necessary, convert the input data type to float
     SimpleMatrix<float> active_data = std::move(input);
 
-    std::cout << "Input image is \n";
-    for (uint layer = 0; layer < active_data.dim(2); layer++){
-        printImage(active_data.slice(layer));
-    }
+    // std::cout << "Input image is \n";
+    // for (uint layer = 0; layer < active_data.dim(2); layer++){
+    //     printImage(active_data.slice(layer));
+    // }
 
     // Create the output struct and store the input
     ModelResults<OutputDataType> result;
@@ -65,7 +65,7 @@ ModelResults<OutputDataType> ModelDescription<InputDataType, OutputDataType>::fo
         size_t idx = flow.indices[i];
 
         // Record the input for this layer (to be used in back propagation)
-
+        timer.tic(flow.names[i].c_str());
         switch (stage){
             case KERNEL:
                 result.layer_inputs.push_back(active_data);
@@ -86,11 +86,11 @@ ModelResults<OutputDataType> ModelDescription<InputDataType, OutputDataType>::fo
                 break;
             }
         }
-
-        std::cout << "After applying layer " << flow.names[i] << "\n";
-        for (uint layer = 0; layer < active_data.dim(2); layer++){
-            printImage(active_data.slice(layer));
-        }
+        timer.toc(flow.names[i].c_str());
+        // std::cout << "After applying layer " << flow.names[i] << "\n";
+        // for (uint layer = 0; layer < active_data.dim(2); layer++){
+        //     printImage(active_data.slice(layer));
+        // }
     }
 
     // Make sure the size of the last layer matches up with the label vector size
@@ -117,13 +117,13 @@ void ModelDescription<InputDataType, OutputDataType>::backwardsPropagation(const
     SimpleMatrix<float> dLdz = result.layer_inputs.back();
     dLdz[result.label_idx] -= 1;
 
-    for (size_t i = 0; i < flow.names.size(); i++){
-        std::cout << "Stored input for layer " << i << ": " << flow.names.at(i) << "\n";
-        const auto& M = result.layer_inputs[i];
-        for (size_t layer = 0; layer < M.dim(2); layer++){
-            printImage(M.slice(layer));
-        }
-    }
+    // for (size_t i = 0; i < flow.names.size(); i++){
+    //     std::cout << "Stored input for layer " << i << ": " << flow.names.at(i) << "\n";
+    //     const auto& M = result.layer_inputs[i];
+    //     for (size_t layer = 0; layer < M.dim(2); layer++){
+    //         printImage(M.slice(layer));
+    //     }
+    // }
 
     // For each of the layers, calculate the corresponding gradient and adjust the weights accordingly
     for (int i = result.layer_inputs.size()-2; i >= 0; i--){

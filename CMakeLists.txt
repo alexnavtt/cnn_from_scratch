@@ -8,9 +8,12 @@ add_compile_options(
     -fno-omit-frame-pointer
 )
 
+find_package(cpp_timer)
+
 include_directories(
     include
     src
+    ${cpp_timer_INCLUDE_DIRS}
 )
 
 enable_testing()
@@ -18,7 +21,7 @@ find_package(GTest REQUIRED)
 
 add_executable(main src/main.cpp src/MNISTReader.cpp)
 target_compile_options(main PRIVATE -g)
-target_link_libraries(main -fsanitize=address)
+target_link_libraries(main -fsanitize=address ${cpp_timer_LIBRARIES})
 
 include(GoogleTest)
 add_executable(MatrixTest test/MatrixTest.cpp)
