@@ -44,6 +44,20 @@ MNISTReader::~MNISTReader(){
     label_stream_.close();
 }
 
+Image MNISTReader::getImage(size_t idx){
+    current_index_ = idx;
+
+    // Set the index for the image stream
+    size_t img_char_start_idx = 4*sizeof(int32_t) + idx * image_height_ * image_width_;
+    image_stream_.seekg(img_char_start_idx);
+
+    // Set the index for the label stream
+    size_t label_char_start_idx = 2*sizeof(int32_t) + idx;
+    label_stream_.seekg(label_char_start_idx);
+
+    return nextImage();
+}
+
 Image MNISTReader::nextImage(){
     Image img;
 
@@ -56,6 +70,7 @@ Image MNISTReader::nextImage(){
 
     img.label = read<unsigned char>(label_stream_);
     img.data = std::move(out);
+    current_index_++;
     return img;
 }
 

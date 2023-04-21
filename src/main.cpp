@@ -23,6 +23,9 @@ int main(int argc, char* argv[]){
         std::cout << "Label :" << +next_img.label << "\n";
         my_cnn::printImage(next_img.data);
     }
+
+    my_cnn::Image img_1 = db.getImage(1);
+    my_cnn::printImage(img_1.data);
     return 0;
 
     // Grayscale image for testing
