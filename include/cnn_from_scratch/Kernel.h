@@ -69,21 +69,9 @@ public:
 
                 // For each filter layer, apply the convolution process to this sub-region
                 for (uint filter_layer = 0; filter_layer < biases.size(); filter_layer++){
-                    // Multiply by the weights
-
+                    // Multiply by the weights and add the biases
                     output({idx.x, idx.y, filter_layer}) = 
-                        sum(sub_region * weights.slices(filter_layer*dim_.z, dim_.z))
-                      + biases[filter_layer];
-
-                    // SimpleMatrix<float> layer_sub_region = sub_region;
-                    // layer_sub_region *= weights.slices(filter_layer*dim_.z, dim_.z);
-                    // // Sum the resulting matrices and add the biases
-                    // float z_val = sum(layer_sub_region) + biases[filter_layer];
-                    
-                    
-                    
-                    // Set the value in the output layer
-                    // output(idx.x, idx.y, filter_layer) = z_val;
+                        sum(sub_region * weights.slices(filter_layer*dim_.z, dim_.z)) + biases[filter_layer];
                 }
             }
         }
