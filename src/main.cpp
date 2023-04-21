@@ -10,16 +10,25 @@
 #include "cnn_from_scratch/Pooling.h"
 #include "cnn_from_scratch/imageUtil.h"
 #include "cnn_from_scratch/ModelDescription.h"
+#include "cnn_from_scratch/MNISTReader.h"
 
 int main(int argc, char* argv[]){ 
 
+    my_cnn::MNISTReader db
+        ("../data/MNIST Train Images.ubyte-img", 
+        "../data/MNIST Train Labels.ubyte-label");
+
+    for (int i = 0; i < 10; i++){
+        my_cnn::Image next_img = db.nextImage();
+        std::cout << "Label :" << +next_img.label << "\n";
+        my_cnn::printImage(next_img.data);
+    }
+    return 0;
+
     // Grayscale image for testing
-    my_cnn::SimpleMatrix<unsigned char> input_image({28, 28, 1});
+    my_cnn::SimpleMatrix<unsigned char> input_image = db.nextImage().data;
+    input_image = db.nextImage().data;
     
-    // Let's make it a 4 for fun
-    input_image.subMatView({ 5,  4,  0}, {10,  2,  1}) = 255;
-    input_image.subMatView({15,  4,  0}, { 2, 12,  1}) = 255;
-    input_image.subMatView({ 7, 12,  0}, {15,  1,  1}) = 255;
 
     // Create a model to put the image through
     my_cnn::ModelDescription<unsigned char, std::string> model;
