@@ -25,15 +25,15 @@ public:
         }
     }
 
-    SimpleMatrix<float> padInput(const SimpleMatrix<float>& input_data) const{
+    static SimpleMatrix<float> padInput(const SimpleMatrix<float>& input_data, const dim3 filter_dim){
         // Create the augmented input data
         SimpleMatrix<float> padded({
-            input_data.dim(0) + 2*dim_.x - 1,
-            input_data.dim(1) + 2*dim_.y - 1,
+            input_data.dim(0) + 2*(filter_dim.x - 1),
+            input_data.dim(1) + 2*(filter_dim.y - 1),
             input_data.dim(2)
         });
 
-        padded.subMatView({dim_.x, dim_.y, 0}, input_data.dims()) = input_data;
+        padded.subMatView({filter_dim.x-1, filter_dim.y-1, 0}, input_data.dims()) = input_data;
         return padded;
     }
 
@@ -49,33 +49,51 @@ public:
         );
     }
 
+    [[nodiscard]]
+    static SimpleMatrix<float> convolve(const SimpleMatrix<float>& filter, const SimpleMatrix<float>& biases, const SimpleMatrix<float>& data, bool padded = false){
+        // Pad the input if necessary
+        SimpleMatrix<float> input = padded ? padInput(data, filter.dim()) : data;
+
+        // Calculate the output size based on the input and filter sizes
+        dim3 output_size(
+            input.dim().x - filter.dim().x + 1,
+            input.dim().y - filter.dim().y + 1,
+            biases.size()
+        );
+        SimpleMatrix<float> output(output_size);
+
+        // This is the size of the filter sub region that we'll be extracting at every step
+        const dim3 sub_region_dim(filter.dim().x, filter.dim().y, data.dim().z);
+
+        // Step through the input and accumulate the results in the output
+        dim3 idx{0, 0, 0};
+        for (idx.x = 0; idx.x < output_size.x; idx.x++){
+            for (idx.y = 0; idx.y < output_size.y; idx.y++){
+                // Extract the sub region
+                SimpleMatrix<float> sub_region = input.subMatCopy(idx, sub_region_dim);
+
+                // For each filter layer, apply the convolution process to this sub-region
+                for (idx.z = 0; idx.z < biases.size(); idx.z++){
+                    // Multiply by the weights and add the biases
+                    output(idx) = 
+                        sum(sub_region * filter.slices(idx.z*data.dim().z, data.dim().z)) + biases[idx.z];
+                }
+                idx.z = 0;
+            }
+        }
+
+        return output;
+    }
+
     [[nodiscard]] 
     SimpleMatrix<float> propagateForward(const SimpleMatrix<float>& input_data) override {
 
         if (not checkSize(input_data))
             throw ModelLayerException("Mismatched channel count for convolution");
 
-        SimpleMatrix<float> input_augmented = pad_inputs ? padInput(input_data) : input_data;
-
         // Create the output container
         dim3 output_size = outputSize(input_data);
-        SimpleMatrix<float> output(output_size);
-
-        dim3 idx{0, 0, 0};
-        for (idx.x = 0; idx.x < output_size.x; idx.x++){
-            for (idx.y = 0; idx.y < output_size.y; idx.y++){
-                // Extract the sub region
-                SimpleMatrix<float> sub_region = input_augmented.subMatCopy(idx, dim_);
-
-                // For each filter layer, apply the convolution process to this sub-region
-                for (uint filter_layer = 0; filter_layer < biases.size(); filter_layer++){
-                    // Multiply by the weights and add the biases
-                    output({idx.x, idx.y, filter_layer}) = 
-                        sum(sub_region * weights.slices(filter_layer*dim_.z, dim_.z)) + biases[filter_layer];
-                }
-            }
-        }
-
+        auto output = convolve(weights, biases, input_data, true);
         activate(output);
         return output;
     }
