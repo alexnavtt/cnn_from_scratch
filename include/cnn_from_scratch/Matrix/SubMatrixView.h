@@ -31,10 +31,34 @@ public:
     using type = T;
 
     SubMatrixView(MatrixType& mat, dim3 start, dim3 dim) : 
-    MatrixBase(dim), mat_ptr_(&mat), start_(start) {}
+    MatrixBase(dim), mat_ptr_(&mat), start_(start) 
+    {
+        dim3 end = start + dim;
+        if (end.x > mat_ptr_->dim().x ||
+            end.y > mat_ptr_->dim().y ||
+            end.z > mat_ptr_->dim().z)
+        {
+            std::stringstream ss;
+            ss << "Cannot create subMatrixView from index " << start << " and of size " 
+               << dim << " from matrix of size " << mat_ptr_->dim();
+            throw MatrixSizeException(ss.str());
+        }
+    }
 
     SubMatrixView(const SubMatrixView<MatrixType>& other_view, dim3 start, dim3 dim) : 
-    MatrixBase(dim), mat_ptr_(other_view.mat_ptr_), start_(other_view.start_ + start) {}
+    SubMatrixView(*other_view.mat_ptr_, other_view.start_ + start, dim)
+    {
+        dim3 end = start + dim;
+        if (end.x > other_view.dim_.x ||
+            end.y > other_view.dim_.y ||
+            end.z > other_view.dim_.z)
+        {
+            std::stringstream ss;
+            ss << "Cannot create subMatrixView from index " << start << " and of size " 
+               << dim << " from subMatrixView of size " << mat_ptr_->dim();
+            throw MatrixSizeException(ss.str());
+        }
+    }
 
     // Indexing - const
     const type& operator()(const dim3& idx) const;
