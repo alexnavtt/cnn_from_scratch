@@ -22,7 +22,7 @@ public:
         return input.dim(0) >= dim_.x && input.dim(1) >= dim_.y;
     }
 
-    SimpleMatrix<float> propagateForward(const SimpleMatrix<float>& input) override {
+    SimpleMatrix<float> propagateForward(SimpleMatrix<float>&& input) override {
         // Create the approriately sized output
         SimpleMatrix<float> output({input.dim(0)/dim_.x, input.dim(1)/dim_.y, input.dim(2)});
 

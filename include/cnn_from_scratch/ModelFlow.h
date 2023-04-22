@@ -14,7 +14,6 @@ enum ModelFlowMode{
     
 struct ModelFlow{
     std::vector<ModelFlowMode> stages;
-    std::vector<size_t> indices;
     std::vector<std::string> names;
 };
 

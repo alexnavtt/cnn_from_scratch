@@ -90,7 +90,7 @@ public:
     }
 
     [[nodiscard]] 
-    SimpleMatrix<float> propagateForward(const SimpleMatrix<float>& input_data) override {
+    SimpleMatrix<float> propagateForward(SimpleMatrix<float>&& input_data) override {
         // Make sure the input size is what we expect based on weights and biases dimensions
         if (not checkSize(input_data))
             throw ModelLayerException("Mismatched channel count for convolution");

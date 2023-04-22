@@ -7,20 +7,18 @@ namespace my_cnn{
     
 template<typename InputDataType, typename OutputDataType>
 void ModelDescription<InputDataType, OutputDataType>::addKernel
-    (Kernel kernel, std::string name)
+    (std::shared_ptr<Kernel> kernel, std::string name)
 {
-    flow.indices.push_back(kernels.size());
-    kernels.push_back(kernel);
+    layers.push_back(std::dynamic_pointer_cast<ModelLayer>(kernel));
     flow.stages.push_back(ModelFlowMode::KERNEL);
     flow.names.push_back(name);
 }
 
 template<typename InputDataType, typename OutputDataType>
 void ModelDescription<InputDataType, OutputDataType>::addPooling
-    (Pooling pool, std::string name)
+    (std::shared_ptr<Pooling> pool, std::string name)
 {
-    flow.indices.push_back(pools.size());
-    pools.push_back(pool);
+    layers.push_back(std::dynamic_pointer_cast<ModelLayer>(pool));
     flow.stages.push_back(ModelFlowMode::POOLING);
     flow.names.push_back(name);
 }
@@ -29,8 +27,7 @@ template<typename InputDataType, typename OutputDataType>
 void ModelDescription<InputDataType, OutputDataType>::addConnectedLayer
     (size_t output_size, std::string name)
 {
-    flow.indices.push_back(connected_layers.size());
-    connected_layers.emplace_back(output_size);
+    layers.emplace_back(new ConnectedLayer(output_size));
     flow.stages.push_back(ModelFlowMode::FULLY_CONNECTED);
     flow.names.push_back(name);
 }
@@ -59,40 +56,21 @@ ModelResults<OutputDataType> ModelDescription<InputDataType, OutputDataType>::fo
 
     // Create the output struct and store the input
     ModelResults<OutputDataType> result;
-    result.layer_inputs.reserve(flow.indices.size() + 1);
+    result.layer_inputs.reserve(layers.size() + 1);
 
     // For each stage of the model, apply the necessary step
-    for (size_t i = 0; i < flow.stages.size(); i++){
-        ModelFlowMode stage = flow.stages[i];
-        size_t idx = flow.indices[i];
+    for (size_t i = 0; i < layers.size(); i++){
 
         // Record the input for this layer (to be used in back propagation)
         global_timer.tic(flow.names[i].c_str());
-        switch (stage){
-            case KERNEL:
-                result.layer_inputs.push_back(active_data);
-                active_data = kernels[idx].propagateForward(active_data);
-                break;
-
-            case POOLING:
-                result.layer_inputs.push_back(active_data);
-                active_data = pools[idx].propagateForward(active_data);
-                break;
-
-            case FULLY_CONNECTED:
-            {
-                // Reshape to a column vector before passing it to the fully connected layer
-                active_data.reshape(active_data.size(), 1, 1);
-                result.layer_inputs.push_back(active_data);
-                active_data = connected_layers[idx].propagateForward(active_data);
-                break;
-            }
-        }
+        result.layer_inputs.push_back(active_data);
+        active_data = layers[i]->propagateForward(std::move(active_data));
         global_timer.toc(flow.names[i].c_str());
-        // std::cout << "After applying layer " << flow.names[i] << "\n";
-        // for (uint layer = 0; layer < active_data.dim(2); layer++){
-        //     printImage(active_data.slice(layer));
-        // }
+
+        std::cout << "After applying layer " << flow.names[i] << "\n";
+        for (uint layer = 0; layer < active_data.dim(2); layer++){
+            printImage(active_data.slice(layer));
+        }
     }
 
     // Make sure the size of the last layer matches up with the label vector size
@@ -128,24 +106,10 @@ void ModelDescription<InputDataType, OutputDataType>::backwardsPropagation(const
     // }
 
     // For each of the layers, calculate the corresponding gradient and adjust the weights accordingly
-    for (int i = result.layer_inputs.size()-2; i >= 0; i--){
+    for (int i = layers.size()-1; i >= 0; i--){
         const SimpleMatrix<float>& layer_input = result.layer_inputs[i];
         const SimpleMatrix<float>& layer_output = result.layer_inputs[i+1];
-        size_t idx = flow.indices[i];
-
-        switch (flow.stages[i]){
-            case FULLY_CONNECTED:
-                dLdz = connected_layers[idx].propagateBackward(layer_input, layer_output, dLdz, learning_rate);
-                break;
-
-            case KERNEL:
-                dLdz.reshape(kernels[idx].outputSize(layer_input));
-                break;
-
-            case POOLING:
-                dLdz = pools[idx].propagateBackward(layer_input, layer_output, dLdz, learning_rate);
-                break;
-        }
+        layers[i]->propagateBackward(layer_input, layer_output, dLdz, learning_rate);
     }
 }
 

@@ -30,15 +30,15 @@ int main(int argc, char* argv[]){
     my_cnn::ModelDescription<unsigned char, unsigned char> model;
 
     // Create an edge detection kernel
-    my_cnn::Kernel K1({5, 5, 1}, 2, 1);
-    K1.activation = my_cnn::RELU;
+    auto K1 = std::make_shared<my_cnn::Kernel>(my_cnn::dim3(5, 5, 1), 2, 1);
+    K1->activation = my_cnn::RELU;
 
     // Run a 2x2 max pooling with a stride of 2x2
-    my_cnn::Pooling pool({2, 2}, {2, 2}, my_cnn::MAX);
+    auto pool = std::make_shared<my_cnn::Pooling>(my_cnn::dim2(2, 2), my_cnn::dim2(2, 2), my_cnn::MAX);
 
     // Add another filter layer
-    my_cnn::Kernel K2({3, 3, 2}, 4, 1);
-    K2.activation = my_cnn::SIGMOID;
+    auto K2 = std::make_shared<my_cnn::Kernel>(my_cnn::dim3(3, 3, 2), 4, 1);
+    K2->activation = my_cnn::SIGMOID;
 
     // Full model description
     model.addKernel(K1, "FirstConvolutionLayer");
@@ -48,7 +48,7 @@ int main(int argc, char* argv[]){
     model.addConnectedLayer(10, "ConnectedLayer");
     model.setOutputLabels({0, 1, 2, 3, 4, 5, 6, 7, 8, 9});
 
-    for (int i = 0; i < 100; i++){
+    for (int i = 0; i < 1; i++){
         global_timer.tic("forwardPropagation");
         my_cnn::ModelResults result = model.forwardPropagation(input_image, &model.output_labels[4]);
         global_timer.toc("forwardPropagation");

@@ -2,7 +2,7 @@
 
 #include <vector>
 #include <string>
-#include <string>
+#include <memory>
 #include "cpp_timer/Timer.h"
 #include "cnn_from_scratch/Kernel.h"
 #include "cnn_from_scratch/Pooling.h"
@@ -27,17 +27,15 @@ template<typename InputDataType, typename OutputDataType>
 class ModelDescription{
 public:
     using result_t = ModelResults<OutputDataType>;
-    std::vector<Kernel> kernels;
-    std::vector<Pooling> pools;
-    std::vector<ConnectedLayer> connected_layers;
+    std::vector<std::shared_ptr<ModelLayer>> layers;
     std::vector<OutputDataType> output_labels;
     ModelFlow flow;
     LossFunction loss_function;
 
     bool saveModel(std::string filename);
     bool loadModel(std::string filename);
-    void addKernel(Kernel kernel, std::string name = "");
-    void addPooling(Pooling pool, std::string name = "");
+    void addKernel(std::shared_ptr<Kernel> kernel, std::string name = "");
+    void addPooling(std::shared_ptr<Pooling> pool, std::string name = "");
     void addConnectedLayer(size_t output_size, std::string name = "");
     void setOutputLabels(std::vector<OutputDataType> labels) {output_labels = labels;}
     result_t forwardPropagation(SimpleMatrix<InputDataType> input, OutputDataType* true_label = nullptr);

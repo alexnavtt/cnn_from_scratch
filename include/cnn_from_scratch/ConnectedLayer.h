@@ -32,7 +32,10 @@ public:
         }
     }
 
-    SimpleMatrix<float> propagateForward(const SimpleMatrix<float>& input_data) override{
+    SimpleMatrix<float> propagateForward(SimpleMatrix<float>&& input_data) override{
+        // The input size is always a column vector
+        input_data.reshape(dim3(input_data.size(), 1, 1));
+
         if (not checkSize(input_data)){
             throw ModelLayerException("Invalid input size for fully connected layer. Input has size " + 
                 std::to_string(input_data.size()) + " and this layer has size " + std::to_string(weights.dim(0)));
