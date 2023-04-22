@@ -27,6 +27,10 @@ public:
     weights(weights_dim)
     {}
 
+    static float sigmoidFunc(float f) {
+        return 1.0f/(1 + expf(f));
+    }
+
     void activate(SimpleMatrix<float>& output_data) const{
         switch (activation){
             case RELU:
@@ -34,7 +38,7 @@ public:
                 break;
 
             case SIGMOID:
-                modify(output_data, [](float f){return 1.0f/(1 + expf(f));});
+                modify(output_data, [](float f){return sigmoidFunc(f);});
                 break;
 
             default:
@@ -51,9 +55,51 @@ public:
         }
     }
 
+    auto activationGradient(const SimpleMatrix<float>& activated_output) const {
+        using result_t = UnaryOperationResult<const SimpleMatrix<float>&, float(*)(const SimpleMatrix<float>&, const dim3&)>;
+        
+        switch (activation){
+            case RELU:
+                return result_t(activated_output, 
+                    [](const SimpleMatrix<float>& M, const dim3& idx){
+                        return (float)(M(idx) > 0);
+                    }
+                );
+
+            case SIGMOID:
+                return result_t(activated_output, 
+                    [](const SimpleMatrix<float>& M, const dim3& idx){
+                        return sigmoidFunc(M(idx))*(1 - sigmoidFunc(M(idx)));
+                    }
+                );
+
+            default:
+            case LINEAR:
+                return result_t(activated_output, 
+                    [](const SimpleMatrix<float>& M, const dim3& idx){
+                        return 1.0f;
+                    }
+                );
+
+            case TANGENT:
+                return result_t(activated_output, 
+                    [](const SimpleMatrix<float>& M, const dim3& idx){
+                        return 1.0f - std::tanh(M(idx))*std::tanh(M(idx));
+                    }
+                );
+
+            case LEAKY_RELU:
+                return result_t(activated_output, 
+                    [](const SimpleMatrix<float>& M, const dim3& idx){
+                        return M(idx) > 0 ? 1.0f : 0.1f;
+                    }
+                );
+        }
+    }
+
     virtual bool checkSize(const SimpleMatrix<float>& input) = 0;
     virtual SimpleMatrix<float> propagateForward(const SimpleMatrix<float>& input) = 0;
-    virtual SimpleMatrix<float> propagateBackward(const SimpleMatrix<float>& input, const SimpleMatrix<float>& output_grad, float learning_rate) = 0;
+    virtual SimpleMatrix<float> propagateBackward(const SimpleMatrix<float>& input, const SimpleMatrix<float>& output, const SimpleMatrix<float>& output_grad, float learning_rate) = 0;
 };
 
 } // namespace my_cnn

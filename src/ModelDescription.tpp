@@ -1,6 +1,8 @@
 #include "cnn_from_scratch/imageUtil.h"
 #include "cnn_from_scratch/ModelDescription.h"
 
+extern cpp_timer::Timer global_timer;
+
 namespace my_cnn{
     
 template<typename InputDataType, typename OutputDataType>
@@ -65,7 +67,7 @@ ModelResults<OutputDataType> ModelDescription<InputDataType, OutputDataType>::fo
         size_t idx = flow.indices[i];
 
         // Record the input for this layer (to be used in back propagation)
-        timer.tic(flow.names[i].c_str());
+        global_timer.tic(flow.names[i].c_str());
         switch (stage){
             case KERNEL:
                 result.layer_inputs.push_back(active_data);
@@ -86,7 +88,7 @@ ModelResults<OutputDataType> ModelDescription<InputDataType, OutputDataType>::fo
                 break;
             }
         }
-        timer.toc(flow.names[i].c_str());
+        global_timer.toc(flow.names[i].c_str());
         // std::cout << "After applying layer " << flow.names[i] << "\n";
         // for (uint layer = 0; layer < active_data.dim(2); layer++){
         //     printImage(active_data.slice(layer));
@@ -128,11 +130,12 @@ void ModelDescription<InputDataType, OutputDataType>::backwardsPropagation(const
     // For each of the layers, calculate the corresponding gradient and adjust the weights accordingly
     for (int i = result.layer_inputs.size()-2; i >= 0; i--){
         const SimpleMatrix<float>& layer_input = result.layer_inputs[i];
+        const SimpleMatrix<float>& layer_output = result.layer_inputs[i+1];
         size_t idx = flow.indices[i];
 
         switch (flow.stages[i]){
             case FULLY_CONNECTED:
-                dLdz = connected_layers[idx].propagateBackward(layer_input, dLdz, learning_rate);
+                dLdz = connected_layers[idx].propagateBackward(layer_input, layer_output, dLdz, learning_rate);
                 break;
 
             case KERNEL:
@@ -140,7 +143,7 @@ void ModelDescription<InputDataType, OutputDataType>::backwardsPropagation(const
                 break;
 
             case POOLING:
-                dLdz = pools[idx].propagateBackward(layer_input, dLdz, learning_rate);
+                dLdz = pools[idx].propagateBackward(layer_input, layer_output, dLdz, learning_rate);
                 break;
         }
     }

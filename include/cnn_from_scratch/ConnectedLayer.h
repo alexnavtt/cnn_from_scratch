@@ -43,7 +43,7 @@ public:
         return output;
     }
 
-    SimpleMatrix<float> propagateBackward(const SimpleMatrix<float>& input_data, const SimpleMatrix<float>& output_grad, float learning_rate) override{
+    SimpleMatrix<float> propagateBackward(const SimpleMatrix<float>& input_data, const SimpleMatrix<float>& output, const SimpleMatrix<float>& output_grad, float learning_rate) override{
         weights -= learning_rate * matrixMultiply(output_grad, transpose(input_data));
         biases  -= learning_rate * output_grad;
         return matrixMultiply(transpose(weights), output_grad);

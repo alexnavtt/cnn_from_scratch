@@ -33,7 +33,6 @@ public:
     std::vector<OutputDataType> output_labels;
     ModelFlow flow;
     LossFunction loss_function;
-    cpp_timer::Timer timer;
 
     bool saveModel(std::string filename);
     bool loadModel(std::string filename);
@@ -45,8 +44,6 @@ public:
     void backwardsPropagation(const result_t& result, float learning_rate);
     float lossFcn(const SimpleMatrix<float>& probabilities, const OutputDataType& true_label) const;
 };
-
-#define TIMER_INSTANCE timer
 
 } // end namespace my_cnn
 
