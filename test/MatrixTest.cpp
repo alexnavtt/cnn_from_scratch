@@ -160,7 +160,7 @@ TEST(Constructor, subMatView){
          14, 15,
          17, 18});
 
-    EXPECT_EQ(M_expected, M2);
+    EXPECT_TRUE((my_cnn::matrixEqual(M2, M_expected)));
 }
 
 TEST(Constructor, subMatCopy){
@@ -181,7 +181,7 @@ TEST(Constructor, subMatCopy){
          14, 15,
          17, 18});
 
-    EXPECT_EQ(M_expected, M2);
+    EXPECT_TRUE((my_cnn::matrixEqual(M2, M_expected)));
 }
 
 TEST(Assignment, default){
@@ -508,7 +508,7 @@ TEST(Arithmetic, rangeMatrixModify){
     expected.setEntries({1, 10, 10,
                          2, 10, 10,
                          3, 10, 10});
-    EXPECT_EQ(expected, M1);
+    EXPECT_TRUE(my_cnn::matrixEqual(M1, expected));
 }
 
 TEST(Arithmetic, rangeScalarModify){
@@ -526,7 +526,7 @@ TEST(Arithmetic, rangeScalarModify){
     expected.setEntries({1, 2, 5,
                          2, 3, 6,
                          3, 4, 7});
-    EXPECT_EQ(expected, M1);
+    EXPECT_TRUE(my_cnn::matrixEqual(expected, M1));
 }
 
 TEST(Arithmetic, matrixViewAdd){
@@ -597,7 +597,7 @@ TEST(Arithmetic, squareMatMul){
                             15, 30, 45,
                             18, 36, 54});
     
-    EXPECT_EQ(M3, M3_expected);
+    EXPECT_TRUE(my_cnn::matrixEqual(M3, M3_expected));
 }
 
 TEST(Arithmetic, longMatMul){
@@ -617,7 +617,7 @@ TEST(Arithmetic, longMatMul){
                             7, 14, 21,
                             9, 18, 27});
     
-    EXPECT_EQ(M3, M3_expected);
+    EXPECT_TRUE(my_cnn::matrixEqual(M3, M3_expected));
 }
 
 TEST(Arithmetic, badMatMul){
@@ -653,7 +653,7 @@ TEST(Arithmetic, mixedTypeMatMul){
                             7.0f, 14.0f, 21.0f,
                             9.0f, 18.0f, 27.0f});
     
-    EXPECT_EQ(M3, M3_expected);
+    EXPECT_TRUE(my_cnn::matrixEqual(M3, M3_expected));
 }
 
 int main(int argc, char* argv[]){

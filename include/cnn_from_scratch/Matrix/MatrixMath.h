@@ -157,86 +157,36 @@ private:
     BinaryOp op;
 };
 
-template<typename MatrixType1, typename MatrixType2>
-auto elementWiseAdd(MatrixType1&& M1, MatrixType2&& M2, const dim3& idx){
-    return std::forward<MatrixType1>(M1)(idx) + std::forward<MatrixType2>(M2)(idx);
+#define ADD_MATRIX_MATRIX_OPERATOR(op)                                                      \
+                                                                                            \
+template<typename MatrixType1, typename MatrixType2,                                        \
+    std::enable_if_t<                                                                       \
+        std::is_base_of_v<MatrixBase, std::remove_reference_t<MatrixType1>>                 \
+     && std::is_base_of_v<MatrixBase, std::remove_reference_t<MatrixType2>>, bool> = true>  \
+auto operator op (MatrixType1&& M1, MatrixType2&& M2){                                      \
+    auto OP = [](MatrixType1&& m1, MatrixType2&& m2, const dim3& idx) {                     \
+        return std::forward<MatrixType1>(m1)(idx) op std::forward<MatrixType2>(m2)(idx);    \
+    };                                                                                      \
+                                                                                            \
+    return MatrixOperationResult<                                                           \
+        decltype(std::forward<MatrixType1>(M1)),                                            \
+        decltype(std::forward<MatrixType2>(M2)),                                            \
+        decltype(OP)>                                                                       \
+    (std::forward<MatrixType1>(M1), std::forward<MatrixType2>(M2), OP);                     \
 }
 
-template<typename MatrixType1, typename MatrixType2>
-auto elementWiseMultiply(MatrixType1&& M1, MatrixType2&& M2, const dim3& idx){
-    return std::forward<MatrixType1>(M1)(idx) * std::forward<MatrixType2>(M2)(idx);
-}
+ADD_MATRIX_MATRIX_OPERATOR(+)
+ADD_MATRIX_MATRIX_OPERATOR(-)
+ADD_MATRIX_MATRIX_OPERATOR(/)
+ADD_MATRIX_MATRIX_OPERATOR(*)
+ADD_MATRIX_MATRIX_OPERATOR(<)
+ADD_MATRIX_MATRIX_OPERATOR(<=)
+ADD_MATRIX_MATRIX_OPERATOR(>)
+ADD_MATRIX_MATRIX_OPERATOR(>=)
+ADD_MATRIX_MATRIX_OPERATOR(!=)
+ADD_MATRIX_MATRIX_OPERATOR(==)
 
-template<typename MatrixType1, typename MatrixType2>
-auto elementWiseDivide(MatrixType1&& M1, MatrixType2&& M2, const dim3& idx){
-    return std::forward<MatrixType1>(M1)(idx) / std::forward<MatrixType2>(M2)(idx);
-}
-
-template<typename MatrixType1, typename MatrixType2>
-auto elementWiseSubtract(MatrixType1&& M1, MatrixType2&& M2, const dim3& idx){
-    return std::forward<MatrixType1>(M1)(idx) - std::forward<MatrixType2>(M2)(idx);
-}
-
-template<typename MatrixType1, typename MatrixType2,
-    std::enable_if_t<
-        std::is_base_of_v<MatrixBase, std::remove_reference_t<MatrixType1>> 
-     && std::is_base_of_v<MatrixBase, std::remove_reference_t<MatrixType2>>, bool> = true>
-auto operator+(MatrixType1&& M1, MatrixType2&& M2){
-    return MatrixOperationResult<
-        decltype(std::forward<MatrixType1>(M1)),
-        decltype(std::forward<MatrixType2>(M2)),
-        decltype(&elementWiseAdd<MatrixType1, MatrixType2>)>
-    (std::forward<MatrixType1>(M1), std::forward<MatrixType2>(M2), elementWiseAdd<MatrixType1, MatrixType2>);
-}
-
-template<typename MatrixType1, typename MatrixType2,
-    std::enable_if_t<
-        std::is_base_of_v<MatrixBase, std::remove_reference_t<MatrixType1>> 
-     && std::is_base_of_v<MatrixBase, std::remove_reference_t<MatrixType2>>, bool> = true>
-auto operator-(MatrixType1&& M1, MatrixType2&& M2){
-    return MatrixOperationResult<
-        decltype(std::forward<MatrixType1>(M1)),
-        decltype(std::forward<MatrixType2>(M2)),
-        decltype(&elementWiseSubtract<MatrixType1, MatrixType2>)>
-    (std::forward<MatrixType1>(M1), std::forward<MatrixType2>(M2), elementWiseSubtract<MatrixType1, MatrixType2>);
-}
-
-template<typename MatrixType1, typename MatrixType2,
-    std::enable_if_t<
-        std::is_base_of_v<MatrixBase, std::remove_reference_t<MatrixType1>> 
-     && std::is_base_of_v<MatrixBase, std::remove_reference_t<MatrixType2>>, bool> = true>
-auto operator*(MatrixType1&& M1, MatrixType2&& M2){
-    return MatrixOperationResult<
-        decltype(std::forward<MatrixType1>(M1)),
-        decltype(std::forward<MatrixType2>(M2)),
-        decltype(&elementWiseMultiply<MatrixType1, MatrixType2>)>
-    (std::forward<MatrixType1>(M1), std::forward<MatrixType2>(M2), elementWiseMultiply<MatrixType1, MatrixType2>);
-}
-
-template<typename MatrixType1, typename MatrixType2,
-    std::enable_if_t<
-        std::is_base_of_v<MatrixBase, std::remove_reference_t<MatrixType1>> 
-     && std::is_base_of_v<MatrixBase, std::remove_reference_t<MatrixType2>>, bool> = true>
-auto operator/(MatrixType1&& M1, MatrixType2&& M2){
-    return MatrixOperationResult<
-        decltype(std::forward<MatrixType1>(M1)),
-        decltype(std::forward<MatrixType2>(M2)),
-        decltype(&elementWiseDivide<MatrixType1, MatrixType2>)>
-    (std::forward<MatrixType1>(M1), std::forward<MatrixType2>(M2), elementWiseDivide<MatrixType1, MatrixType2>);
-}
-
-template<typename MatrixType1, typename MatrixType2,
-    std::enable_if_t<
-        std::is_base_of_v<MatrixBase, std::remove_reference_t<MatrixType1>> 
-     && std::is_base_of_v<MatrixBase, std::remove_reference_t<MatrixType2>>, bool> = true>
-bool operator==(MatrixType1&& M1, MatrixType2&& M2){
-    if (M1.dim() != M2.dim()) return false;
-    bool equal = true;
-    for (auto it = std::forward<MatrixType1>(M1).begin(); it != std::forward<MatrixType1>(M1).end() && equal; it++){
-        equal = equal && (*it == std::forward<MatrixType2>(M2)(it.idx()));
-    }
-    return equal;
-}
+#undef ADD_MATRIX_MATRIX_OPERATOR
 
 template<typename MatrixType1, typename MatrixType2>
 auto dot(const MatrixType1& M1, const MatrixType2& M2){
@@ -359,131 +309,53 @@ private:
     BinaryOp op;
 };
 
-template<typename MatrixType, typename Scalar>
-auto scalarAdd(MatrixType&& M1, const Scalar& S, const dim3& idx){
-    return std::forward<MatrixType>(M1)(idx) + S;
+#define ADD_MATRIX_SCALAR_OPERATOR(op)                                                          \
+                                                                                                \
+template<typename MatrixType, typename Scalar,                                                  \
+    std::enable_if_t<                                                                           \
+        std::is_arithmetic_v<Scalar>                                                            \
+     && std::is_base_of_v<MatrixBase, std::remove_reference_t<MatrixType>>, bool> = true>       \
+auto operator op (MatrixType&& M1, const Scalar& S){                                            \
+    auto comp = [](MatrixType&& m1, const Scalar& s, const dim3& idx) {                         \
+        return std::forward<MatrixType>(m1)(idx) op s;                                          \
+    };                                                                                          \
+                                                                                                \
+    return ScalarOperationResult<                                                               \
+        decltype(std::forward<MatrixType>(M1)),                                                 \
+        Scalar,                                                                                 \
+        decltype(comp)                                                                          \
+    >                                                                                           \
+    (std::forward<MatrixType>(M1), S, comp);                                                    \
+}                                                                                               \
+template<typename MatrixType, typename Scalar,                                                  \
+    std::enable_if_t<                                                                           \
+        std::is_arithmetic_v<Scalar>                                                            \
+     && std::is_base_of_v<MatrixBase, std::remove_reference_t<MatrixType>>, bool> = true>       \
+auto operator op (const Scalar& S, MatrixType&& M1){                                            \
+    auto comp = [](MatrixType&& m1, const Scalar& s, const dim3& idx) {                         \
+        return s op std::forward<MatrixType>(m1)(idx);                                          \
+    };                                                                                          \
+                                                                                                \
+    return ScalarOperationResult<                                                               \
+        decltype(std::forward<MatrixType>(M1)),                                                 \
+        Scalar,                                                                                 \
+        decltype(comp)                                                                          \
+    >                                                                                           \
+    (std::forward<MatrixType>(M1), S, comp);                                                    \
 }
 
-template<typename MatrixType, typename Scalar>
-auto scalarMultiply(MatrixType&& M1, const Scalar& S, const dim3& idx){
-    return std::forward<MatrixType>(M1)(idx) * S;
-}
+ADD_MATRIX_SCALAR_OPERATOR(<)
+ADD_MATRIX_SCALAR_OPERATOR(<=)
+ADD_MATRIX_SCALAR_OPERATOR(>)
+ADD_MATRIX_SCALAR_OPERATOR(>=)
+ADD_MATRIX_SCALAR_OPERATOR(==)
+ADD_MATRIX_SCALAR_OPERATOR(!=)
+ADD_MATRIX_SCALAR_OPERATOR(+)
+ADD_MATRIX_SCALAR_OPERATOR(-)
+ADD_MATRIX_SCALAR_OPERATOR(*)
+ADD_MATRIX_SCALAR_OPERATOR(/)
 
-template<typename MatrixType, typename Scalar>
-auto scalarDivide(MatrixType&& M1, const Scalar& S, const dim3& idx){
-    return std::forward<MatrixType>(M1)(idx) / S;
-}
-
-template<typename MatrixType, typename Scalar>
-auto scalarSubtract(MatrixType&& M1, const Scalar& S, const dim3& idx){
-    return std::forward<MatrixType>(M1)(idx) - S;
-}
-
-template<typename MatrixType, typename Scalar,
-    std::enable_if_t<
-        std::is_arithmetic_v<Scalar> 
-     && std::is_base_of_v<MatrixBase, std::remove_reference_t<MatrixType>>, bool> = true>
-auto operator+(MatrixType&& M1, const Scalar& S){
-    return ScalarOperationResult<
-        decltype(std::forward<MatrixType>(M1)),
-        Scalar,
-        decltype(&scalarAdd<MatrixType, Scalar>)
-    >
-    (std::forward<MatrixType>(M1), S, scalarAdd<MatrixType, Scalar>);
-}
-
-template<typename MatrixType, typename Scalar,
-    std::enable_if_t<
-        std::is_arithmetic_v<Scalar> 
-     && std::is_base_of_v<MatrixBase, std::remove_reference_t<MatrixType>>, bool> = true>
-auto operator+(const Scalar& S, MatrixType&& M1){
-    return ScalarOperationResult<
-        decltype(std::forward<MatrixType>(M1)),
-        Scalar,
-        decltype(&scalarAdd<MatrixType, Scalar>)
-    >
-    (std::forward<MatrixType>(M1), S, scalarAdd<MatrixType, Scalar>);
-}
-
-template<typename MatrixType, typename Scalar,
-    std::enable_if_t<
-        std::is_arithmetic_v<Scalar> 
-     && std::is_base_of_v<MatrixBase, std::remove_reference_t<MatrixType>>, bool> = true>
-auto operator-(MatrixType&& M1, const Scalar& S){
-    return ScalarOperationResult<
-        decltype(std::forward<MatrixType>(M1)),
-        Scalar,
-        decltype(&scalarSubtract<MatrixType, Scalar>)
-    >
-    (std::forward<MatrixType>(M1), S, scalarSubtract<MatrixType, Scalar>);
-}
-
-template<typename MatrixType, typename Scalar,
-    std::enable_if_t<
-        std::is_arithmetic_v<Scalar> 
-     && std::is_base_of_v<MatrixBase, std::remove_reference_t<MatrixType>>, bool> = true>
-auto operator-(const Scalar& S, MatrixType&& M1){
-    return ScalarOperationResult<
-        decltype(std::forward<MatrixType>(M1)),
-        Scalar,
-        decltype(&scalarSubtract<MatrixType, Scalar>)
-    >
-    (std::forward<MatrixType>(M1), S, scalarSubtract<MatrixType, Scalar>);
-}
-
-template<typename MatrixType, typename Scalar,
-    std::enable_if_t<
-        std::is_arithmetic_v<Scalar> 
-     && std::is_base_of_v<MatrixBase, std::remove_reference_t<MatrixType>>, bool> = true>
-auto operator*(MatrixType&& M1, const Scalar& S){
-    return ScalarOperationResult<
-        decltype(std::forward<MatrixType>(M1)),
-        Scalar,
-        decltype(&scalarMultiply<MatrixType, Scalar>)
-    >
-    (std::forward<MatrixType>(M1), S, scalarMultiply<MatrixType, Scalar>);
-}
-
-template<typename MatrixType, typename Scalar,
-    std::enable_if_t<
-        std::is_arithmetic_v<Scalar> 
-     && std::is_base_of_v<MatrixBase, std::remove_reference_t<MatrixType>>, bool> = true>
-auto operator*(const Scalar& S, MatrixType&& M1){
-    return ScalarOperationResult<
-        decltype(std::forward<MatrixType>(M1)),
-        Scalar,
-        decltype(&scalarMultiply<MatrixType, Scalar>)
-    >
-    (std::forward<MatrixType>(M1), S, scalarMultiply<MatrixType, Scalar>);
-}
-
-
-template<typename MatrixType, typename Scalar,
-    std::enable_if_t<
-        std::is_arithmetic_v<Scalar> 
-     && std::is_base_of_v<MatrixBase, std::remove_reference_t<MatrixType>>, bool> = true>
-auto operator/(MatrixType&& M1, const Scalar& S){
-    return ScalarOperationResult<
-        decltype(std::forward<MatrixType>(M1)),
-        Scalar,
-        decltype(&scalarDivide<MatrixType, Scalar>)
-    >
-    (std::forward<MatrixType>(M1), S, scalarDivide<MatrixType, Scalar>);
-}
-
-template<typename MatrixType, typename Scalar,
-    std::enable_if_t<
-        std::is_arithmetic_v<Scalar> 
-     && std::is_base_of_v<MatrixBase, std::remove_reference_t<MatrixType>>, bool> = true>
-auto operator/(const Scalar& S, MatrixType&& M1){
-    return ScalarOperationResult<
-        decltype(std::forward<MatrixType>(M1)),
-        Scalar,
-        decltype(&scalarDivide<MatrixType, Scalar>)
-    >
-    (std::forward<MatrixType>(M1), S, scalarDivide<MatrixType, Scalar>);
-}
-
+#undef ADD_MATRIX_SCALAR_OPERATOR
 
 // ================================================================================================
 // Matrix unary operation
@@ -633,6 +505,20 @@ auto maxIndex(MatrixType&& M){
 // ================================================================================================
 // 
 // ================================================================================================
+
+template<typename MatrixType1, typename MatrixType2>
+bool matrixEqual(MatrixType1&& M1, MatrixType2&& M2){
+    if (M1.dim() != M2.dim()) return false;
+
+    decltype(auto) m1 = std::forward<MatrixType1>(M1);
+    decltype(auto) m2 = std::forward<MatrixType2>(M2);
+
+    bool equal = true;
+    for (auto it = m1.begin(); equal && (it != m1.end()); it++){
+        equal = equal && (*it == m2(it.idx()));
+    }
+    return equal;
+}
 
 template<typename Matrix1, typename Matrix2>
 void checkSize(const Matrix1& M1, const Matrix2& M2){
