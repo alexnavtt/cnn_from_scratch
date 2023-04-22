@@ -13,7 +13,10 @@
 #include "cnn_from_scratch/ModelDescription.h"
 #include "cnn_from_scratch/MNISTReader.h"
 
+cpp_timer::Timer global_timer;
+
 int main(int argc, char* argv[]){ 
+
     my_cnn::MNISTReader db
         ("../data/MNIST Train Images.ubyte-img", 
         "../data/MNIST Train Labels.ubyte-label");
@@ -28,7 +31,6 @@ int main(int argc, char* argv[]){
 
     // Create an edge detection kernel
     my_cnn::Kernel K1({5, 5, 1}, 2, 1);
-    K1.pad_inputs = false;
     K1.activation = my_cnn::RELU;
 
     // Run a 2x2 max pooling with a stride of 2x2
@@ -36,7 +38,6 @@ int main(int argc, char* argv[]){
 
     // Add another filter layer
     my_cnn::Kernel K2({3, 3, 2}, 4, 1);
-    K2.pad_inputs = false;
     K2.activation = my_cnn::SIGMOID;
 
     // Full model description
@@ -47,12 +48,12 @@ int main(int argc, char* argv[]){
     model.addConnectedLayer(10, "ConnectedLayer");
     model.setOutputLabels({0, 1, 2, 3, 4, 5, 6, 7, 8, 9});
 
-    for (int i = 0; i < 1000; i++){
-        model.timer.tic("forwardPropagation");
+    for (int i = 0; i < 100; i++){
+        global_timer.tic("forwardPropagation");
         my_cnn::ModelResults result = model.forwardPropagation(input_image, &model.output_labels[4]);
-        model.timer.toc("forwardPropagation");
+        global_timer.toc("forwardPropagation");
     }
-    model.timer.summary();
+    global_timer.summary();
 
     // std::cout << "Model predicted that the image was a " << result.label << "\n";
 
