@@ -15,16 +15,6 @@
 
 namespace my_cnn{
 
-#define THROW_SIZE_EXCEPTION { \
-    std::stringstream ss;      \
-    ss << "Matrix size mismatch. Sizes are (" \
-       << dim_.x << ", " << dim_.y << ", " << dim_.z \
-       << ") and (" \
-       << other.dim_.x << ", " << other.dim_.y << ", " << other.dim_.z \
-       << ")\n";    \
-       throw MatrixSizeException(ss.str()); \
-}
-
 template<typename T>  
 class SimpleMatrix : public MatrixBase{
     // Make all temlplates of SimpleMatrix friends
@@ -63,41 +53,6 @@ public:
 
     // Full matrix description constructor
     SimpleMatrix(dim3 dim, std::vector<T>&& vals);
-
-    /* === Size Checking === */
-
-    // Check against another matrix
-    template<typename Other>
-    bool sizeCheck(const SimpleMatrix<Other>& other) const noexcept{
-        if (other.dim_ == dim_) return true;
-        printf("Size mismatch (Matrix): Compared sizes are (%u, %u, %u) for this and (%u, %u, %u) for other\n", 
-                dim_.x, dim_.y, dim_.z, other.dim_.x, other.dim_.y, other.dim_.z);
-        return false;
-    }
-
-    // Check against a matrix view
-    template<typename Other>
-    bool sizeCheck(const SubMatrixView<Other>& other) const noexcept{
-        if (other.dim_ == dim_) return true;
-        printf("Size mismatch (Matrix): Compared sizes are (%u, %u, %u) for this and (%u, %u, %u) for other\n", 
-                dim_.x, dim_.y, dim_.z, other.dim_.x, other.dim_.y, other.dim_.z);
-        return false;
-    }
-
-    // Check against a vector
-    template<typename Other>
-    bool sizeCheck(const std::vector<Other>&& v) const {
-        if(v.size() == this->values_.size()) return true;
-        printf("Size mismatch (Valarray/gslice_array): Compared sizes are (%u, %u, %u) (i.e. size %zd) for this and %zd for other\n", 
-                dim_.x, dim_.y, dim_.z, this->size(), v.size());
-        return false;
-    }
-
-    // Literal value
-    template<typename Other, std::enable_if_t<std::is_arithmetic<Other>::value, bool> = true>
-    bool sizeCheck(const Other& v) const noexcept{
-        return true;
-    }
 
     /* == Assignment === */
 

@@ -284,38 +284,6 @@ TEST(Assignment, transposeFat){
     }
 }
 
-TEST(SizeCheck, matrix){
-    my_cnn::SimpleMatrix<float> M1({3, 4, 5});
-    my_cnn::SimpleMatrix<float> M2({3, 4, 5});
-    EXPECT_TRUE(M1.sizeCheck(M2));
-
-    my_cnn::SimpleMatrix<float> M3({3, 4, 5});
-    my_cnn::SimpleMatrix<float> M4({3, 3, 5});
-    EXPECT_FALSE(M3.sizeCheck(M4));
-
-    my_cnn::SimpleMatrix<float> M5({6, 5, 4});
-    my_cnn::SimpleMatrix<char>  M6({6, 5, 4});
-    EXPECT_TRUE(M5.sizeCheck(M6));
-}
-
-TEST(SizeCheck, valarray){
-    my_cnn::SimpleMatrix<float> M1({1, 2, 3});
-    EXPECT_TRUE(M1.sizeCheck(std::vector<float>{0, 5, 3, 6, 3, 5}));
-    EXPECT_FALSE(M1.sizeCheck(std::vector<float>{1, 2, 3}));
-    EXPECT_TRUE(M1.sizeCheck(std::vector<char>{1, 2, 3, 4, 5, 6}));
-}
-
-TEST(SizeCheck, numeric){
-    my_cnn::SimpleMatrix<float> M1({1, 2, 3});
-    EXPECT_TRUE(M1.sizeCheck(1));
-    EXPECT_TRUE(M1.sizeCheck(2.5));
-    EXPECT_TRUE(M1.sizeCheck(8ULL));
-    EXPECT_TRUE(M1.sizeCheck(true));
-
-    // Error: std::vector<int> is not an arithmetic type
-    // M1.sizeCheck(std::vector<int>{1, 2, 3});
-}
-
 TEST(Indexing, getIndex){
     // Uses column major storage, but regular (row, col, depth) matrix indexing
     my_cnn::SimpleMatrix<size_t> M({2, 3, 4});

@@ -27,7 +27,7 @@ public:
     weights(weights_dim)
     {}
 
-    static float sigmoidFunc(float f) {
+    static float sigmoid(float f) {
         return 1.0f/(1 + expf(f));
     }
 
@@ -38,7 +38,7 @@ public:
                 break;
 
             case SIGMOID:
-                modify(output_data, [](float f){return sigmoidFunc(f);});
+                modify(output_data, [](float f){return sigmoid(f);});
                 break;
 
             default:
@@ -69,7 +69,8 @@ public:
             case SIGMOID:
                 return result_t(activated_output, 
                     [](const SimpleMatrix<float>& M, const dim3& idx){
-                        return sigmoidFunc(M(idx))*(1 - sigmoidFunc(M(idx)));
+                        const auto val = M(idx);
+                        return sigmoid(val)*(1 - sigmoid(val));
                     }
                 );
 
@@ -84,7 +85,8 @@ public:
             case TANGENT:
                 return result_t(activated_output, 
                     [](const SimpleMatrix<float>& M, const dim3& idx){
-                        return 1.0f - std::tanh(M(idx))*std::tanh(M(idx));
+                        const auto val = M(idx);
+                        return 1.0f - std::tanh(val)*std::tanh(val);
                     }
                 );
 
