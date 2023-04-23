@@ -46,10 +46,20 @@ public:
         return output;
     }
 
-    SimpleMatrix<float> propagateBackward(const SimpleMatrix<float>& input_data, const SimpleMatrix<float>& output, const SimpleMatrix<float>& output_grad, float learning_rate) override{
-        weights -= learning_rate * matrixMultiply(output_grad, transpose(input_data));
-        biases  -= learning_rate * output_grad;
-        return matrixMultiply(transpose(weights), output_grad);
+    SimpleMatrix<float> propagateBackward(const SimpleMatrix<float>& badly_shaped_X, const SimpleMatrix<float>& Y, const SimpleMatrix<float>& dLdY, float learning_rate) override{        
+        auto _ = global_timer.scopedTic("connectedLayerBackprop");
+        // Need to reshape the input appropriately
+        SimpleMatrix<float> X = badly_shaped_X;
+        X.reshape(badly_shaped_X.size(), 1, 1);
+
+        SimpleMatrix<float> dLdz = dLdY * activationGradient(Y);
+        weights -= learning_rate * matrixMultiply(dLdz, transpose(X));
+        biases  -= learning_rate * dLdz;
+
+        // We need to reshape the gradient to what the previous layer would be expecting
+        SimpleMatrix<float> dLdX = matrixMultiply(transpose(weights), dLdz);
+        dLdX.reshape(badly_shaped_X.dim());
+        return dLdX;
     }
 };
 
