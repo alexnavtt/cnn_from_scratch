@@ -20,7 +20,7 @@ enable_testing()
 find_package(GTest REQUIRED)
 
 add_executable(main src/main.cpp src/MNISTReader.cpp)
-target_compile_options(main PRIVATE -g)
+target_compile_options(main PRIVATE -g -O3)
 target_link_libraries(main -fsanitize=address ${cpp_timer_LIBRARIES})
 
 include(GoogleTest)
