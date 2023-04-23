@@ -46,6 +46,7 @@ float ModelDescription<InputDataType, OutputDataType>::lossFcn(const SimpleMatri
 template<typename InputDataType, typename OutputDataType>
 ModelResults<OutputDataType> ModelDescription<InputDataType, OutputDataType>::forwardPropagation(SimpleMatrix<InputDataType> input, OutputDataType* true_label)
 {
+    auto _ = global_timer.scopedTic("forwardPropagation");
     // If necessary, convert the input data type to float
     SimpleMatrix<float> active_data = std::move(input);
 
@@ -67,19 +68,21 @@ ModelResults<OutputDataType> ModelDescription<InputDataType, OutputDataType>::fo
         active_data = layers[i]->propagateForward(std::move(active_data));
         global_timer.toc(flow.names[i].c_str());
 
-        std::cout << "After applying layer " << flow.names[i] << "\n";
-        for (uint layer = 0; layer < active_data.dim(2); layer++){
-            printImage(active_data.slice(layer));
-        }
+        // std::cout << "After applying layer " << flow.names[i] << "\n";
+        // for (uint layer = 0; layer < active_data.dim(2); layer++){
+        //     printImage(active_data.slice(layer));
+        // }
     }
 
     // Make sure the size of the last layer matches up with the label vector size
     assert(active_data.size() == output_labels.size());
 
     // Apply softmax to the output and store that as well
+    global_timer.tic("Softmax");
     active_data = exp(active_data - max(active_data));
     active_data /= sum(active_data);
     result.layer_inputs.push_back(active_data);
+    global_timer.toc("Softmax");
 
     // Find the maximum probability
     auto max_idx = std::max_element(std::begin(active_data), std::end(active_data));
@@ -93,6 +96,7 @@ ModelResults<OutputDataType> ModelDescription<InputDataType, OutputDataType>::fo
 
 template<typename InputDataType, typename OutputDataType>
 void ModelDescription<InputDataType, OutputDataType>::backwardsPropagation(const result_t& result, float learning_rate){
+    auto _ = global_timer.scopedTic("backwardsPropagation");
     // First we calculate the loss gradient with respect to the output values (assuming softmax and cross entropy)
     SimpleMatrix<float> dLdz = result.layer_inputs.back();
     dLdz[result.label_idx] -= 1;
@@ -107,9 +111,10 @@ void ModelDescription<InputDataType, OutputDataType>::backwardsPropagation(const
 
     // For each of the layers, calculate the corresponding gradient and adjust the weights accordingly
     for (int i = layers.size()-1; i >= 0; i--){
+        // std::cout << "layer " << flow.names[i] << "\n";
         const SimpleMatrix<float>& layer_input = result.layer_inputs[i];
         const SimpleMatrix<float>& layer_output = result.layer_inputs[i+1];
-        layers[i]->propagateBackward(layer_input, layer_output, dLdz, learning_rate);
+        dLdz = layers[i]->propagateBackward(layer_input, layer_output, dLdz, learning_rate);
     }
 }
 
