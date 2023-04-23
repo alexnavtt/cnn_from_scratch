@@ -12,6 +12,7 @@
 #include "cnn_from_scratch/imageUtil.h"
 #include "cnn_from_scratch/ModelDescription.h"
 #include "cnn_from_scratch/MNISTReader.h"
+#include "cnn_from_scratch/LoadingBar.h"
 
 cpp_timer::Timer global_timer;
 
@@ -43,20 +44,21 @@ int main(int argc, char* argv[]){
     model.addConnectedLayer(10, "ConnectedLayer");
     model.setOutputLabels({0, 1, 2, 3, 4, 5, 6, 7, 8, 9});
 
-    int batch_size = 1;
-    for (int j = 0; j < 2; j++){
+    int batch_size = 1000;
+    for (int j = 0; j < 5; j++){
         int correct_count = 0;
+        std::cout << "Starting batch " << j << "\n";
         for (int i = 0; i < batch_size; i++){
-            global_timer.tic("getImage");
             auto Data = db.nextImage();
-            global_timer.toc("getImage");
 
             my_cnn::ModelResults result = model.forwardPropagation(Data.data, &Data.label);
             model.backwardsPropagation(result, 0.01);
 
             correct_count += result.label == Data.label;
+            loadingBar(i, batch_size);
         }
-        std::cout << ": Accuracy was " << 100.0*correct_count/batch_size << "%\n";
+        std::cout << "\nAccuracy was " << 100.0*correct_count/batch_size << "%\n";
+        db.getImage(0);
     }
 
     auto Data = db.nextImage();
