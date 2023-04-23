@@ -45,7 +45,7 @@ public:
         }
     }
 
-    SubMatrixView(const SubMatrixView<MatrixType>& other_view, dim3 start, dim3 dim) : 
+    SubMatrixView(const SubMatrixView<T>& other_view, dim3 start, dim3 dim) : 
     SubMatrixView(*other_view.mat_ptr_, other_view.start_ + start, dim)
     {
         dim3 end = start + dim;
@@ -80,8 +80,8 @@ public:
 
     // Assign to a matrix-like object
     template<typename Other, 
-            std::enable_if_t<std::is_base_of_v<MatrixBase, Other>, bool> = true >
-    SubMatrixView<T>& operator=(const Other& o);
+        std::enable_if_t<std::is_base_of_v<MatrixBase, std::remove_reference_t<Other>>, bool> = true>
+    SubMatrixView<T>& operator=(Other&& M);
 
     // Iterators
     auto begin() {

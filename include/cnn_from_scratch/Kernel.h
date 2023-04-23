@@ -13,10 +13,11 @@ namespace my_cnn{
 
 class Kernel : public ModelLayer{
 public:
-    Kernel(dim3 filter_dim, unsigned num_filters, unsigned stride) :
-    ModelLayer(num_filters, {filter_dim.x, filter_dim.y, filter_dim.z*num_filters}),
+    Kernel(dim3 filter_dim, unsigned num_filters_in, unsigned stride) :
+    ModelLayer(num_filters_in, {filter_dim.x, filter_dim.y, filter_dim.z*num_filters_in}),
     dim_(filter_dim),
-    stride(stride)
+    stride(stride),
+    num_filters(num_filters_in)
     {
         std::srand(std::chrono::steady_clock::now().time_since_epoch().count());
         // Set random weights in the interval [0, 1] upon construction
@@ -28,16 +29,17 @@ public:
         }
     }
 
-    static SimpleMatrix<float> padInput(const SimpleMatrix<float>& input_data, const dim3 filter_dim){
+    template<typename MatrixType>
+    static SimpleMatrix<float> padInput(MatrixType&& input_data, const dim3 filter_dim){
         auto _ = global_timer.scopedTic("padInput");
         // Create the augmented input data
         SimpleMatrix<float> padded({
-            input_data.dim(0) + 2*(filter_dim.x - 1),
-            input_data.dim(1) + 2*(filter_dim.y - 1),
-            input_data.dim(2)
+            input_data.dim().x + 2*(filter_dim.x - 1),
+            input_data.dim().y + 2*(filter_dim.y - 1),
+            input_data.dim().z
         });
 
-        padded.subMatView({filter_dim.x-1, filter_dim.y-1, 0}, input_data.dims()) = input_data;
+        padded.subMatView({filter_dim.x-1, filter_dim.y-1, 0}, input_data.dim()) = std::forward<MatrixType>(input_data);
         return padded;
     }
 
@@ -49,45 +51,10 @@ public:
         return dim3(
             input_data.dim(0) - dim_.x + 1,
             input_data.dim(1) - dim_.y + 1,
-            (uint)biases.size()
+            num_filters
         );
     }
 
-    [[nodiscard]]
-    static SimpleMatrix<float> convolve(const SimpleMatrix<float>& filter, const SimpleMatrix<float>& data, bool padded = false){
-        auto _ = global_timer.scopedTic("convolve");
-        // Pad the input if necessary
-        SimpleMatrix<float> input = padded ? padInput(data, filter.dim()) : data;
-
-        // Calculate the output size based on the input and filter sizes
-        dim3 output_size(
-            input.dim().x - filter.dim().x + 1,
-            input.dim().y - filter.dim().y + 1,
-            filter.dim().z / data.dim().z
-        );
-        SimpleMatrix<float> output(output_size);
-
-        // This is the size of the filter sub region that we'll be extracting at every step
-        const dim3 sub_region_dim(filter.dim().x, filter.dim().y, data.dim().z);
-
-        // Step through the input and accumulate the results in the output
-        dim3 idx{0, 0, 0};
-        for (uint x = 0; x < output_size.x; x++){
-            for (uint y = 0; y < output_size.y; y++){
-                // Extract the sub region
-                auto sub_region = input.subMatView({x, y, 0}, sub_region_dim);
-                auto _ = global_timer.scopedTic("calculateOutputValue");
-
-                // For each filter layer, apply the convolution process to this sub-region
-                for (uint z = 0; z < output_size.z; z++){
-                    // Multiply by the weights and add the biases
-                    output(x, y, z) = sum(sub_region * filter.slices(z*data.dim().z, data.dim().z));
-                }
-            }
-        }
-
-        return output;
-    }
 
     [[nodiscard]] 
     SimpleMatrix<float> propagateForward(SimpleMatrix<float>&& input_data) override {
@@ -95,15 +62,17 @@ public:
         if (not checkSize(input_data))
             throw ModelLayerException("Mismatched channel count for convolution");
 
-        // Convolve the input with the weights
-        auto output = convolve(weights, input_data, false);
-
-        // Add the bias terms
-        global_timer.tic("addBiases");
-        for (size_t i = 0; i < output.dim().z; i++){
+        // Convolve the input with the weights and add the biases
+        SimpleMatrix<float> output(outputSize(input_data));
+        for (size_t i = 0; i < num_filters; i++){
+            for (size_t j = 0; j < dim_.z; j++){
+                auto _ = global_timer.scopedTic("Convolution");
+                const auto W = weights.slice(i*dim_.z  + j);
+                const auto I = input_data.slice(j);
+                output.slice(i) += convolve(I, W, dim2(stride, stride));
+            }
             output.slice(i) += biases[i];
         }
-        global_timer.toc("addBiases");
 
         // Apply the activation function
         activate(output);
@@ -114,15 +83,37 @@ public:
 
     [[nodiscard]] 
     SimpleMatrix<float> propagateBackward(const SimpleMatrix<float>& X, const SimpleMatrix<float>& Y, const SimpleMatrix<float>& dLdY, float learning_rate) override {
+        auto _ = global_timer.scopedTic("kernelBackprop");
+        // Apply the gradient from the activation layer to get the output gradient
         const SimpleMatrix<float> dLdZ = dLdY * activationGradient(dLdY);
-        // Update the weights
-        weights -= learning_rate * convolve(dLdZ, X);
-        // Update the biases
-        for (size_t i = 0; i < biases.size(); i++){
-            biases[i] -= learning_rate * sum(dLdZ.slice(i));
+
+        SimpleMatrix<float> dLdX(X.dim());
+        for (size_t i = 0; i < num_filters; i++){
+            // Update weights
+            global_timer.tic("updateWeights");
+            auto gradient_layer = dLdZ.slice(i);
+            for (size_t j = 0; j < dim_.z; j++){
+                auto input_layer = X.slice(j);
+                weights.slice(i*dim_.z + j) -= learning_rate * convolve(input_layer, gradient_layer, dim2(1, 1)); 
+            }
+            global_timer.toc("updateWeights");
+
+            // Update biases
+            global_timer.tic("updateBiases");
+            biases[i] -= learning_rate * sum(gradient_layer);
+            global_timer.toc("updateBiases");
+
+            // Update output gradient
+            global_timer.tic("outputGradient");
+            for (size_t j = 0; j < dim_.z; j++){
+                SimpleMatrix<float> padded_weights = padInput(rotate<2>(weights.slice(i*dim_.z + j)), gradient_layer.dim());
+                global_timer.tic("convolve");
+                dLdX.slice(j) += convolve(padded_weights, gradient_layer, dim2(1, 1));
+                global_timer.toc("convolve");
+            }
+            global_timer.toc("outputGradient");
         }
-        // Calculate the input gradient
-        return X;
+        return dLdX;
     }
 
 private:
@@ -130,6 +121,7 @@ private:
 
 public:
     unsigned stride = 1;
+    unsigned num_filters = 0;
 };
 
 } // namespace my_cnn
