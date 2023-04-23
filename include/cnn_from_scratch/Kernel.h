@@ -5,9 +5,7 @@
 #include "cnn_from_scratch/Matrix/SimpleMatrix.h"
 #include "cnn_from_scratch/imageUtil.h"
 #include "cnn_from_scratch/ModelLayer.h"
-#include "cpp_timer/Timer.h"
-
-extern cpp_timer::Timer global_timer;
+#include "cnn_from_scratch/timerConfig.h"
 
 namespace my_cnn{
 
@@ -31,7 +29,6 @@ public:
 
     template<typename MatrixType>
     static SimpleMatrix<float> padInput(MatrixType&& input_data, const dim3 filter_dim){
-        auto _ = global_timer.scopedTic("padInput");
         // Create the augmented input data
         SimpleMatrix<float> padded({
             input_data.dim().x + 2*(filter_dim.x - 1),
@@ -83,35 +80,32 @@ public:
 
     [[nodiscard]] 
     SimpleMatrix<float> propagateBackward(const SimpleMatrix<float>& X, const SimpleMatrix<float>& Y, const SimpleMatrix<float>& dLdY, float learning_rate) override {
-        auto _ = global_timer.scopedTic("kernelBackprop");
         // Apply the gradient from the activation layer to get the output gradient
         const SimpleMatrix<float> dLdZ = dLdY * activationGradient(dLdY);
 
         SimpleMatrix<float> dLdX(X.dim());
         for (size_t i = 0; i < num_filters; i++){
             // Update weights
-            global_timer.tic("updateWeights");
+            TIC("updateWeights");
             auto gradient_layer = dLdZ.slice(i);
             for (size_t j = 0; j < dim_.z; j++){
                 auto input_layer = X.slice(j);
                 weights.slice(i*dim_.z + j) -= learning_rate * convolve(input_layer, gradient_layer, dim2(1, 1)); 
             }
-            global_timer.toc("updateWeights");
+           TOC("updateWeights");
 
             // Update biases
-            global_timer.tic("updateBiases");
+            TIC("updateBiases");
             biases[i] -= learning_rate * sum(gradient_layer);
-            global_timer.toc("updateBiases");
+            TOC("updateBiases");
 
             // Update output gradient
-            global_timer.tic("outputGradient");
+            TIC("outputGradient");
             for (size_t j = 0; j < dim_.z; j++){
                 SimpleMatrix<float> padded_weights = padInput(rotate<2>(weights.slice(i*dim_.z + j)), gradient_layer.dim());
-                global_timer.tic("convolve");
                 dLdX.slice(j) += convolve(padded_weights, gradient_layer, dim2(1, 1));
-                global_timer.toc("convolve");
             }
-            global_timer.toc("outputGradient");
+            TOC("outputGradient");
         }
         return dLdX;
     }

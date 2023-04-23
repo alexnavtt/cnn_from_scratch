@@ -4,6 +4,7 @@
 #include <valarray>
 #include "cnn_from_scratch/exceptions.h"
 #include "cnn_from_scratch/ModelLayer.h"
+#include "cnn_from_scratch/timerConfig.h"
 #include "cnn_from_scratch/Matrix/SimpleMatrix.h"
 
 namespace my_cnn{
@@ -47,18 +48,25 @@ public:
     }
 
     SimpleMatrix<float> propagateBackward(const SimpleMatrix<float>& badly_shaped_X, const SimpleMatrix<float>& Y, const SimpleMatrix<float>& dLdY, float learning_rate) override{        
-        auto _ = global_timer.scopedTic("connectedLayerBackprop");
         // Need to reshape the input appropriately
         SimpleMatrix<float> X = badly_shaped_X;
         X.reshape(badly_shaped_X.size(), 1, 1);
 
+        TIC("activationGradient");
         SimpleMatrix<float> dLdz = dLdY * activationGradient(Y);
+        TOC("activationGradient");
+        TIC("updateWeights");
         weights -= learning_rate * matrixMultiply(dLdz, transpose(X));
+        TOC("updateWeights");
+        TIC("updateBiases");
         biases  -= learning_rate * dLdz;
+        TOC("updateBiases");
 
         // We need to reshape the gradient to what the previous layer would be expecting
+        TIC("outputGradient");
         SimpleMatrix<float> dLdX = matrixMultiply(transpose(weights), dLdz);
         dLdX.reshape(badly_shaped_X.dim());
+        TOC("outputGradient");
         return dLdX;
     }
 };

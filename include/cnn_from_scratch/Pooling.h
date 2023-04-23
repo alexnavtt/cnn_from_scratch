@@ -65,7 +65,6 @@ public:
     }
 
     SimpleMatrix<float> propagateBackward(const SimpleMatrix<float>& X, const SimpleMatrix<float>& Y, const SimpleMatrix<float>& dLdY, [[maybe_unused]] float learning_rate) override{        
-        auto _ = global_timer.scopedTic("poolingBackprop");
         SimpleMatrix<float> dLdx(X.dim());
         switch(type_){
             case MIN:

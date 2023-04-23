@@ -1,4 +1,5 @@
 #include "cnn_from_scratch/imageUtil.h"
+#include "cnn_from_scratch/timerConfig.h"
 #include "cnn_from_scratch/ModelDescription.h"
 
 extern cpp_timer::Timer global_timer;
@@ -46,7 +47,7 @@ float ModelDescription<InputDataType, OutputDataType>::lossFcn(const SimpleMatri
 template<typename InputDataType, typename OutputDataType>
 ModelResults<OutputDataType> ModelDescription<InputDataType, OutputDataType>::forwardPropagation(SimpleMatrix<InputDataType> input, OutputDataType* true_label)
 {
-    auto _ = global_timer.scopedTic("forwardPropagation");
+    STIC;
     // If necessary, convert the input data type to float
     SimpleMatrix<float> active_data = std::move(input);
 
@@ -61,12 +62,11 @@ ModelResults<OutputDataType> ModelDescription<InputDataType, OutputDataType>::fo
 
     // For each stage of the model, apply the necessary step
     for (size_t i = 0; i < layers.size(); i++){
+        stic(flow.names[i].c_str());
 
         // Record the input for this layer (to be used in back propagation)
-        global_timer.tic(flow.names[i].c_str());
         result.layer_inputs.push_back(active_data);
         active_data = layers[i]->propagateForward(std::move(active_data));
-        global_timer.toc(flow.names[i].c_str());
 
         // std::cout << "After applying layer " << flow.names[i] << "\n";
         // for (uint layer = 0; layer < active_data.dim(2); layer++){
@@ -96,7 +96,7 @@ ModelResults<OutputDataType> ModelDescription<InputDataType, OutputDataType>::fo
 
 template<typename InputDataType, typename OutputDataType>
 void ModelDescription<InputDataType, OutputDataType>::backwardsPropagation(const result_t& result, float learning_rate){
-    auto _ = global_timer.scopedTic("backwardsPropagation");
+    STIC;
     // First we calculate the loss gradient with respect to the output values (assuming softmax and cross entropy)
     SimpleMatrix<float> dLdz = result.layer_inputs.back();
     dLdz[result.label_idx] -= 1;
@@ -111,7 +111,7 @@ void ModelDescription<InputDataType, OutputDataType>::backwardsPropagation(const
 
     // For each of the layers, calculate the corresponding gradient and adjust the weights accordingly
     for (int i = layers.size()-1; i >= 0; i--){
-        // std::cout << "layer " << flow.names[i] << "\n";
+        auto _ = global_timer.scopedTic(flow.names[i].c_str());
         const SimpleMatrix<float>& layer_input = result.layer_inputs[i];
         const SimpleMatrix<float>& layer_output = result.layer_inputs[i+1];
         dLdz = layers[i]->propagateBackward(layer_input, layer_output, dLdz, learning_rate);

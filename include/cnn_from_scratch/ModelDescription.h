@@ -3,7 +3,6 @@
 #include <vector>
 #include <string>
 #include <memory>
-#include "cpp_timer/Timer.h"
 #include "cnn_from_scratch/Kernel.h"
 #include "cnn_from_scratch/Pooling.h"
 #include "cnn_from_scratch/ModelFlow.h"
