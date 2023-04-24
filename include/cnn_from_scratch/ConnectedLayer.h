@@ -53,13 +53,13 @@ public:
         X.reshape(badly_shaped_X.size(), 1, 1);
 
         TIC("activationGradient");
-        SimpleMatrix<float> dLdz = dLdY * activationGradient(Y);
+        const SimpleMatrix<float> dLdz = dLdY * activationGradient(Y);
         TOC("activationGradient");
         TIC("updateWeights");
         weights -= learning_rate * matrixMultiply(dLdz, transpose(X));
         TOC("updateWeights");
         TIC("updateBiases");
-        biases  -= learning_rate * dLdz;
+        biases -= learning_rate * dLdz;
         TOC("updateBiases");
 
         // We need to reshape the gradient to what the previous layer would be expecting

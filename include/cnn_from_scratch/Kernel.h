@@ -92,7 +92,7 @@ public:
                 auto input_layer = X.slice(j);
                 weights.slice(i*dim_.z + j) -= learning_rate * convolve(input_layer, gradient_layer, dim2(1, 1)); 
             }
-           TOC("updateWeights");
+            TOC("updateWeights");
 
             // Update biases
             TIC("updateBiases");
