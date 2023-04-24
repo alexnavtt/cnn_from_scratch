@@ -45,6 +45,13 @@ float ModelDescription<InputDataType, OutputDataType>::lossFcn(const SimpleMatri
 }
 
 template<typename InputDataType, typename OutputDataType>
+SimpleMatrix<float> ModelDescription<InputDataType, OutputDataType>::softMax(const SimpleMatrix<float>& X){
+    SimpleMatrix<float> out = my_cnn::exp(X);
+    out /= my_cnn::sum(out);
+    return out;
+}
+
+template<typename InputDataType, typename OutputDataType>
 ModelResults<OutputDataType> ModelDescription<InputDataType, OutputDataType>::forwardPropagation(SimpleMatrix<InputDataType> input, OutputDataType* true_label)
 {
     STIC;
@@ -79,8 +86,7 @@ ModelResults<OutputDataType> ModelDescription<InputDataType, OutputDataType>::fo
 
     // Apply softmax to the output and store that as well
     global_timer.tic("Softmax");
-    active_data = exp(active_data - max(active_data));
-    active_data /= sum(active_data);
+    active_data = softMax(active_data);
     result.layer_inputs.push_back(active_data);
     global_timer.toc("Softmax");
 
@@ -89,8 +95,11 @@ ModelResults<OutputDataType> ModelDescription<InputDataType, OutputDataType>::fo
 
     // Construct the output data
     result.label_idx = std::distance(std::begin(active_data), max_idx);
-    result.label = output_labels[result.label_idx];
-    result.loss = true_label ? lossFcn(active_data, *true_label) : -1.0f;
+    if (true_label != nullptr){
+        result.loss = lossFcn(active_data, *true_label);
+        result.true_label_idx = std::distance(std::begin(output_labels), std::find(std::begin(output_labels), std::end(output_labels), *true_label));
+        // std::cout << "Label is " << +output_labels[result.label_idx] << " and the true label is " << +*true_label << ". Loss is " << result.loss << "\n";
+    } 
     return result;
 }
 
@@ -99,8 +108,7 @@ void ModelDescription<InputDataType, OutputDataType>::backwardsPropagation(const
     STIC;
     // First we calculate the loss gradient with respect to the output values (assuming softmax and cross entropy)
     SimpleMatrix<float> dLdz = result.layer_inputs.back();
-    dLdz[result.label_idx] -= 1;
-
+    dLdz[result.true_label_idx] -= 1;
     // for (size_t i = 0; i < flow.names.size(); i++){
     //     std::cout << "Stored input for layer " << i << ": " << flow.names.at(i) << "\n";
     //     const auto& M = result.layer_inputs[i];
@@ -115,6 +123,7 @@ void ModelDescription<InputDataType, OutputDataType>::backwardsPropagation(const
         const SimpleMatrix<float>& layer_input = result.layer_inputs[i];
         const SimpleMatrix<float>& layer_output = result.layer_inputs[i+1];
         dLdz = layers[i]->propagateBackward(layer_input, layer_output, dLdz, learning_rate);
+        break;
     }
 }
 

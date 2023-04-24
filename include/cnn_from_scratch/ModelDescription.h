@@ -12,9 +12,9 @@ namespace my_cnn{
 
 template<typename OutputDataType>
 struct ModelResults{
-    OutputDataType label;
     size_t label_idx;
-    float loss;
+    size_t true_label_idx;
+    float loss = -1.0f;
     std::vector<SimpleMatrix<float>> layer_inputs;
 };
 
@@ -40,6 +40,7 @@ public:
     result_t forwardPropagation(SimpleMatrix<InputDataType> input, OutputDataType* true_label = nullptr);
     void backwardsPropagation(const result_t& result, float learning_rate);
     float lossFcn(const SimpleMatrix<float>& probabilities, const OutputDataType& true_label) const;
+    SimpleMatrix<float> softMax(const SimpleMatrix<float>& X);
 };
 
 } // end namespace my_cnn
