@@ -69,7 +69,7 @@ Image MNISTReader::nextImage(){
     }
 
     img.label = read<unsigned char>(label_stream_);
-    img.data = std::move(out);
+    img.data = (out - 128)/255.0f;
     current_index_++;
     return img;
 }
