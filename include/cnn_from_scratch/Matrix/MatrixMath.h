@@ -467,7 +467,7 @@ auto abs(MatrixType&& M){
 
 template<typename MatrixType>
 auto exp(MatrixType&& M){
-    using input_type = typename MatrixType::type;
+    using input_type = typename std::remove_reference_t<MatrixType>::type;
     using return_type = decltype(std::exp(input_type{}));
     return my_cnn::apply<MatrixType, return_type(*)(input_type)>(std::forward<MatrixType>(M), std::exp);
 }
@@ -546,6 +546,11 @@ auto minIndex(MatrixType&& M){
 template<typename MatrixType>
 auto maxIndex(MatrixType&& M){
     return std::max_element(std::forward<MatrixType>(M).begin(), std::forward<MatrixType>(M).end()).idx();
+}
+
+template<typename MatrixType>
+auto l2Norm(MatrixType&& M){
+    return std::sqrt(my_cnn::sum(std::forward<MatrixType>(M)*std::forward<MatrixType>(M)));
 }
 
 // ================================================================================================
