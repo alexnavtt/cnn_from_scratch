@@ -69,10 +69,6 @@ public:
     type& operator()(uint x, uint y, uint z);
     type& at(const dim3& idx);
 
-    // Convert to SimpleMatrix
-    operator SimpleMatrix<std::remove_const_t<T>>() const;
-    SimpleMatrix<std::remove_const_t<T>> matrix() const;
-
     // Assign to a contained type
     template<typename Other, 
             std::enable_if_t<std::is_convertible_v<Other, type>, bool> = true >

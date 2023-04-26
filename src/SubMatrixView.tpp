@@ -50,18 +50,6 @@ T& SubMatrixView<T>::at(const dim3& idx) {
 }
 
 template<typename T>
-SubMatrixView<T>::operator SimpleMatrix<typename std::remove_const_t<T>>() const{
-    SimpleMatrix<typename std::remove_const_t<T>> mat(this->dim_);
-    std::copy(begin(), end(), std::begin(mat));
-    return mat;
-}
-
-template<typename T>
-SimpleMatrix<typename std::remove_const_t<T>> SubMatrixView<T>::matrix() const{
-    return *this;
-}
-
-template<typename T>
 template<typename Other, std::enable_if_t<std::is_convertible_v<Other, T>,bool>>
 SubMatrixView<T>& SubMatrixView<T>::operator=(const Other& o){
     std::fill(begin(), end(), o);
