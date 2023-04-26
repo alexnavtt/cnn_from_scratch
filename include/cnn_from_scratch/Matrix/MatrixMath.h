@@ -469,39 +469,39 @@ auto rotate(MatrixType&& M){
 // ================================================================================================
 
 template<typename MatrixType>
-auto sum(MatrixType&& M){
+auto sum(const MatrixType& M){
     using T = typename std::remove_reference_t<MatrixType>::type;
-    return std::accumulate(std::forward<MatrixType>(M).begin(), std::forward<MatrixType>(M).end(), T());
+    return std::accumulate(M.begin(), M.end(), T());
 }
 
 template<typename MatrixType>
-auto mean(MatrixType&& M){
+auto mean(const MatrixType& M){
     return sum(M) / M.size();
 }
 
 template<typename MatrixType>
-auto max(MatrixType&& M){
-    return *std::max_element(std::forward<MatrixType>(M).begin(), std::forward<MatrixType>(M).end());
+auto max(const MatrixType& M){
+    return *std::max_element(M.begin(), M.end());
 }
 
 template<typename MatrixType>
-auto min(MatrixType&& M){
-    return *std::min_element(std::forward<MatrixType>(M).begin(), std::forward<MatrixType>(M).end());
+auto min(const MatrixType& M){
+    return *std::min_element(M.begin(), M.end());
 }
 
 template<typename MatrixType>
-auto minIndex(MatrixType&& M){
-    return std::min_element(std::forward<MatrixType>(M).begin(), std::forward<MatrixType>(M).end()).idx();
+auto minIndex(const MatrixType& M){
+    return std::min_element(M.begin(), M.end()).idx();
 }
 
 template<typename MatrixType>
-auto maxIndex(MatrixType&& M){
-    return std::max_element(std::forward<MatrixType>(M).begin(), std::forward<MatrixType>(M).end()).idx();
+auto maxIndex(const MatrixType& M){
+    return std::max_element(M.begin(), M.end()).idx();
 }
 
 template<typename MatrixType>
-auto l2Norm(MatrixType&& M){
-    return std::sqrt(my_cnn::sum(std::forward<MatrixType>(M)*std::forward<MatrixType>(M)));
+auto l2Norm(const MatrixType& M){
+    return std::sqrt(my_cnn::sum(M*M));
 }
 
 // ================================================================================================
@@ -509,15 +509,12 @@ auto l2Norm(MatrixType&& M){
 // ================================================================================================
 
 template<typename MatrixType1, typename MatrixType2>
-bool matrixEqual(MatrixType1&& M1, MatrixType2&& M2){
+bool matrixEqual(const MatrixType1& M1, const MatrixType2& M2){
     if (M1.dim() != M2.dim()) return false;
 
-    decltype(auto) m1 = std::forward<MatrixType1>(M1);
-    decltype(auto) m2 = std::forward<MatrixType2>(M2);
-
     bool equal = true;
-    for (auto it = m1.begin(); equal && (it != m1.end()); it++){
-        equal = equal && (*it == m2(it.idx()));
+    for (auto it = M1.begin(); equal && (it != M1.end()); it++){
+        equal = equal && (*it == M2(it.idx()));
     }
     return equal;
 }
