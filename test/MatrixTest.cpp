@@ -508,8 +508,8 @@ TEST(Arithmetic, matrixViewAdd){
                    6, 5, 4,
                    3, 2, 1});
 
-    my_cnn::SimpleMatrix<float> M3 = M1 + M2.subMatView({0, 0, 0}, {2, 2, 1});
-    for (auto& v : M3){
+    auto M3 = M1 + M2.subMatView({0, 0, 0}, {2, 2, 1});
+    for (auto v : M3){
         EXPECT_EQ(v,10.0f);
     }
 }
