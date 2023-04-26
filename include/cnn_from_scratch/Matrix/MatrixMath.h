@@ -164,8 +164,8 @@ public:
 
 
 private:
-    MT1 m1_;
-    MT2 m2_;
+    const MT1 m1_;
+    const MT2 m2_;
     BinaryOp op;
 };
 
@@ -239,8 +239,8 @@ public:
     auto end() const {return MatrixIterator<const GeneralMatrixOperationResult<MatrixType1, MatrixType2, BinaryOp>&>(*this, {0, 0, dim_.z});}
 
 private:
-    MT1 m1_;
-    MT2 m2_;
+    const MT1 m1_;
+    const MT2 m2_;
     BinaryOp op_;
 };
 
@@ -375,78 +375,67 @@ public:
     template<typename T1>
     friend auto transpose(T1&&);
 
-    using MT = typename std::remove_reference_t<MatrixType>;
-    using type = typename std::remove_const_t<typename MT::type>;
+    using MT = MatrixStorageType<MatrixType>;
+    using type = typename std::remove_reference_t<MatrixType>::type;
 
     UnaryOperationResult(MatrixType&& M, UnaryOp Op) :
     MatrixBase(M.dim()),
-    m_(&M), op(Op) 
+    m_(std::forward<MatrixType>(M)), op(Op) 
     {}
 
-    type operator()(dim3 idx) const && {
-        return std::invoke(op, std::forward<MatrixType>(*m_), idx);
+    type operator()(dim3 idx) const {
+        return std::invoke(op, m_, idx);
     }
 
-    type operator()(uint x, uint y, uint z) const && {
+    type operator()(uint x, uint y, uint z) const {
         return operator()(dim3(x,y,z));
     }
 
-    template<typename U>
-    type operator()(U, U = {}, U = {}) const &{
-        static_assert(std::is_same_v<U, void>, bad_access_error);
-        static_assert(not std::is_same_v<U, void>);
-        return type{};
-    }
-
-    auto begin() && {return MatrixIterator<UnaryOperationResult<MatrixType, UnaryOp>&&>(std::move(*this), {0, 0, 0});}
-    auto end() && {return MatrixIterator<UnaryOperationResult<MatrixType, UnaryOp>&&>(std::move(*this), {0, 0, dim_.z});}
-    auto begin() const && {return MatrixIterator<const UnaryOperationResult<MatrixType, UnaryOp>&&>(std::move(*this), {0, 0, 0});}
-    auto end() const && {return MatrixIterator<const UnaryOperationResult<MatrixType, UnaryOp>&&>(std::move(*this), {0, 0, dim_.z});}
+    auto begin() {return MatrixIterator<UnaryOperationResult<MatrixType, UnaryOp>&>(*this, {0, 0, 0});}
+    auto end() {return MatrixIterator<UnaryOperationResult<MatrixType, UnaryOp>&>(*this, {0, 0, dim_.z});}
+    auto begin() const {return MatrixIterator<const UnaryOperationResult<MatrixType, UnaryOp>&>(*this, {0, 0, 0});}
+    auto end() const {return MatrixIterator<const UnaryOperationResult<MatrixType, UnaryOp>&>(*this, {0, 0, dim_.z});}
 
 private:
-    MT* m_;
+    const MT m_;
     UnaryOp op;
 };
 
 template<typename MatrixType, typename UnaryOp>
 auto apply(MatrixType&& M, UnaryOp op){
-    auto invoker = [op](MatrixType&& M_, const dim3& idx_){
-        return std::invoke(op, std::forward<MatrixType>(M_)(idx_));
+    auto invoker = [op](const MatrixType& M_, const dim3& idx_){
+        return std::invoke(op, M_(idx_));
     };
 
-    return UnaryOperationResult<
-        decltype(std::forward<MatrixType>(M)), 
-        decltype(invoker)>
-    (std::forward<MatrixType>(M), invoker);
+    return UnaryOperationResult<decltype(M), decltype(invoker)>(std::forward<MatrixType>(M), invoker);
 }
 
 template<typename MatrixType>
 auto abs(MatrixType&& M){
     using input_type = typename MatrixType::type;
     using return_type = decltype(std::abs(input_type{}));
-    return my_cnn::apply<MatrixType, return_type(*)(input_type)>(std::forward<MatrixType>(M), std::abs);
+    return my_cnn::apply<decltype(M), return_type(*)(input_type)>(std::forward<MatrixType>(M), std::abs);
 }
 
 template<typename MatrixType>
 auto exp(MatrixType&& M){
     using input_type = typename std::remove_reference_t<MatrixType>::type;
     using return_type = decltype(std::exp(input_type{}));
-    return my_cnn::apply<MatrixType, return_type(*)(input_type)>(std::forward<MatrixType>(M), std::exp);
+    return my_cnn::apply<decltype(M), return_type(*)(input_type)>(std::forward<MatrixType>(M), std::exp);
 }
 
 template<typename MatrixType>
 auto transpose(MatrixType&& M){
-    auto transposeIdx = [](MatrixType&& M, const dim3& idx){
-        return std::forward<MatrixType>(M)(dim3(idx.y, idx.x, idx.z));
+    auto transposeIdx = [](const MatrixType& M, const dim3& idx){
+        return M(dim3(idx.y, idx.x, idx.z));
     };
-    auto&& ret_val = UnaryOperationResult<MatrixType, decltype(transposeIdx)>(std::forward<MatrixType>(M), transposeIdx);
+    auto&& ret_val = UnaryOperationResult<decltype(M), decltype(transposeIdx)>(std::forward<MatrixType>(M), transposeIdx);
     ret_val.dim_.x = M.dim().y;
     ret_val.dim_.y = M.dim().x;
     return ret_val;
 }
 
-template<size_t NumSteps, typename MatrixType,
-    typename = std::enable_if_t<std::is_base_of_v<MatrixBase, std::remove_reference_t<MatrixType>>>>
+template<size_t NumSteps, typename MatrixType, typename = IsMatrixBase<MatrixType>>
 auto rotate(MatrixType&& M){
     static_assert(NumSteps > 0 && NumSteps < 4);
     if (not M.isSquare()){
@@ -455,7 +444,7 @@ auto rotate(MatrixType&& M){
         throw MatrixTransformException(ss.str());
     }
 
-    auto rotatedIndex = [](MatrixType&& M, const dim3& idx){
+    auto rotatedIndex = [](const MatrixType& M, const dim3& idx){
         dim3 new_idx;
         new_idx.z = idx.z;
         if constexpr (NumSteps == 1){
@@ -469,10 +458,10 @@ auto rotate(MatrixType&& M){
             new_idx.y = M.dim().x - idx.x - 1;
         }
 
-        return std::forward<MatrixType>(M)(new_idx);
+        return M(new_idx);
     };
 
-    return UnaryOperationResult<decltype(std::forward<MatrixType>(M)), decltype(rotatedIndex)>(std::forward<MatrixType>(M), rotatedIndex);
+    return UnaryOperationResult<decltype(M), decltype(rotatedIndex)>(std::forward<MatrixType>(M), rotatedIndex);
 }
 
 // ================================================================================================
