@@ -32,6 +32,33 @@ namespace my_cnn{
 template<typename T>
 class SimpleMatrix;
 
+template<typename MatrixType1, typename MatrixType2>
+using CommonMatrixType = typename std::common_type_t<
+        typename std::remove_reference_t<MatrixType1>::type,
+        typename std::remove_reference_t<MatrixType2>::type
+    >;
+
+
+template<typename MatrixType1, typename MatrixType2 = MatrixBase>
+using IsMatrixBase = typename std::enable_if_t<
+        std::is_base_of_v<
+            MatrixBase,
+            typename std::remove_reference_t<MatrixType1>
+        >
+        && 
+        std::is_base_of_v<
+            MatrixBase,
+            typename std::remove_reference_t<MatrixType2>
+        >
+    >;
+
+template<typename MatrixType>
+using MatrixStorageType = typename std::conditional_t<
+    std::is_lvalue_reference_v<MatrixType>,
+    MatrixType,
+    std::remove_reference_t<MatrixType>
+>;
+
 // ================================================================================================
 // Self modification math
 // ================================================================================================
@@ -105,74 +132,53 @@ MatrixType& operator/=(MatrixType&& M, Other&& other){
 // Matrix - Matrix math result
 // ================================================================================================
 
-template<typename MatrixType1, typename MatrixType2, class BinaryOp, 
-    typename = std::enable_if_t<
-        std::is_base_of_v<MatrixBase, std::remove_reference_t<MatrixType1>> 
-     && std::is_base_of_v<MatrixBase, std::remove_reference_t<MatrixType2>>
-    >>
+template<typename MatrixType1, typename MatrixType2, class BinaryOp>
 class ElementWiseMatrixOperationResult : public MatrixBase{
 public:
-    using this_type = ElementWiseMatrixOperationResult<MatrixType1, MatrixType2, BinaryOp, std::enable_if_t<
-        std::is_base_of_v<MatrixBase, std::remove_reference_t<MatrixType1>> 
-     && std::is_base_of_v<MatrixBase, std::remove_reference_t<MatrixType2>>
-    >>;
+    using this_type = ElementWiseMatrixOperationResult<MatrixType1, MatrixType2, BinaryOp>;
+    using type = CommonMatrixType<MatrixType1, MatrixType2>;
 
-    using MT1 = typename std::remove_reference_t<MatrixType1>;
-    using MT2 = typename std::remove_reference_t<MatrixType2>;
+    using MT1 = MatrixStorageType<MatrixType1>;
+    using MT2 = MatrixStorageType<MatrixType2>;
 
-    using type = typename std::common_type_t<typename MT1::type, typename MT2::type>;
-
-    template<typename = std::enable_if_t<std::is_reference_v<MatrixType1> && std::is_reference_v<MatrixType2>>>
-    ElementWiseMatrixOperationResult(MatrixType1 M1, MatrixType2 M2, BinaryOp Op) :
+    // template<typename = std::enable_if_t<std::is_reference_v<MatrixType1> && std::is_reference_v<MatrixType2>>>
+    ElementWiseMatrixOperationResult(MT1 M1, MT2 M2, BinaryOp Op) :
     MatrixBase(M1.dim()),
-    m1_(&M1), m2_(&M2), op(Op) 
+    m1_(std::forward<MatrixType1>(M1)), m2_(std::forward<MatrixType2>(M2)), op(Op) 
     {
-        checkSize(M1, M2);
+        checkSize(m1_, m2_);
     }
 
-    type operator()(const dim3& idx) && {
-        return std::invoke(op, std::forward<MatrixType1>(*m1_), std::forward<MatrixType2>(*m2_), idx);
+    type operator()(const dim3& idx) const {
+        return std::invoke(op, m1_, m2_, idx);
     }
 
-    type operator()(uint x, uint y, uint z) && {
+    type operator()(uint x, uint y, uint z) const {
         return operator()(dim3(x,y,z));
     }
 
-    template<typename U>
-    type operator()(U, U = {}, U = {}) const &{
-        static_assert(std::is_same_v<U, void>, bad_access_error);
-        static_assert(not std::is_same_v<U, void>);
-        return type{};
-    }
-
-    auto begin() && {return MatrixIterator<this_type&&>(std::move(*this), {0, 0, 0});}
-    auto end() && {return MatrixIterator<this_type&&>(std::move(*this), {0, 0, dim_.z});}
-    auto begin() const && {return MatrixIterator<const this_type&&>(*this, {0, 0, 0});}
-    auto end() const && {return MatrixIterator<const this_type&&>(*this, {0, 0, dim_.z});}
+    auto begin() {return MatrixIterator<this_type&>(*this, {0, 0, 0});}
+    auto end() {return MatrixIterator<this_type&>(*this, {0, 0, dim_.z});}
+    auto begin() const {return MatrixIterator<const this_type&>(*this, {0, 0, 0});}
+    auto end() const {return MatrixIterator<const this_type&>(*this, {0, 0, dim_.z});}
 
 
 private:
-    MT1* m1_;
-    MT2* m2_;
+    MT1 m1_;
+    MT2 m2_;
     BinaryOp op;
 };
 
-#define ADD_MATRIX_MATRIX_OPERATOR(op)                                                      \
-                                                                                            \
-template<typename MatrixType1, typename MatrixType2,                                        \
-    std::enable_if_t<                                                                       \
-        std::is_base_of_v<MatrixBase, std::remove_reference_t<MatrixType1>>                 \
-     && std::is_base_of_v<MatrixBase, std::remove_reference_t<MatrixType2>>, bool> = true>  \
-auto operator op (MatrixType1&& M1, MatrixType2&& M2){                                      \
-    auto OP = [](MatrixType1&& m1, MatrixType2&& m2, const dim3& idx) {                     \
-        return std::forward<MatrixType1>(m1)(idx) op std::forward<MatrixType2>(m2)(idx);    \
-    };                                                                                      \
-                                                                                            \
-    return ElementWiseMatrixOperationResult<                                                \
-        decltype(std::forward<MatrixType1>(M1)),                                            \
-        decltype(std::forward<MatrixType2>(M2)),                                            \
-        decltype(OP)>                                                                       \
-    (std::forward<MatrixType1>(M1), std::forward<MatrixType2>(M2), OP);                     \
+#define ADD_MATRIX_MATRIX_OPERATOR(op)                                                                  \
+                                                                                                        \
+template<typename MatrixType1, typename MatrixType2, typename = IsMatrixBase<MatrixType1, MatrixType2>> \
+auto operator op (MatrixType1&& M1, MatrixType2&& M2){                                                  \
+    auto OP = [](const MatrixType1& m1, const MatrixType2& m2, const dim3& idx) {                       \
+        return m1(idx) op m2(idx);                                                                      \
+    };                                                                                                  \
+                                                                                                        \
+    return ElementWiseMatrixOperationResult<decltype(M1), decltype(M2), decltype(OP)>                   \
+    (std::forward<MatrixType1>(M1), std::forward<MatrixType2>(M2), OP);                                 \
 }
 
 ADD_MATRIX_MATRIX_OPERATOR(+)
