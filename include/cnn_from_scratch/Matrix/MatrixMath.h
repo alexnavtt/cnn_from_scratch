@@ -306,7 +306,7 @@ public:
     using MT = MatrixStorageType<MatrixType>;
     using type = typename std::common_type_t<typename std::remove_reference_t<MatrixType>::type, ScalarType>;
 
-    ScalarOperationResult(MatrixType&& M, const ScalarType& S, BinaryOp op) :
+    ScalarOperationResult(MatrixType&& M, ScalarType S, BinaryOp op) :
     MatrixBase(M.dim()),
     m_(std::forward<MatrixType>(M)), s_(S), op_(op) 
     {}
@@ -332,19 +332,21 @@ private:
 
 #define ADD_MATRIX_SCALAR_OPERATOR(op)                                                          \
                                                                                                 \
-template<typename MatrixType, typename Scalar, typename = IsMatrixBase<MatrixType>>             \
+template<typename MatrixType, typename Scalar, typename = IsMatrixBase<MatrixType>,             \
+    typename = std::enable_if_t<std::is_arithmetic_v<Scalar>>>                                  \
 auto operator op (MatrixType&& M1, const Scalar& S){                                            \
     auto comp = [](const MatrixType& m1, const Scalar& s, const dim3& idx) {                    \
-        return std::forward<MatrixType>(m1)(idx) op s;                                          \
+        return m1(idx) op s;                                                                    \
     };                                                                                          \
                                                                                                 \
     return ScalarOperationResult<decltype(M1), Scalar, decltype(comp)>                          \
     (std::forward<MatrixType>(M1), S, comp);                                                    \
 }                                                                                               \
-template<typename MatrixType, typename Scalar, typename = IsMatrixBase<MatrixType>>             \
+template<typename MatrixType, typename Scalar, typename = IsMatrixBase<MatrixType>,             \
+    typename = std::enable_if_t<std::is_arithmetic_v<Scalar>>>                                  \
 auto operator op (const Scalar& S, MatrixType&& M1){                                            \
     auto comp = [](const MatrixType& m1, const Scalar& s, const dim3& idx) {                    \
-        return std::forward<MatrixType>(m1)(idx) op s;                                          \
+        return s op m1(idx);                                                                    \
     };                                                                                          \
                                                                                                 \
     return ScalarOperationResult<decltype(M1), Scalar, decltype(comp)>                          \
