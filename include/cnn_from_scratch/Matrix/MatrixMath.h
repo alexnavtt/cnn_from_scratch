@@ -300,76 +300,54 @@ auto convolve(MatrixType1&& M1, MatrixType2&& M2, dim2 stride){
 // Matrix - Scalar math result
 // ================================================================================================
 
-template<typename MatrixType, typename ScalarType, class BinaryOp,
-    typename = std::enable_if_t<std::is_reference_v<MatrixType>>>
+template<typename MatrixType, typename ScalarType, class BinaryOp>
 class ScalarOperationResult : public MatrixBase{
 public:
-    using MT = std::remove_reference_t<MatrixType>;
-    using type = typename std::common_type_t<typename MT::type, ScalarType>;
+    using MT = MatrixStorageType<MatrixType>;
+    using type = typename std::common_type_t<typename std::remove_reference_t<MatrixType>::type, ScalarType>;
 
-    ScalarOperationResult(MatrixType M, ScalarType S, BinaryOp Op) :
+    ScalarOperationResult(MatrixType&& M, const ScalarType& S, BinaryOp op) :
     MatrixBase(M.dim()),
-    m_(&M), s_(S), op(Op) 
+    m_(std::forward<MatrixType>(M)), s_(S), op_(op) 
     {}
 
-    type operator()(dim3 idx) const &&{
-        return std::invoke(op, std::forward<MatrixType>(*m_), s_, idx);
+    type operator()(dim3 idx) const {
+        return std::invoke(op_, m_, s_, idx);
     }
 
-    type operator()(uint x, uint y, uint z) const &&{
+    type operator()(uint x, uint y, uint z) const {
         return operator()(dim3(x,y,z));
     }
 
-    template<typename U>
-    type operator()(U, U = {}, U = {}) const &{
-        static_assert(std::is_same_v<U, void>, bad_access_error);
-        static_assert(not std::is_same_v<U, void>);
-        return type{};
-    }
-
-    auto begin() && {return MatrixIterator<ScalarOperationResult<MatrixType, ScalarType, BinaryOp>&&>(std::move(*this), {0, 0, 0});}
-    auto end() && {return MatrixIterator<ScalarOperationResult<MatrixType, ScalarType, BinaryOp>&&>(std::move(*this), {0, 0, dim_.z});}
-    auto begin() const && {return MatrixIterator<const ScalarOperationResult<MatrixType, ScalarType, BinaryOp>&&>(std::move(*this), {0, 0, 0});}
-    auto end() const && {return MatrixIterator<const ScalarOperationResult<MatrixType, ScalarType, BinaryOp>&&>(std::move(*this), {0, 0, dim_.z});}
+    auto begin() {return MatrixIterator<ScalarOperationResult<MatrixType, ScalarType, BinaryOp>&>(*this, {0, 0, 0});}
+    auto end() {return MatrixIterator<ScalarOperationResult<MatrixType, ScalarType, BinaryOp>&>(*this, {0, 0, dim_.z});}
+    auto begin() const {return MatrixIterator<const ScalarOperationResult<MatrixType, ScalarType, BinaryOp>&>(*this, {0, 0, 0});}
+    auto end() const {return MatrixIterator<const ScalarOperationResult<MatrixType, ScalarType, BinaryOp>&>(*this, {0, 0, dim_.z});}
 
 private:
-    MT* m_;
+    const MT m_;
     const ScalarType s_;
-    BinaryOp op;
+    BinaryOp op_;
 };
 
 #define ADD_MATRIX_SCALAR_OPERATOR(op)                                                          \
                                                                                                 \
-template<typename MatrixType, typename Scalar,                                                  \
-    std::enable_if_t<                                                                           \
-        std::is_arithmetic_v<Scalar>                                                            \
-     && std::is_base_of_v<MatrixBase, std::remove_reference_t<MatrixType>>, bool> = true>       \
+template<typename MatrixType, typename Scalar, typename = IsMatrixBase<MatrixType>>             \
 auto operator op (MatrixType&& M1, const Scalar& S){                                            \
-    auto comp = [](MatrixType&& m1, const Scalar& s, const dim3& idx) {                         \
+    auto comp = [](const MatrixType& m1, const Scalar& s, const dim3& idx) {                    \
         return std::forward<MatrixType>(m1)(idx) op s;                                          \
     };                                                                                          \
                                                                                                 \
-    return ScalarOperationResult<                                                               \
-        decltype(std::forward<MatrixType>(M1)),                                                 \
-        Scalar,                                                                                 \
-        decltype(comp)                                                                          \
-    >                                                                                           \
+    return ScalarOperationResult<decltype(M1), Scalar, decltype(comp)>                          \
     (std::forward<MatrixType>(M1), S, comp);                                                    \
 }                                                                                               \
-template<typename MatrixType, typename Scalar,                                                  \
-    std::enable_if_t<                                                                           \
-        std::is_arithmetic_v<Scalar>                                                            \
-     && std::is_base_of_v<MatrixBase, std::remove_reference_t<MatrixType>>, bool> = true>       \
+template<typename MatrixType, typename Scalar, typename = IsMatrixBase<MatrixType>>             \
 auto operator op (const Scalar& S, MatrixType&& M1){                                            \
-    auto comp = [](MatrixType&& m1, const Scalar& s, const dim3& idx) {                         \
-        return s op std::forward<MatrixType>(m1)(idx);                                          \
+    auto comp = [](const MatrixType& m1, const Scalar& s, const dim3& idx) {                    \
+        return std::forward<MatrixType>(m1)(idx) op s;                                          \
     };                                                                                          \
                                                                                                 \
-    return ScalarOperationResult<                                                               \
-        decltype(std::forward<MatrixType>(M1)),                                                 \
-        Scalar,                                                                                 \
-        decltype(comp)                                                                          \
-    >                                                                                           \
+    return ScalarOperationResult<decltype(M1), Scalar, decltype(comp)>                          \
     (std::forward<MatrixType>(M1), S, comp);                                                    \
 }
 
