@@ -214,45 +214,37 @@ auto dot(const MatrixType1& M1, const MatrixType2& M2){
 template<typename MatrixType1, typename MatrixType2, typename BinaryOp>
 class GeneralMatrixOperationResult : public MatrixBase{
 public:
-    using MT1  = typename std::remove_reference_t<MatrixType1>;
-    using MT2  = typename std::remove_reference_t<MatrixType2>;
-    using type = typename std::common_type_t<typename MT1::type, typename MT2::type>;
+    using MT1  = MatrixStorageType<MatrixType1>;
+    using MT2  = MatrixStorageType<MatrixType2>;
+    using type = CommonMatrixType<MT1, MT2>;
 
-    template<typename = std::enable_if_t<std::is_reference_v<MatrixType1> && std::is_reference_v<MatrixType2>>>
-    GeneralMatrixOperationResult(MatrixType1 M1, MatrixType2 M2, dim3 dim, BinaryOp op) :
+    GeneralMatrixOperationResult(MT1 M1, MT2 M2, dim3 dim, BinaryOp op) :
     MatrixBase(dim),
-    m1_(&M1), 
-    m2_(&M2),
+    m1_(std::forward<MatrixType1>(M1)), 
+    m2_(std::forward<MatrixType2>(M2)),
     op_(op)
     {}
 
-    type operator()(const dim3& idx) const &&{
-        return std::invoke(op_, std::forward<MatrixType1>(*m1_), std::forward<MatrixType2>(*m2_), idx);
+    type operator()(const dim3& idx) const {
+        return std::invoke(op_, m1_, m2_, idx);
     }
 
-    type operator()(uint x, uint y, uint z) const &&{
+    type operator()(uint x, uint y, uint z) const {
         return operator()(dim3(x,y,z));
     }
 
-    template<typename U>
-    type operator()(U, U = {}, U = {}) const &{
-        static_assert(std::is_same_v<U, void>, bad_access_error);
-        static_assert(not std::is_same_v<U, void>);
-        return type{};
-    }
-
-    auto begin() && {return MatrixIterator<GeneralMatrixOperationResult<MatrixType1, MatrixType2, BinaryOp>&&>(std::move(*this), {0, 0, 0});}
-    auto end() && {return MatrixIterator<GeneralMatrixOperationResult<MatrixType1, MatrixType2, BinaryOp>&&>(std::move(*this), {0, 0, dim_.z});}
-    auto begin() const && {return MatrixIterator<const GeneralMatrixOperationResult<MatrixType1, MatrixType2, BinaryOp>&&>(std::move(*this), {0, 0, 0});}
-    auto end() const && {return MatrixIterator<const GeneralMatrixOperationResult<MatrixType1, MatrixType2, BinaryOp>&&>(std::move(*this), {0, 0, dim_.z});}
+    auto begin() {return MatrixIterator<GeneralMatrixOperationResult<MatrixType1, MatrixType2, BinaryOp>&>(*this, {0, 0, 0});}
+    auto end() {return MatrixIterator<GeneralMatrixOperationResult<MatrixType1, MatrixType2, BinaryOp>&>(*this, {0, 0, dim_.z});}
+    auto begin() const {return MatrixIterator<const GeneralMatrixOperationResult<MatrixType1, MatrixType2, BinaryOp>&>(*this, {0, 0, 0});}
+    auto end() const {return MatrixIterator<const GeneralMatrixOperationResult<MatrixType1, MatrixType2, BinaryOp>&>(*this, {0, 0, dim_.z});}
 
 private:
-    MT1* m1_;
-    MT2* m2_;
+    MT1 m1_;
+    MT2 m2_;
     BinaryOp op_;
 };
 
-template<typename MatrixType1, typename MatrixType2>
+template<typename MatrixType1, typename MatrixType2, typename = IsMatrixBase<MatrixType1, MatrixType2>>
 auto matrixMultiply(MatrixType1&& M1, MatrixType2&& M2){
     if ((M1.dim().z != M2.dim().z) || (M1.dim().y != M2.dim().x)){
         std::stringstream ss;
@@ -260,38 +252,27 @@ auto matrixMultiply(MatrixType1&& M1, MatrixType2&& M2){
         throw MatrixSizeException(ss.str());
     }
 
-    using T = typename std::common_type_t<
-        typename std::remove_reference_t<MatrixType1>::type, 
-        typename std::remove_reference_t<MatrixType2>::type
-    >;
+    using T = CommonMatrixType<MatrixType1, MatrixType2>;
 
-    auto getMultipliedIndex = [](MatrixType1&& m1, MatrixType2&& m2, const dim3& idx) {
+    auto getMultipliedIndex = [](const MatrixType1& m1, const MatrixType2& m2, const dim3& idx) {
         dim3 m1_idx(idx.x, 0, idx.z);
         dim3 m2_idx(0, idx.y, idx.z);
                 
         T sum{};
         for (size_t i = 0; i < m1.dim().y; ++i, ++m1_idx.y, ++m2_idx.x){
-            sum += std::forward<MatrixType1>(m1)(m1_idx) * std::forward<MatrixType2>(m2)(m2_idx);
+            sum += m1(m1_idx) * m2(m2_idx);
         }
         return sum;
     };
 
-    return GeneralMatrixOperationResult<
-        decltype(std::forward<MatrixType1>(M1)), 
-        decltype(std::forward<MatrixType2>(M2)),
-        decltype(getMultipliedIndex)>
+    return GeneralMatrixOperationResult<decltype(M1), decltype(M2),decltype(getMultipliedIndex)>
     (std::forward<MatrixType1>(M1), std::forward<MatrixType2>(M2), dim3(M1.dim().x, M2.dim().y, M1.dim().z), getMultipliedIndex);
 }
 
-template<typename MatrixType1, typename MatrixType2>
+template<typename MatrixType1, typename MatrixType2, typename = IsMatrixBase<MatrixType1, MatrixType2>>
 auto convolve(MatrixType1&& M1, MatrixType2&& M2, dim2 stride){
     // We define convolutions only for 2D matrices
     assert(M1.dim().z == M2.dim().z == 1);
-
-    using T = typename std::common_type_t<
-        typename std::remove_reference_t<MatrixType1>::type, 
-        typename std::remove_reference_t<MatrixType2>::type
-    >;
 
     const dim3 output_size(
         M1.dim().x - M2.dim().x + 1,
@@ -299,22 +280,19 @@ auto convolve(MatrixType1&& M1, MatrixType2&& M2, dim2 stride){
         1
     );
 
-    auto getConvolvedValue = [stride, output_size](MatrixType1&& m1, MatrixType2&& m2, const dim3& idx){
+    auto getConvolvedValue = [stride, output_size](const MatrixType1& m1, const MatrixType2& m2, const dim3& idx){
         dim3 view_idx(idx.x*stride.x, idx.y*stride.y, 0);
-        T sum{};
+        CommonMatrixType<MatrixType1, MatrixType2> sum{};
         for (uint x = 0; x < m2.dim().x; x++){
             for (uint y = 0; y < m2.dim().y; y++){
                 dim3 local_idx(x, y, 0);
-                sum += std::forward<MatrixType1>(m1)(local_idx + view_idx) * std::forward<MatrixType2>(m2)(local_idx);
+                sum += m1(local_idx + view_idx) * m2(local_idx);
             }
         }
         return sum;
     };
 
-    return GeneralMatrixOperationResult<
-        decltype(std::forward<MatrixType1>(M1)), 
-        decltype(std::forward<MatrixType2>(M2)),
-        decltype(getConvolvedValue)>
+    return GeneralMatrixOperationResult<decltype(M1), decltype(M2), decltype(getConvolvedValue)>
     (std::forward<MatrixType1>(M1), std::forward<MatrixType2>(M2), output_size, getConvolvedValue);
 }
 
