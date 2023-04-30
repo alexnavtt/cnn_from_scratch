@@ -406,7 +406,7 @@ private:
 template<typename MatrixType, typename UnaryOp>
 auto apply(MatrixType&& M, UnaryOp op){
     auto invoker = [op](const MatrixType& M_, const dim3& idx_){
-        return std::invoke(op, M_(idx_));
+        return op(M_(idx_));
     };
 
     return UnaryOperationResult<decltype(M), decltype(invoker)>(std::forward<MatrixType>(M), invoker);
@@ -414,16 +414,20 @@ auto apply(MatrixType&& M, UnaryOp op){
 
 template<typename MatrixType>
 auto abs(MatrixType&& M){
-    using input_type = typename MatrixType::type;
-    using return_type = decltype(std::abs(input_type{}));
-    return my_cnn::apply<decltype(M), return_type(*)(input_type)>(std::forward<MatrixType>(M), std::abs);
+    auto absIdx = [](const MatrixType& M, const dim3& idx){
+        return std::abs(M(idx));
+    };
+
+    return UnaryOperationResult<decltype(M), decltype(absIdx)>(std::forward<MatrixType>(M), absIdx);
 }
 
 template<typename MatrixType>
 auto exp(MatrixType&& M){
-    using input_type = typename std::remove_reference_t<MatrixType>::type;
-    using return_type = decltype(std::exp(input_type{}));
-    return my_cnn::apply<decltype(M), return_type(*)(input_type)>(std::forward<MatrixType>(M), std::exp);
+    auto expIdx = [](const MatrixType& M, const dim3& idx){
+        return std::exp(M(idx));
+    };
+
+    return UnaryOperationResult<decltype(M), decltype(expIdx)>(std::forward<MatrixType>(M), expIdx);
 }
 
 template<typename MatrixType>
