@@ -4,7 +4,7 @@ set(version 1.0)
 
 add_compile_options(
     -std=c++17 
-    -fsanitize=address 
+    # -fsanitize=address 
     -fno-omit-frame-pointer
 )
 
