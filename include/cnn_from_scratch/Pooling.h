@@ -18,13 +18,13 @@ public:
     dim_(dim), stride_(stride), type_(type)
     {}
 
-    bool checkSize(const SimpleMatrix<float>& input) override {
+    bool checkSize(const SimpleMatrix<double>& input) override {
         return input.dim(0) >= dim_.x && input.dim(1) >= dim_.y;
     }
 
-    SimpleMatrix<float> propagateForward(SimpleMatrix<float>&& input) override {
+    SimpleMatrix<double> propagateForward(SimpleMatrix<double>&& input) override {
         // Create the approriately sized output
-        SimpleMatrix<float> output({input.dim(0)/dim_.x, input.dim(1)/dim_.y, input.dim(2)});
+        SimpleMatrix<double> output({input.dim(0)/dim_.x, input.dim(1)/dim_.y, input.dim(2)});
 
         // Reset the affected indices vector
         affected_indices_.resize(output.dim());
@@ -63,12 +63,12 @@ public:
         return output;
     }
 
-    SimpleMatrix<float> propagateBackward(
-        const SimpleMatrix<float>& X,    [[maybe_unused]] const SimpleMatrix<float>& Y, 
-        const SimpleMatrix<float>& dLdY, [[maybe_unused]] float learning_rate, [[maybe_unused]] float norm_penalty) 
+    SimpleMatrix<double> propagateBackward(
+        const SimpleMatrix<double>& X,    [[maybe_unused]] const SimpleMatrix<double>& Y, 
+        const SimpleMatrix<double>& dLdY, [[maybe_unused]] double learning_rate, [[maybe_unused]] double norm_penalty) 
     override
     {        
-        SimpleMatrix<float> dLdx(X.dim());
+        SimpleMatrix<double> dLdx(X.dim());
         switch(type_){
             case MIN:
             case MAX:

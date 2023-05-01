@@ -13,19 +13,19 @@ class ConnectedLayer : public ModelLayer{
 public:
     using ModelLayer::ModelLayer;
 
-    bool checkSize(const SimpleMatrix<float>& input_data) override{
+    bool checkSize(const SimpleMatrix<double>& input_data) override{
         // If this is the first time at this layer, resize and apply random values
         dim3 expected_size(biases.size(), input_data.size(), 1);
         if (not initialized){
             initialized = true;
             std::srand(std::chrono::steady_clock::now().time_since_epoch().count());
             // Set random weights in the interval [0, 1] upon construction
-            weights = SimpleMatrix<float>(expected_size);
-            for (float& w : weights){
-                w = 1 - 2*static_cast<float>(std::rand()) / RAND_MAX;
+            weights = SimpleMatrix<double>(expected_size);
+            for (double& w : weights){
+                w = 1 - 2*static_cast<double>(std::rand()) / RAND_MAX;
             }
-            for (float& b : biases){
-                b = 1 - 2*static_cast<float>(std::rand()) / RAND_MAX;
+            for (double& b : biases){
+                b = 1 - 2*static_cast<double>(std::rand()) / RAND_MAX;
             }
 
             // Normalize weights and biases so they start on stable footing
@@ -40,7 +40,7 @@ public:
         }
     }
 
-    SimpleMatrix<float> propagateForward(SimpleMatrix<float>&& input_data) override{
+    SimpleMatrix<double> propagateForward(SimpleMatrix<double>&& input_data) override{
         // The input size is always a column vector
         input_data.reshape(dim3(input_data.size(), 1, 1));
 
@@ -49,22 +49,22 @@ public:
                 std::to_string(input_data.size()) + " and this layer has size " + std::to_string(weights.dim(0)));
         }
 
-        SimpleMatrix<float> output = matrixMultiply(weights, input_data) + biases;
+        SimpleMatrix<double> output = matrixMultiply(weights, input_data) + biases;
         activate(output);
         return output;
     }
 
-    SimpleMatrix<float> propagateBackward(
-            const SimpleMatrix<float>& badly_shaped_X, const SimpleMatrix<float>& Y, 
-            const SimpleMatrix<float>& dLdY, float learning_rate, float norm_penalty) 
+    SimpleMatrix<double> propagateBackward(
+            const SimpleMatrix<double>& badly_shaped_X, const SimpleMatrix<double>& Y, 
+            const SimpleMatrix<double>& dLdY, double learning_rate, double norm_penalty) 
     override
     {        
         // Need to reshape the input appropriately
-        SimpleMatrix<float> X = badly_shaped_X;
+        SimpleMatrix<double> X = badly_shaped_X;
         X.reshape(badly_shaped_X.size(), 1, 1);
 
         TIC("activationGradient");
-        const SimpleMatrix<float> dLdz = dLdY * activationGradient(Y);
+        const SimpleMatrix<double> dLdz = dLdY * activationGradient(Y);
         TOC("activationGradient");
         TIC("updateWeights");
         weights -= learning_rate * matrixMultiply(dLdz, transpose(X));
@@ -76,7 +76,7 @@ public:
 
         // We need to reshape the gradient to what the previous layer would be expecting
         TIC("outputGradient");
-        SimpleMatrix<float> dLdX = matrixMultiply(transpose(weights), dLdz);
+        SimpleMatrix<double> dLdX = matrixMultiply(transpose(weights), dLdz);
         dLdX.reshape(badly_shaped_X.dim());
         TOC("outputGradient");
         return dLdX;

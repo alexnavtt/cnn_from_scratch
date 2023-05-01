@@ -16,8 +16,8 @@ enum ModelActivationFunction{
 class ModelLayer{
 public:
     std::string name;
-    SimpleMatrix<float> weights;
-    SimpleMatrix<float> biases;
+    SimpleMatrix<double> weights;
+    SimpleMatrix<double> biases;
     bool initialized = false;
     ModelActivationFunction activation = LINEAR;
 
@@ -28,18 +28,18 @@ public:
     weights(weights_dim)
     {}
 
-    static float sigmoid(float f) {
+    static double sigmoid(double f) {
         return 1.0f/(1 + std::exp(f));
     }
 
-    void activate(SimpleMatrix<float>& output_data) const{
+    void activate(SimpleMatrix<double>& output_data) const{
         switch (activation){
             case RELU:
-                modify(output_data, [](float f){return f > 0 ? f : 0;});
+                modify(output_data, [](double f){return f > 0 ? f : 0;});
                 break;
 
             case SIGMOID:
-                modify(output_data, [](float f){return sigmoid(f);});
+                modify(output_data, [](double f){return sigmoid(f);});
                 break;
 
             default:
@@ -47,29 +47,29 @@ public:
                 break;
 
             case TANGENT:
-                modify(output_data, (float(*)(float))std::tanh);
+                modify(output_data, (double(*)(double))std::tanh);
                 break;
                 
             case LEAKY_RELU:
-                modify(output_data, [](float f){return std::max(0.1f*f, f);});
+                modify(output_data, [](double f){return std::max(0.1f*f, f);});
                 break;
         }
     }
 
-    auto activationGradient(const SimpleMatrix<float>& activated_output) const {
-        using result_t = UnaryOperationResult<const SimpleMatrix<float>&, float(*)(const SimpleMatrix<float>&, const dim3&)>;
+    auto activationGradient(const SimpleMatrix<double>& activated_output) const {
+        using result_t = UnaryOperationResult<const SimpleMatrix<double>&, double(*)(const SimpleMatrix<double>&, const dim3&)>;
         
         switch (activation){
             case RELU:
                 return result_t(activated_output, 
-                    [](const SimpleMatrix<float>& M, const dim3& idx){
-                        return (float)(M(idx) > 0);
+                    [](const SimpleMatrix<double>& M, const dim3& idx){
+                        return (double)(M(idx) > 0);
                     }
                 );
 
             case SIGMOID:
                 return result_t(activated_output, 
-                    [](const SimpleMatrix<float>& M, const dim3& idx){
+                    [](const SimpleMatrix<double>& M, const dim3& idx){
                         const auto val = M(idx);
                         return sigmoid(val)*(1 - sigmoid(val));
                     }
@@ -78,14 +78,14 @@ public:
             default:
             case LINEAR:
                 return result_t(activated_output, 
-                    [](const SimpleMatrix<float>& M, const dim3& idx){
-                        return 1.0f;
+                    [](const SimpleMatrix<double>& M, const dim3& idx){
+                        return 1.0;
                     }
                 );
 
             case TANGENT:
                 return result_t(activated_output, 
-                    [](const SimpleMatrix<float>& M, const dim3& idx){
+                    [](const SimpleMatrix<double>& M, const dim3& idx){
                         const auto val = M(idx);
                         return 1.0f - std::tanh(val)*std::tanh(val);
                     }
@@ -93,21 +93,21 @@ public:
 
             case LEAKY_RELU:
                 return result_t(activated_output, 
-                    [](const SimpleMatrix<float>& M, const dim3& idx){
-                        return M(idx) > 0 ? 1.0f : 0.1f;
+                    [](const SimpleMatrix<double>& M, const dim3& idx){
+                        return M(idx) > 0 ? 1.0 : 0.1;
                     }
                 );
         }
     }
 
-    virtual bool checkSize(const SimpleMatrix<float>& input) = 0;
-    virtual SimpleMatrix<float> propagateForward(SimpleMatrix<float>&& input) = 0;
-    virtual SimpleMatrix<float> propagateBackward(
-        const SimpleMatrix<float>& input, 
-        const SimpleMatrix<float>& output, 
-        const SimpleMatrix<float>& output_grad, 
-        float learning_rate, 
-        float norm_penalty
+    virtual bool checkSize(const SimpleMatrix<double>& input) = 0;
+    virtual SimpleMatrix<double> propagateForward(SimpleMatrix<double>&& input) = 0;
+    virtual SimpleMatrix<double> propagateBackward(
+        const SimpleMatrix<double>& input, 
+        const SimpleMatrix<double>& output, 
+        const SimpleMatrix<double>& output_grad, 
+        double learning_rate, 
+        double norm_penalty
     ) = 0;
 };
 

@@ -15,7 +15,7 @@ void printImageBWImpl(const MatrixType& M, typename MatrixType::type max_val){
             const T& val = M(idx);
             float dist = max_val - val;
             float mapped_val = max_val * (1 - dist/range);
-            unsigned char code = std::min(static_cast<float>(mapped_val)/max_val * 255, 255.0f);
+            unsigned char code = std::min(static_cast<double>(mapped_val)/max_val * 255, 255.0);
             printf("\033[48;2;%d;%d;%dm  ", (int)code, (int)code, (int)code);
         }
         std::cout << "\033[0m\n";
@@ -32,7 +32,7 @@ void printImageColorImpl(const MatrixType& M, typename MatrixType::type max_val)
             ss << "\033[48;2";
             for (idx.z = 0; idx.z < 3; idx.z++){
                 const T& val = M(idx);
-                unsigned char code = std::min(static_cast<float>(val)/max_val * 255, 255.0f);
+                unsigned char code = std::min(static_cast<double>(val)/max_val * 255, 255.0);
                 ss << ";" << +code;
             }
             ss << "m   ";
@@ -45,7 +45,8 @@ void printImageColorImpl(const MatrixType& M, typename MatrixType::type max_val)
 template<typename MatrixType>
 void printImage(const MatrixType& M){
     using T = typename MatrixType::type;
-    T max = (std::is_integral_v<T> ? std::numeric_limits<unsigned char>::max() : my_cnn::max(M));
+    typename std::remove_const_t<T> max = (std::is_integral_v<T> ? std::numeric_limits<unsigned char>::max() : my_cnn::max(M));
+    if (max < 1) max = 1;
 
     if (M.dim().z == 3)
         printImageColorImpl<MatrixType>(M, max); 
