@@ -35,18 +35,20 @@ void ModelDescription<InputDataType, OutputDataType>::addConnectedLayer
 
 template<typename InputDataType, typename OutputDataType>
 float ModelDescription<InputDataType, OutputDataType>::lossFcn(const SimpleMatrix<float>& probabilities, const OutputDataType& true_label) const{
+    constexpr float eps = 1e-5;
+    
     switch (loss_function){
         default:
         case CROSS_ENTROPY:
             // Find the index of the true label
             size_t true_idx = std::distance(std::begin(output_labels), std::find(std::begin(output_labels), std::end(output_labels), true_label));
-            return -1*log2(probabilities[true_idx]);
+            return -1*log2(probabilities[true_idx] + eps);
     }
 }
 
 template<typename InputDataType, typename OutputDataType>
 SimpleMatrix<float> ModelDescription<InputDataType, OutputDataType>::softMax(const SimpleMatrix<float>& X){
-    SimpleMatrix<float> out = my_cnn::exp(X);
+    SimpleMatrix<float> out = my_cnn::exp(X - my_cnn::max(X));
     out /= my_cnn::sum(out);
     return out;
 }
@@ -95,6 +97,7 @@ ModelResults<OutputDataType> ModelDescription<InputDataType, OutputDataType>::fo
 
     // Construct the output data
     result.label_idx = std::distance(std::begin(active_data), max_idx);
+    result.confidence = max(active_data)/sum(active_data);
     if (true_label != nullptr){
         result.loss = lossFcn(active_data, *true_label);
         result.true_label_idx = std::distance(std::begin(output_labels), std::find(std::begin(output_labels), std::end(output_labels), *true_label));
@@ -122,8 +125,7 @@ void ModelDescription<InputDataType, OutputDataType>::backwardsPropagation(const
         auto _ = global_timer.scopedTic(flow.names[i].c_str());
         const SimpleMatrix<float>& layer_input = result.layer_inputs[i];
         const SimpleMatrix<float>& layer_output = result.layer_inputs[i+1];
-        dLdz = layers[i]->propagateBackward(layer_input, layer_output, dLdz, learning_rate);
-        break;
+        dLdz = layers[i]->propagateBackward(layer_input, layer_output, dLdz, learning_rate, 0.01);
     }
 }
 
