@@ -15,6 +15,7 @@ struct ModelResults{
     size_t label_idx;
     size_t true_label_idx;
     float loss = -1.0f;
+    float confidence = -1.0f;
     std::vector<SimpleMatrix<float>> layer_inputs;
 };
 
