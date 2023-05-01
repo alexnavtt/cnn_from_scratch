@@ -11,10 +11,5 @@ enum ModelFlowMode{
     FULLY_CONNECTED,
     OUTPUT
 };
-    
-struct ModelFlow{
-    std::vector<ModelFlowMode> stages;
-    std::vector<std::string> names;
-};
 
 } // namespace my_cnn
