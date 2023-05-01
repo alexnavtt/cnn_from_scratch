@@ -4,6 +4,7 @@
 #include <chrono>
 #include "cnn_from_scratch/Matrix/SimpleMatrix.h"
 #include "cnn_from_scratch/imageUtil.h"
+#include "cnn_from_scratch/ModelFlow.h"
 #include "cnn_from_scratch/ModelLayer.h"
 #include "cnn_from_scratch/timerConfig.h"
 
@@ -101,13 +102,15 @@ public:
             for (size_t j = 0; j < dim_.z; j++){
                 SubMatrixView<const float> input_layer = X.slice(j);
                 SubMatrixView<float> filter_layer = filter.slice(j);
-                filter_layer -= learning_rate * (convolve(input_layer, gradient_layer, stride) + norm_penalty * filter_layer/filter_norm);
+                filter_layer -= learning_rate * convolve(input_layer, gradient_layer, stride);
+                filter_layer -= norm_penalty * filter_layer/filter_norm;
             }
             TOC("updateWeights");
 
             // Update biases
             TIC("updateBiases");
-            biases[i] -= learning_rate * (sum(gradient_layer) + norm_penalty * biases[i]/bias_norm);
+            biases[i] -= learning_rate * sum(gradient_layer);
+            biases[i] -= norm_penalty * biases[i]/bias_norm;
             TOC("updateBiases");
 
             // Update output gradient
@@ -130,6 +133,7 @@ private:
 public:
     unsigned stride = 1;
     unsigned num_filters = 0;
+    ModelFlowMode type = KERNEL;
 };
 
 } // namespace my_cnn

@@ -47,7 +47,11 @@ public:
         return output;
     }
 
-    SimpleMatrix<float> propagateBackward(const SimpleMatrix<float>& badly_shaped_X, const SimpleMatrix<float>& Y, const SimpleMatrix<float>& dLdY, float learning_rate) override{        
+    SimpleMatrix<float> propagateBackward(
+            const SimpleMatrix<float>& badly_shaped_X, const SimpleMatrix<float>& Y, 
+            const SimpleMatrix<float>& dLdY, float learning_rate, float norm_penalty) 
+    override
+    {        
         // Need to reshape the input appropriately
         SimpleMatrix<float> X = badly_shaped_X;
         X.reshape(badly_shaped_X.size(), 1, 1);
@@ -57,9 +61,11 @@ public:
         TOC("activationGradient");
         TIC("updateWeights");
         weights -= learning_rate * matrixMultiply(dLdz, transpose(X));
+        weights -= norm_penalty * weights/l2Norm(weights);
         TOC("updateWeights");
         TIC("updateBiases");
         biases -= learning_rate * dLdz;
+        biases -= norm_penalty * biases/l2Norm(biases);
         TOC("updateBiases");
 
         // We need to reshape the gradient to what the previous layer would be expecting
