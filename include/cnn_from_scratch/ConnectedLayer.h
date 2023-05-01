@@ -18,13 +18,20 @@ public:
         dim3 expected_size(biases.size(), input_data.size(), 1);
         if (not initialized){
             initialized = true;
+            std::srand(std::chrono::steady_clock::now().time_since_epoch().count());
+            // Set random weights in the interval [0, 1] upon construction
             weights = SimpleMatrix<float>(expected_size);
-            for (auto& v : weights){
-                v = (float)rand() / (float)RAND_MAX;
+            for (float& w : weights){
+                w = 1 - 2*static_cast<float>(std::rand()) / RAND_MAX;
             }
-            for (auto& v : biases){
-                v = (float)rand() / (float)RAND_MAX;
+            for (float& b : biases){
+                b = 1 - 2*static_cast<float>(std::rand()) / RAND_MAX;
             }
+
+            // Normalize weights and biases so they start on stable footing
+            weights /= l2Norm(weights);
+            biases /= l2Norm(biases);
+
             return true;
         }
         // Otherwise check to make sure the size is correct
@@ -61,11 +68,10 @@ public:
         TOC("activationGradient");
         TIC("updateWeights");
         weights -= learning_rate * matrixMultiply(dLdz, transpose(X));
-        weights -= norm_penalty * weights/l2Norm(weights);
+        weights *= (1 - norm_penalty);
         TOC("updateWeights");
         TIC("updateBiases");
         biases -= learning_rate * dLdz;
-        biases -= norm_penalty * biases/l2Norm(biases);
         TOC("updateBiases");
 
         // We need to reshape the gradient to what the previous layer would be expecting

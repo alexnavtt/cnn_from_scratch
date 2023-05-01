@@ -26,6 +26,10 @@ public:
         for (float& b : biases){
             b = 1 - 2*static_cast<float>(std::rand()) / RAND_MAX;
         }
+
+        // Normalize weights and biases so they start on stable footing
+        weights /= l2Norm(weights);
+        biases /= l2Norm(biases);
     }
 
     template<typename MatrixType>
@@ -103,14 +107,12 @@ public:
                 SubMatrixView<const float> input_layer = X.slice(j);
                 SubMatrixView<float> filter_layer = filter.slice(j);
                 filter_layer -= learning_rate * convolve(input_layer, gradient_layer, stride);
-                filter_layer -= norm_penalty * filter_layer/filter_norm;
             }
             TOC("updateWeights");
 
             // Update biases
             TIC("updateBiases");
             biases[i] -= learning_rate * sum(gradient_layer);
-            biases[i] -= norm_penalty * biases[i]/bias_norm;
             TOC("updateBiases");
 
             // Update output gradient
@@ -124,6 +126,10 @@ public:
             }
             TOC("inputGradient");
         }
+
+        // Apply the norm penalty
+        weights *= (1 - norm_penalty);
+
         return dLdX;
     }
 
