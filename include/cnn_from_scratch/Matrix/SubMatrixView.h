@@ -70,8 +70,8 @@ public:
     type& at(const dim3& idx);
 
     // Slice of the view
-    SubMatrixView<T> slices(int idx, int num);
-    SubMatrixView<T> slice(int idx);
+    SubMatrixView<T> slices(int idx, int num) const;
+    SubMatrixView<T> slice(int idx) const;
 
     // Assign to a contained type
     template<typename Other, 

@@ -50,12 +50,12 @@ T& SubMatrixView<T>::at(const dim3& idx) {
 }
 
 template<typename T>
-SubMatrixView<T> SubMatrixView<T>::slices(int idx, int num){
+SubMatrixView<T> SubMatrixView<T>::slices(int idx, int num) const{
     return SubMatrixView<T>(*this, {0, 0, idx}, {dim_.x, dim_.y, num});
 }
 
 template<typename T>
-SubMatrixView<T> SubMatrixView<T>::slice(int idx){
+SubMatrixView<T> SubMatrixView<T>::slice(int idx) const{
     return slices(idx, 1);
 }
 
