@@ -5,32 +5,29 @@
 extern cpp_timer::Timer global_timer;
 
 namespace my_cnn{
-    
+
 template<typename InputDataType, typename OutputDataType>
 void ModelDescription<InputDataType, OutputDataType>::addKernel
-    (std::shared_ptr<Kernel> kernel, std::string name)
+    (dim3 size, size_t count, ModelActivationFunction activation)
 {
-    layers.push_back(std::dynamic_pointer_cast<ModelLayer>(kernel));
-    flow.stages.push_back(ModelFlowMode::KERNEL);
-    flow.names.push_back(name);
+    auto& K = layers.emplace_back(new Kernel(size, count, 1));
+    K->activation = activation;
+    K->name = "Kernel_" + std::to_string(++kernel_count_);
 }
 
 template<typename InputDataType, typename OutputDataType>
 void ModelDescription<InputDataType, OutputDataType>::addPooling
-    (std::shared_ptr<Pooling> pool, std::string name)
+    (dim2 size, dim2 stride, PoolingType type)
 {
-    layers.push_back(std::dynamic_pointer_cast<ModelLayer>(pool));
-    flow.stages.push_back(ModelFlowMode::POOLING);
-    flow.names.push_back(name);
+    auto& P = layers.emplace_back(new Pooling(size, stride, type));
+    P->name = "Pooling_" + std::to_string(++pooling_count_);
 }
 
 template<typename InputDataType, typename OutputDataType>
-void ModelDescription<InputDataType, OutputDataType>::addConnectedLayer
-    (size_t output_size, std::string name)
+void ModelDescription<InputDataType, OutputDataType>::addConnectedLayer(size_t output_size)
 {
-    layers.emplace_back(new ConnectedLayer(output_size));
-    flow.stages.push_back(ModelFlowMode::FULLY_CONNECTED);
-    flow.names.push_back(name);
+    auto& C = layers.emplace_back(new ConnectedLayer(output_size));
+    C->name = "FullyConnected_" + std::to_string(++fully_conn_count_);
 }
 
 template<typename InputDataType, typename OutputDataType>
@@ -71,7 +68,7 @@ ModelResults<OutputDataType> ModelDescription<InputDataType, OutputDataType>::fo
 
     // For each stage of the model, apply the necessary step
     for (size_t i = 0; i < layers.size(); i++){
-        stic(flow.names[i].c_str());
+        stic(layers[i]->name.c_str());
 
         // Record the input for this layer (to be used in back propagation)
         result.layer_inputs.push_back(active_data);
@@ -122,7 +119,7 @@ void ModelDescription<InputDataType, OutputDataType>::backwardsPropagation(const
 
     // For each of the layers, calculate the corresponding gradient and adjust the weights accordingly
     for (int i = layers.size()-1; i >= 0; i--){
-        auto _ = global_timer.scopedTic(flow.names[i].c_str());
+        stic(layers[i]->name.c_str());
         const SimpleMatrix<float>& layer_input = result.layer_inputs[i];
         const SimpleMatrix<float>& layer_output = result.layer_inputs[i+1];
         dLdz = layers[i]->propagateBackward(layer_input, layer_output, dLdz, learning_rate, 0.01);

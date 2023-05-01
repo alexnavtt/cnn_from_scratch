@@ -29,19 +29,23 @@ public:
     using result_t = ModelResults<OutputDataType>;
     std::vector<std::shared_ptr<ModelLayer>> layers;
     std::vector<OutputDataType> output_labels;
-    ModelFlow flow;
     LossFunction loss_function;
 
     bool saveModel(std::string filename);
     bool loadModel(std::string filename);
-    void addKernel(std::shared_ptr<Kernel> kernel, std::string name = "");
-    void addPooling(std::shared_ptr<Pooling> pool, std::string name = "");
-    void addConnectedLayer(size_t output_size, std::string name = "");
+    void addKernel(dim3 size, size_t count, ModelActivationFunction activation);
+    void addPooling(dim2 size, dim2 stride, PoolingType type);
+    void addConnectedLayer(size_t output_size);
     void setOutputLabels(std::vector<OutputDataType> labels) {output_labels = labels;}
     result_t forwardPropagation(SimpleMatrix<InputDataType> input, OutputDataType* true_label = nullptr);
     void backwardsPropagation(const result_t& result, float learning_rate);
     float lossFcn(const SimpleMatrix<float>& probabilities, const OutputDataType& true_label) const;
     SimpleMatrix<float> softMax(const SimpleMatrix<float>& X);
+
+private:
+    size_t kernel_count_     = 0;
+    size_t pooling_count_    = 0;
+    size_t fully_conn_count_ = 0;
 };
 
 } // end namespace my_cnn
