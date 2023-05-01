@@ -69,6 +69,10 @@ public:
     type& operator()(uint x, uint y, uint z);
     type& at(const dim3& idx);
 
+    // Slice of the view
+    SubMatrixView<T> slices(int idx, int num);
+    SubMatrixView<T> slice(int idx);
+
     // Assign to a contained type
     template<typename Other, 
             std::enable_if_t<std::is_convertible_v<Other, type>, bool> = true >

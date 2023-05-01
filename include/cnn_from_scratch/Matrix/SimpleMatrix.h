@@ -1,11 +1,11 @@
 #pragma once
 
 #include <math.h>
+#include <vector>
 #include <utility>
 #include <iomanip>
 #include <sstream>
 #include <iostream>
-#include <valarray>
 #include <stdexcept>
 #include <type_traits>
 
@@ -104,6 +104,9 @@ public:
     const dim3& dims() const;
     using MatrixBase::dim;
     uint dim(size_t idx) const;
+
+    void resize(int x, int y, int z);
+    void resize(dim3 new_dim){this->resize(new_dim.x, new_dim.y, new_dim.z);}
 
     void reshape(int x, int y, int z);
     void reshape(dim3 new_dim){this->reshape(new_dim.x, new_dim.y, new_dim.z);}

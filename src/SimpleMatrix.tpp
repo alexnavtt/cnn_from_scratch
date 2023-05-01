@@ -108,6 +108,12 @@ const dim3& SimpleMatrix<T>::dims() const{
 }
 
 template<typename T>
+void SimpleMatrix<T>::resize(int x, int y, int z){
+    dim_ = dim3(x, y, z);
+    values_.resize(x*y*z, T{});
+}
+
+template<typename T>
 void SimpleMatrix<T>::reshape(int x, int y, int z){
     if(x*y*z != dim_.x*dim_.y*dim_.z){
         std::stringstream ss;

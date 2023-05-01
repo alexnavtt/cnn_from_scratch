@@ -50,6 +50,16 @@ T& SubMatrixView<T>::at(const dim3& idx) {
 }
 
 template<typename T>
+SubMatrixView<T> SubMatrixView<T>::slices(int idx, int num){
+    return SubMatrixView<T>(*this, {0, 0, idx}, {dim_.x, dim_.y, num});
+}
+
+template<typename T>
+SubMatrixView<T> SubMatrixView<T>::slice(int idx){
+    return slices(idx, 1);
+}
+
+template<typename T>
 template<typename Other, std::enable_if_t<std::is_convertible_v<Other, T>,bool>>
 SubMatrixView<T>& SubMatrixView<T>::operator=(const Other& o){
     std::fill(begin(), end(), o);
