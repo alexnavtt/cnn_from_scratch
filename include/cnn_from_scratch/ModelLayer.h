@@ -15,6 +15,7 @@ enum ModelActivationFunction{
     
 class ModelLayer{
 public:
+    std::string name;
     SimpleMatrix<float> weights;
     SimpleMatrix<float> biases;
     bool initialized = false;
