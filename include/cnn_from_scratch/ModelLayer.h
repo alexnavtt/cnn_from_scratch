@@ -28,7 +28,7 @@ public:
     {}
 
     static float sigmoid(float f) {
-        return 1.0f/(1 + expf(f));
+        return 1.0f/(1 + std::exp(f));
     }
 
     void activate(SimpleMatrix<float>& output_data) const{
@@ -101,7 +101,13 @@ public:
 
     virtual bool checkSize(const SimpleMatrix<float>& input) = 0;
     virtual SimpleMatrix<float> propagateForward(SimpleMatrix<float>&& input) = 0;
-    virtual SimpleMatrix<float> propagateBackward(const SimpleMatrix<float>& input, const SimpleMatrix<float>& output, const SimpleMatrix<float>& output_grad, float learning_rate) = 0;
+    virtual SimpleMatrix<float> propagateBackward(
+        const SimpleMatrix<float>& input, 
+        const SimpleMatrix<float>& output, 
+        const SimpleMatrix<float>& output_grad, 
+        float learning_rate, 
+        float norm_penalty
+    ) = 0;
 };
 
 } // namespace my_cnn

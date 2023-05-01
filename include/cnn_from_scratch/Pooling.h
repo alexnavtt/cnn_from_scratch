@@ -27,52 +27,54 @@ public:
         SimpleMatrix<float> output({input.dim(0)/dim_.x, input.dim(1)/dim_.y, input.dim(2)});
 
         // Reset the affected indices vector
-        affected_indices_.clear();
-        affected_indices_.reserve(output.size());
+        affected_indices_.resize(output.dim());
 
         const dim3 pool_size{dim_.x, dim_.y, 1};
-        for (auto out_it = output.begin(); out_it != output.end(); ++out_it){
-            dim3 in_idx(out_it.idx().x*stride_.x, out_it.idx().y*stride_.y, out_it.idx().z);
+        for (auto it = output.begin(); it != output.end(); ++it){
+
+            dim3 out_idx = it.idx();
+            dim3 in_idx(out_idx.x*stride_.x, out_idx.y*stride_.y, out_idx.z);
+
             const auto AoI = input.subMatView(in_idx, pool_size);
 
             switch (type_){
                 case MIN:
                 {
-                    const dim3 min_index = minIndex(AoI);
-                    const dim3 min_index_global = in_idx + min_index;
-                    const size_t affected_index = input.getIndex(min_index_global);
-                    affected_indices_.push_back(affected_index);
-                    *out_it = AoI(min_index);
+                    const dim3 min_index = in_idx + minIndex(AoI);
+                    affected_indices_(out_idx) = min_index;
+                    output(out_idx) = input(min_index);
                     break;
                 }
 
                 case MAX: 
                 {
-                    const dim3 max_index = maxIndex(AoI);
-                    const dim3 max_index_global = in_idx + max_index;
-                    const size_t affected_index = input.getIndex(max_index_global);
-                    affected_indices_.push_back(affected_index);
-                    *out_it = AoI(max_index);
+                    const dim3 max_index= in_idx + maxIndex(AoI);
+                    affected_indices_(out_idx) = max_index;
+                    output(out_idx) = input(max_index);
                     break;
                 }
 
                 case AVG:
-                    *out_it = mean(AoI);
+                    output(out_idx) = mean(AoI);
                     break;
             }
+
         }
         return output;
     }
 
-    SimpleMatrix<float> propagateBackward(const SimpleMatrix<float>& X, const SimpleMatrix<float>& Y, const SimpleMatrix<float>& dLdY, [[maybe_unused]] float learning_rate) override{        
+    SimpleMatrix<float> propagateBackward(
+        const SimpleMatrix<float>& X,    [[maybe_unused]] const SimpleMatrix<float>& Y, 
+        const SimpleMatrix<float>& dLdY, [[maybe_unused]] float learning_rate, [[maybe_unused]] float norm_penalty) 
+    override
+    {        
         SimpleMatrix<float> dLdx(X.dim());
         switch(type_){
             case MIN:
             case MAX:
             {
-                size_t out_idx = 0;
-                for (size_t in_idx : affected_indices_){
-                    dLdx[in_idx] += dLdY[out_idx++];
+                for (auto it = affected_indices_.begin(); it != affected_indices_.end(); ++it){
+                    dLdx(*it) += dLdY(it.idx());
                 }
                 break;
             }
@@ -96,7 +98,7 @@ private:
     dim2 dim_;
     dim2 stride_;
     PoolingType type_;
-    std::vector<size_t> affected_indices_;
+    SimpleMatrix<dim3> affected_indices_;
 };
 
 } // namespace my_cnn

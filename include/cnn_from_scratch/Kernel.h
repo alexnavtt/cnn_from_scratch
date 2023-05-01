@@ -79,33 +79,47 @@ public:
     }
 
     [[nodiscard]] 
-    SimpleMatrix<float> propagateBackward(const SimpleMatrix<float>& X, const SimpleMatrix<float>& Y, const SimpleMatrix<float>& dLdY, float learning_rate) override {
+    SimpleMatrix<float> propagateBackward(
+            const SimpleMatrix<float>& X, const SimpleMatrix<float>& Y, 
+            const SimpleMatrix<float>& dLdY, float learning_rate, float norm_penalty) 
+        override 
+        {
         // Apply the gradient from the activation layer to get the output gradient
-        const SimpleMatrix<float> dLdZ = dLdY * activationGradient(dLdY);
+        const SimpleMatrix<float> dLdZ = dLdY * activationGradient(Y);
+        const dim2 stride(1,1);
+        const float bias_norm = l2Norm(biases);
 
         SimpleMatrix<float> dLdX(X.dim());
         for (size_t i = 0; i < num_filters; i++){
+            // Extract the part of the gradient salient to this filter
+            SubMatrixView<const float> gradient_layer = dLdZ.slice(i);
+            SubMatrixView<float> filter = weights.slices(i*dim_.z, dim_.z);
+            const float filter_norm = l2Norm(filter);
+
             // Update weights
             TIC("updateWeights");
-            auto gradient_layer = dLdZ.slice(i);
             for (size_t j = 0; j < dim_.z; j++){
-                auto input_layer = X.slice(j);
-                weights.slice(i*dim_.z + j) -= learning_rate * convolve(input_layer, gradient_layer, dim2(1, 1)); 
+                SubMatrixView<const float> input_layer = X.slice(j);
+                SubMatrixView<float> filter_layer = filter.slice(j);
+                filter_layer -= learning_rate * (convolve(input_layer, gradient_layer, stride) + norm_penalty * filter_layer/filter_norm);
             }
             TOC("updateWeights");
 
             // Update biases
             TIC("updateBiases");
-            biases[i] -= learning_rate * sum(gradient_layer);
+            biases[i] -= learning_rate * (sum(gradient_layer) + norm_penalty * biases[i]/bias_norm);
             TOC("updateBiases");
 
             // Update output gradient
-            TIC("outputGradient");
+            TIC("inputGradient");
             for (size_t j = 0; j < dim_.z; j++){
-                SimpleMatrix<float> padded_weights = padInput(rotate<2>(weights.slice(i*dim_.z + j)), gradient_layer.dim());
-                dLdX.slice(j) += convolve(padded_weights, gradient_layer, dim2(1, 1));
+                SubMatrixView<float> filter_layer = filter.slice(j);
+                SubMatrixView<float> input_gradient = dLdX.slice(j);
+                SimpleMatrix<float> padded_weights = padInput(rotate<2>(filter_layer), gradient_layer.dim());
+
+                input_gradient += convolve(padded_weights, gradient_layer, stride);
             }
-            TOC("outputGradient");
+            TOC("inputGradient");
         }
         return dLdX;
     }
