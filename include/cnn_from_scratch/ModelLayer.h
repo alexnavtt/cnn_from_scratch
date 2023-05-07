@@ -29,7 +29,7 @@ public:
     {}
 
     static double sigmoid(double f) {
-        return 1.0f/(1 + std::exp(f));
+        return 1.0/(1.0 + std::exp(-f));
     }
 
     void activate(SimpleMatrix<double>& output_data) const{

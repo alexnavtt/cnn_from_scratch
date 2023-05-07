@@ -28,6 +28,10 @@ add_executable(MatrixTest test/MatrixTest.cpp)
 target_link_libraries(MatrixTest GTest::gtest GTest::gtest_main -fsanitize=address)
 gtest_discover_tests(MatrixTest)
 
+add_executable(ModelLayerTest test/ModelLayerTest.cpp)
+target_link_libraries(ModelLayerTest GTest::gtest GTest::gtest_main -fsanitize=address ${cpp_timer_LIBRARIES})
+gtest_discover_tests(ModelLayerTest)
+
 add_executable(rvalue_detection src/rvalue_detection.cpp)
 target_compile_options(rvalue_detection PRIVATE -g)
 target_link_libraries(rvalue_detection -fsanitize=address)
