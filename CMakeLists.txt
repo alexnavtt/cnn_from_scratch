@@ -16,6 +16,8 @@ include_directories(
     ${cpp_timer_INCLUDE_DIRS}
 )
 
+add_compile_definitions(DATA_DIR="${CMAKE_SOURCE_DIR}/data")
+
 enable_testing()
 find_package(GTest REQUIRED)
 
