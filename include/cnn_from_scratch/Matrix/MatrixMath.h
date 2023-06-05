@@ -6,27 +6,6 @@
 #include <functional>
 #include "cnn_from_scratch/Matrix/MatrixBase.h"
 
-#define bad_access_error R"|||(                                                 \
-                                                                                \
-    MATRIX ACCESS ERROR                                                         \
-    You tried to use a temporary Matrix operation result as an lvalue           \
-    This can lead to dangling references and so it has been disabled            \
-                                                                                \
-    auto myMat = /** Matrix Operation **/                                       \
-    ^ ^                                                                         \
-    (This saves the temporary instead of creating a new matrix)                 \
-                                                                                \
-    my_cnn::SimpleMatrix<T> = /** Matrix Operation **/                          \
-    ^ ^ ^ ^ ^ ^ ^ ^ ^ ^ ^                                                       \
-    (Do this instead to get the final result)                                   \
-                                                                                \
-    If you really know what you're doing, you can still use std::move           \
-    to access the result as an rvalue. This is only valid if a single           \
-    binary matrix-matrix operation, a single matrix-scalar opration,            \
-    or a single unary matrix function was used                                  \
-                                                                                \
-)|||"
-
 namespace my_cnn{
     
 template<typename T>
