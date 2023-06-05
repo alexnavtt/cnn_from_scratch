@@ -1,7 +1,7 @@
 #pragma once
 
 #include "cnn_from_scratch/imageUtil.h"
-#include "cnn_from_scratch/ModelLayer.h"
+#include "cnn_from_scratch/Layers/ModelLayer.h"
 #include "cnn_from_scratch/Matrix/SimpleMatrix.h"
 
 namespace my_cnn{

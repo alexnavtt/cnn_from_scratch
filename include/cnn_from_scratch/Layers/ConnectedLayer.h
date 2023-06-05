@@ -3,8 +3,8 @@
 #include <assert.h>
 #include <valarray>
 #include "cnn_from_scratch/exceptions.h"
-#include "cnn_from_scratch/ModelLayer.h"
 #include "cnn_from_scratch/timerConfig.h"
+#include "cnn_from_scratch/Layers/ModelLayer.h"
 #include "cnn_from_scratch/Matrix/SimpleMatrix.h"
 
 namespace my_cnn{

@@ -2,10 +2,10 @@
 
 #include <random>
 #include <chrono>
+#include "cnn_from_scratch/Layers/ModelFlow.h"
+#include "cnn_from_scratch/Layers/ModelLayer.h"
 #include "cnn_from_scratch/Matrix/SimpleMatrix.h"
 #include "cnn_from_scratch/imageUtil.h"
-#include "cnn_from_scratch/ModelFlow.h"
-#include "cnn_from_scratch/ModelLayer.h"
 #include "cnn_from_scratch/timerConfig.h"
 
 namespace my_cnn{

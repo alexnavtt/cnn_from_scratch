@@ -3,10 +3,10 @@
 #include <vector>
 #include <string>
 #include <memory>
-#include "cnn_from_scratch/Kernel.h"
-#include "cnn_from_scratch/Pooling.h"
-#include "cnn_from_scratch/ModelFlow.h"
-#include "cnn_from_scratch/ConnectedLayer.h"
+#include "cnn_from_scratch/Layers/Kernel.h"
+#include "cnn_from_scratch/Layers/Pooling.h"
+#include "cnn_from_scratch/Layers/ModelFlow.h"
+#include "cnn_from_scratch/Layers/ConnectedLayer.h"
 
 namespace my_cnn{
 

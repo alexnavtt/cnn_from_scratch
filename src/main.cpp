@@ -7,8 +7,6 @@
 #include <chrono>
 #include "cnn_from_scratch/Matrix/SimpleMatrix.h"
 #include "cnn_from_scratch/Matrix/MatrixMath.h"
-#include "cnn_from_scratch/Kernel.h"
-#include "cnn_from_scratch/Pooling.h"
 #include "cnn_from_scratch/imageUtil.h"
 #include "cnn_from_scratch/ModelDescription.h"
 #include "cnn_from_scratch/MNISTReader.h"
