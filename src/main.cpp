@@ -15,6 +15,8 @@
 // Define global timer used by all translation units
 cpp_timer::Timer global_timer;
 
+using namespace std::string_literals;
+
 template<typename ModelType>
 void debugLayerWeights(const ModelType& model){
     auto max_element = my_cnn::max(model.layers.back()->weights);
@@ -89,12 +91,36 @@ size_t runBatch(ModelType& model, my_cnn::MNISTReader& image_source, size_t trai
 // ------------------------------------------------------------------------------------------------
 // ------------------------------------------------------------------------------------------------
 
+template<typename ModelType>
+void validate(ModelType& model){
+    STIC;
+
+    my_cnn::MNISTReader db
+        (DATA_DIR + "/MNIST Test Images.ubyte-img"s, 
+         DATA_DIR + "/MNIST Test Labels.ubyte-label"s);  
+
+    int correct_count = 0;
+    int num_images = db.numImages();
+    for (int i = 0; i < num_images; i++){
+        auto Data = db.getImage(i);
+
+        // Run forwards and backwards propagation
+        my_cnn::ModelResults result = model.forwardPropagation(Data.data);
+        correct_count += model.output_labels[result.label_idx] == Data.label;
+    }
+
+    std::cout << "\nValidation accuracy was " << 100.0f * correct_count/num_images << "%\n";
+}
+
+// ------------------------------------------------------------------------------------------------
+// ------------------------------------------------------------------------------------------------
+
 int main(int argc, char* argv[]){ 
 
     // Load the database images and labels
     my_cnn::MNISTReader db
-        ("../data/MNIST Train Images.ubyte-img", 
-        "../data/MNIST Train Labels.ubyte-label");        
+        (DATA_DIR + "/MNIST Train Images.ubyte-img"s, 
+         DATA_DIR + "/MNIST Train Labels.ubyte-label"s);        
 
     // Create a model to put the images through
     my_cnn::ModelDescription<float, unsigned char> model;
@@ -102,20 +128,21 @@ int main(int argc, char* argv[]){
     // Full model description
     model.addKernel ({5, 5, 1},  2    , my_cnn::RELU);
     model.addPooling({2, 2}   , {2, 2}, my_cnn::MAX);
-    model.addKernel ({3, 3, 2},  4    , my_cnn::RELU);
+    // model.addKernel ({3, 3, 2},  4    , my_cnn::RELU);
     model.addPooling({2, 2}   , {2, 2}, my_cnn::MAX);
     model.addConnectedLayer(10);
     model.setOutputLabels({0, 1, 2, 3, 4, 5, 6, 7, 8, 9}, my_cnn::OutputFunction::SOFTMAX);
 
-    int num_epochs = 100;
-    int training_size = 2;
+    int num_epochs = 5;
+    int training_size = 20000;
     for (int j = 0; j < num_epochs; j++){
         
-        int correct_count = runBatch(model, db, training_size, 0.01);
+        int correct_count = runBatch(model, db, training_size, 0.05);
 
         std::cout << "Accuracy was " << 100.0*correct_count/training_size << "%\n";
     }
 
+    validate(model);
     global_timer.summary();
 
     return 0;
