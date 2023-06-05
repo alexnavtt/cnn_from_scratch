@@ -525,6 +525,17 @@ bool matrixEqual(const MatrixType1& M1, const MatrixType2& M2){
     return equal;
 }
 
+template<typename MatrixType1, typename MatrixType2, typename F>
+bool matrixEqual(const MatrixType1& M1, const MatrixType2& M2, F eps = 0){
+    if (M1.dim() != M2.dim()) return false;
+
+    bool equal = true;
+    for (auto it = M1.begin(); equal && (it != M1.end()); it++){
+        equal = equal && (std::abs(*it - M2(it.idx())) <= eps);
+    }
+    return equal;
+}
+
 template<typename Matrix1, typename Matrix2>
 void checkSize(const Matrix1& M1, const Matrix2& M2){
     if (M1.dim() != M2.dim()){
