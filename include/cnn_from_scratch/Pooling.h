@@ -22,9 +22,17 @@ public:
         return input.dim(0) >= dim_.x && input.dim(1) >= dim_.y;
     }
 
+    // Get the appropriate output size given the input size
+    dim3 outputSize(const dim3& input_dim) const{
+        const int x_size = (input_dim.x - dim_.x + 1)/stride_.x;
+        const int y_size = (input_dim.y - dim_.y + 1)/stride_.y;
+        const int z_size = input_dim.z;
+        return dim3(x_size, y_size, z_size); 
+    }
+
     SimpleMatrix<double> propagateForward(SimpleMatrix<double>&& input) override {
         // Create the approriately sized output
-        SimpleMatrix<double> output({input.dim(0)/dim_.x, input.dim(1)/dim_.y, input.dim(2)});
+        SimpleMatrix<double> output(outputSize(input.dim()));
 
         // Reset the affected indices vector
         affected_indices_.resize(output.dim());
