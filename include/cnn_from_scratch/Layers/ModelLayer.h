@@ -1,7 +1,8 @@
 #pragma once
 
 #include <valarray>
-#include <cnn_from_scratch/Matrix/SimpleMatrix.h>
+#include "cnn_from_scratch/Layers/ModelFlow.h"
+#include "cnn_from_scratch/Matrix/SimpleMatrix.h"
 
 namespace my_cnn{
 
@@ -18,8 +19,8 @@ public:
     std::string name;
     SimpleMatrix<double> weights;
     SimpleMatrix<double> biases;
-    bool initialized = false;
     ModelActivationFunction activation = LINEAR;
+    ModelFlowMode tag;
 
     ModelLayer() = default;
 

@@ -8,7 +8,9 @@ class Softmax : public ModelLayer{
 public:
     Softmax(size_t output_label_count) : 
     output_label_count_(output_label_count)
-    {}    
+    {
+        tag = OUTPUT;
+    }    
 
     bool checkSize(const SimpleMatrix<double>& input) override {
         return (input.isColumn() || input.isRow()) && 
