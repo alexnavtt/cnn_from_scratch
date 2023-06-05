@@ -20,6 +20,8 @@ public:
 
     Image getImage(size_t idx);
 
+    size_t numImages() const {return num_images_;}
+
 private:
     std::fstream image_stream_;
     std::fstream label_stream_;
