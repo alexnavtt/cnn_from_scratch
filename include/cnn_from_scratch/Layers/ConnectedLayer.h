@@ -16,8 +16,8 @@ public:
     bool checkSize(const SimpleMatrix<double>& input_data) override{
         // If this is the first time at this layer, resize and apply random values
         dim3 expected_size(biases.size(), input_data.size(), 1);
-        if (not initialized){
-            initialized = true;
+        if (not initialized_){
+            initialized_ = true;
             std::srand(std::chrono::steady_clock::now().time_since_epoch().count());
             // Set random weights in the interval [0, 1] upon construction
             weights = SimpleMatrix<double>(expected_size);
@@ -81,6 +81,9 @@ public:
         TOC("outputGradient");
         return dLdX;
     }
+
+private:
+    bool initialized_ = false;
 };
 
 } // namespace my_cnn
