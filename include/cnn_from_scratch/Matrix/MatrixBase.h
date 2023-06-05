@@ -13,6 +13,18 @@ public:
         return dim_.x == dim_.y;
     }
 
+    bool isFlat() const{
+        return dim_.z == 1;
+    }
+
+    bool isRow() const{
+        return isFlat() && dim_.x == 1;
+    }
+
+    bool isColumn() const{
+        return isFlat() && dim_.y == 1;
+    }
+
     size_t size() const{
         return dim_.x*dim_.y*dim_.z;
     }
