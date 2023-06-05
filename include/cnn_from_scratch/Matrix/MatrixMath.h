@@ -120,7 +120,6 @@ public:
     using MT1 = MatrixStorageType<MatrixType1>;
     using MT2 = MatrixStorageType<MatrixType2>;
 
-    // template<typename = std::enable_if_t<std::is_reference_v<MatrixType1> && std::is_reference_v<MatrixType2>>>
     ElementWiseMatrixOperationResult(MT1 M1, MT2 M2, BinaryOp Op) :
     MatrixBase(M1.dim()),
     m1_(std::forward<MatrixType1>(M1)), m2_(std::forward<MatrixType2>(M2)), op(Op) 
@@ -251,7 +250,7 @@ auto matrixMultiply(MatrixType1&& M1, MatrixType2&& M2){
 template<typename MatrixType1, typename MatrixType2, typename = IsMatrixBase<MatrixType1, MatrixType2>>
 auto convolve(MatrixType1&& M1, MatrixType2&& M2, dim2 stride){
     // We define convolutions only for 2D matrices
-    assert(M1.dim().z == M2.dim().z == 1);
+    assert(M1.isFlat() && M2.isFlat());
 
     const dim3 output_size(
         M1.dim().x - M2.dim().x + 1,
