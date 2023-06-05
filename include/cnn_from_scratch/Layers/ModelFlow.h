@@ -6,6 +6,7 @@
 namespace my_cnn{
 
 enum ModelFlowMode{
+    UNSPECIFIED,
     KERNEL,
     POOLING,
     FULLY_CONNECTED,

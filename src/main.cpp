@@ -37,17 +37,35 @@ void debugLayerWeights(const ModelType& model){
     }
 }
 
-template<typename ModelType, typename ImageSource>
-size_t runBatch(ModelType& model, ImageSource& image_source, size_t batch_size, double learning_rate){
+// ------------------------------------------------------------------------------------------------
+// ------------------------------------------------------------------------------------------------
+
+template<typename T>
+std::ostream& operator<<(std::ostream& os, const my_cnn::ModelResults<T>& mr){
+    os << "Layer Results:\n";
+    os << "\tLabel Index: " << mr.label_idx << "\n";
+    os << "\tConfidence:  " << mr.confidence << "\n";
+    if (mr.knows_true_value){
+        os << "\tLoss:        " << mr.loss << "\n";
+        os << "\tTrue value:  " << std::to_string(mr.true_label) << "\n";
+        os << "\tTrue index:  " << mr.true_label_idx << "\n";
+    }
+    os << "\n";
+    return os;
+}
+
+// ------------------------------------------------------------------------------------------------
+// ------------------------------------------------------------------------------------------------
+
+template<typename ModelType>
+size_t runBatch(ModelType& model, my_cnn::MNISTReader& image_source, size_t training_size, double learning_rate){
     size_t correct_count = 0;
-    image_source.getImage(0);
-    for (size_t i = 0; i < batch_size; i++){
+    for (size_t i = 0; i < training_size; i++){
         auto Data = image_source.getImage(i);
 
         // Run forwards and backwards propagation
-        my_cnn::ModelResults result = model.forwardPropagation(Data.data, &Data.label);
-        std::cout << "Loss was " << result.loss << "\n";
-        model.backwardsPropagation(result, learning_rate);
+        my_cnn::ModelResults result = model.forwardPropagation(Data.data);
+        model.backwardsPropagation(result, Data.label, learning_rate);
 
         // Try to catch where it happens
         for (const auto& layer : model.layers){
@@ -62,61 +80,43 @@ size_t runBatch(ModelType& model, ImageSource& image_source, size_t batch_size, 
         }
 
         correct_count += model.output_labels[result.label_idx] == Data.label;
-        // loadingBar(i, batch_size);
+        loadingBar(i, training_size);
     }
     std::cout << "\n";
     return correct_count;
 }
 
+// ------------------------------------------------------------------------------------------------
+// ------------------------------------------------------------------------------------------------
+
 int main(int argc, char* argv[]){ 
 
+    // Load the database images and labels
     my_cnn::MNISTReader db
         ("../data/MNIST Train Images.ubyte-img", 
         "../data/MNIST Train Labels.ubyte-label");        
 
-    // Create a model to put the image through
+    // Create a model to put the images through
     my_cnn::ModelDescription<float, unsigned char> model;
 
     // Full model description
     model.addKernel ({5, 5, 1},  2    , my_cnn::RELU);
     model.addPooling({2, 2}   , {2, 2}, my_cnn::MAX);
-    model.addKernel ({3, 3, 2},  4    , my_cnn::TANGENT);
+    model.addKernel ({3, 3, 2},  4    , my_cnn::RELU);
     model.addPooling({2, 2}   , {2, 2}, my_cnn::MAX);
     model.addConnectedLayer(10);
-    model.setOutputLabels({0, 1, 2, 3, 4, 5, 6, 7, 8, 9});
+    model.setOutputLabels({0, 1, 2, 3, 4, 5, 6, 7, 8, 9}, my_cnn::OutputFunction::SOFTMAX);
 
-    int num_epochs = 20;
-    int batch_size = 200;
+    int num_epochs = 100;
+    int training_size = 2;
     for (int j = 0; j < num_epochs; j++){
         
-        int correct_count = runBatch(model, db, batch_size, 0.01);
+        int correct_count = runBatch(model, db, training_size, 0.01);
 
-        // debugLayerWeights(model);
-
-        std::cout << "Accuracy was " << 100.0*correct_count/batch_size << "%\n";
-        db.getImage(0);
+        std::cout << "Accuracy was " << 100.0*correct_count/training_size << "%\n";
     }
 
-    // auto Data = db.getImage(25001);
-    // my_cnn::printImage(Data.data);
-    // auto result = model.forwardPropagation(Data.data);
-
-    // for (const auto& layer : model.layers){
-    //     if (layer->weights.dim().z == 0) continue;
-    //     std::cout << "Layer " << layer->name << "\n";
-    //     std::cout << "Max: " << my_cnn::max(layer->weights) << " and min: " << my_cnn::min(layer->weights) << "\n";
-    //     std::cout << layer->weights;
-    //     for (size_t z = 0; z < layer->weights.dim().z; z++)
-    //         my_cnn::printImage(layer->weights.slice(z));
-    // }
-
-    // for (const auto& res : result.layer_inputs){
-    //     for (size_t z = 0; z < res.dim().z; z++)
-    //         my_cnn::printImage(res.slice(z));
-    // }
-    // std::cout << "This image was predicted to be a " << +model.output_labels[result.label_idx] << " with confidence of " << result.confidence << "\n";
-
-    // global_timer.summary();
+    global_timer.summary();
 
     return 0;
 }
