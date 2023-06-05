@@ -24,8 +24,8 @@ public:
 
     // Get the appropriate output size given the input size
     dim3 outputSize(const dim3& input_dim) const{
-        const int x_size = (input_dim.x - dim_.x + 1)/stride_.x;
-        const int y_size = (input_dim.y - dim_.y + 1)/stride_.y;
+        const int x_size = std::ceil((input_dim.x - dim_.x + 1.0f)/stride_.x);
+        const int y_size = std::ceil((input_dim.y - dim_.y + 1.0f)/stride_.y);
         const int z_size = input_dim.z;
         return dim3(x_size, y_size, z_size); 
     }
