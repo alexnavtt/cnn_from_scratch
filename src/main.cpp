@@ -19,16 +19,6 @@ using namespace std::string_literals;
 
 template<typename ModelType>
 void debugLayerWeights(const ModelType& model){
-    auto max_element = my_cnn::max(model.layers.back()->weights);
-    auto min_element = my_cnn::min(model.layers.back()->weights);
-
-    for (const auto& layer : model.layers){
-        for (size_t ii = 0; ii < layer->weights.dim().z; ii++)
-            my_cnn::printImage(layer->weights.slice(ii));
-        std::cout << "\n";
-    }
-    std::cout << "Connected layer weights range from " << min_element << " to " << max_element << "\n";
-
     int ii = 0;
     for (const auto& layer : model.layers){
         auto w_norm = my_cnn::l2Norm(layer->weights);
@@ -60,14 +50,16 @@ std::ostream& operator<<(std::ostream& os, const my_cnn::ModelResults<T>& mr){
 // ------------------------------------------------------------------------------------------------
 
 template<typename ModelType>
-size_t runBatch(ModelType& model, my_cnn::MNISTReader& image_source, size_t training_size, double learning_rate){
+size_t runEpoch(ModelType& model, my_cnn::MNISTReader& image_source, size_t training_size, double learning_rate){
     size_t correct_count = 0;
+    double total_loss = 0.0;
     for (size_t i = 0; i < training_size; i++){
         auto Data = image_source.getImage(i);
 
         // Run forwards and backwards propagation
         my_cnn::ModelResults result = model.forwardPropagation(Data.data);
         model.backwardsPropagation(result, Data.label, learning_rate);
+        total_loss += result.loss;
 
         // Try to catch where it happens
         for (const auto& layer : model.layers){
@@ -85,6 +77,7 @@ size_t runBatch(ModelType& model, my_cnn::MNISTReader& image_source, size_t trai
         loadingBar(i, training_size);
     }
     std::cout << "\n";
+    std::cout << "Average loss was " << total_loss/training_size << " and ";
     return correct_count;
 }
 
@@ -99,6 +92,8 @@ void validate(ModelType& model){
         (DATA_DIR + "/MNIST Test Images.ubyte-img"s, 
          DATA_DIR + "/MNIST Test Labels.ubyte-label"s);  
 
+    std::cout << "Running model validation test...\n";
+
     int correct_count = 0;
     int num_images = db.numImages();
     for (int i = 0; i < num_images; i++){
@@ -107,6 +102,7 @@ void validate(ModelType& model){
         // Run forwards and backwards propagation
         my_cnn::ModelResults result = model.forwardPropagation(Data.data);
         correct_count += model.output_labels[result.label_idx] == Data.label;
+        loadingBar(i, num_images);
     }
 
     std::cout << "\nValidation accuracy was " << 100.0f * correct_count/num_images << "%\n";
@@ -128,21 +124,22 @@ int main(int argc, char* argv[]){
     // Full model description
     model.addKernel ({5, 5, 1},  2    , my_cnn::RELU);
     model.addPooling({2, 2}   , {2, 2}, my_cnn::MAX);
-    // model.addKernel ({3, 3, 2},  4    , my_cnn::RELU);
+    model.addKernel ({3, 3, 2},  4    , my_cnn::RELU);
     model.addPooling({2, 2}   , {2, 2}, my_cnn::MAX);
     model.addConnectedLayer(10);
-    model.setOutputLabels({0, 1, 2, 3, 4, 5, 6, 7, 8, 9}, my_cnn::OutputFunction::SOFTMAX);
+    model.setOutputLabels({0, 1, 2, 3, 4, 5, 6, 7, 8, 9}, my_cnn::SOFTMAX);
 
-    int num_epochs = 5;
-    int training_size = 20000;
+    int num_epochs = 10;
+    int training_size = 500;
     for (int j = 0; j < num_epochs; j++){
         
-        int correct_count = runBatch(model, db, training_size, 0.05);
+        int correct_count = runEpoch(model, db, training_size, 0.0001);
 
         std::cout << "Accuracy was " << 100.0*correct_count/training_size << "%\n";
     }
 
     validate(model);
+    debugLayerWeights(model);
     global_timer.summary();
 
     return 0;
