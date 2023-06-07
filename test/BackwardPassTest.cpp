@@ -105,9 +105,6 @@ TEST_F(SingleKernelFixture, inputGradient){
     expected_input_gradient(2, 0, 0) = dLdY(1, 0, 0) * F(1, 0, 0);
     expected_input_gradient(2, 1, 0) = dLdY(1, 0, 0) * F(1, 1, 0) + dLdY(1, 1, 0) * F(1, 0, 0);
     expected_input_gradient(2, 2, 0) = dLdY(1, 1, 0) * F(1, 1, 0);
-
-    std::cout << dLdX;
-    std::cout << expected_input_gradient;
     
     ASSERT_TRUE(my_cnn::matrixEqual(dLdX, expected_input_gradient, 1e-5));
 }
