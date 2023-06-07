@@ -8,6 +8,8 @@
 #include "cnn_from_scratch/imageUtil.h"
 #include "cnn_from_scratch/timerConfig.h"
 
+#define debug(x) std::cout << #x << x
+
 namespace my_cnn{
 
 class Kernel : public ModelLayer{
@@ -96,16 +98,24 @@ public:
     [[nodiscard]]
     SimpleMatrix<double> getdLdW(const SimpleMatrix<double>& X, const SimpleMatrix<double>& dLdY){
         STIC;
+        const int num_channels = dim_.z;
+
+        // Create the output matrix
         SimpleMatrix<double> dLdW(weights.dim());
 
-        const int num_channels = dim_.z;
+        // Loop through all of the filters and find the gradient for each one
         for (int filter_idx = 0; filter_idx < num_filters; filter_idx++){
-            const auto gradient  = dLdY.slice(filter_idx);
-            auto filter_gradient = dLdW.slices(filter_idx*num_channels, num_channels);
+
+            // Get references to the data just for this filter
+            SubMatrixView<const double> output_gradient = dLdY.slice(filter_idx);
+            SubMatrixView<double>       weight_gradient = dLdW.slices(filter_idx*num_channels, num_channels);
 
             for (int channel_idx = 0; channel_idx < num_channels; channel_idx++){
-                const auto input_layer = X.slice(channel_idx);
-                filter_gradient.slice(channel_idx) = convolve(input_layer, gradient, {1, 1});
+                // Get the input channel that corresponds to this filter channel
+                SubMatrixView<const double> input_channel = X.slice(channel_idx);
+
+                // Calculate the derivate of the loss with respect to the weights for this channel
+                weight_gradient.slice(channel_idx) = convolve(input_channel, output_gradient, {1, 1});
             }
         }
 
@@ -115,19 +125,25 @@ public:
     [[nodiscard]]
     SimpleMatrix<double> getdLdX(const SimpleMatrix<double>& X, const SimpleMatrix<double>& dLdY){
         STIC;
+        const int num_channels = dim_.z;
+
+        // Create the output matrix
         SimpleMatrix<double> dLdX(X.dim());
 
-        const int num_channels = dim_.z;
+        // Loop through all of the filters and find the gradient for each one
         for (int filter_idx = 0; filter_idx < num_filters; filter_idx++){
-            // Grab the info relevant to this filter
-            const auto gradient = dLdY.slice(filter_idx);
-            const auto filter   = weights.slices(filter_idx*num_channels, num_channels);
+            // Get references to the data just for this filter
+            const SubMatrixView<double> filter          = weights.slices(filter_idx*num_channels, num_channels);
+            SubMatrixView<const double> output_gradient = dLdY.slice(filter_idx);
 
+            // Create storage for the input gradient corresponding to this filter
             SimpleMatrix<double> filter_gradient(dLdX.dim());
+
+            // Loop through each channel of the input and calculate the gradient
             for (int channel_idx = 0; channel_idx < num_channels; channel_idx++){
                 const auto filter_channel   = filter.slice(channel_idx);
-                const auto rotated_gradient = rotate<2>(gradient);
-                const auto padded_filter    = padInput(filter_channel, gradient.dim());
+                const auto rotated_gradient = rotate<2>(output_gradient);
+                const auto padded_filter    = padInput(filter_channel, output_gradient.dim());
 
                 filter_gradient.slice(channel_idx) = convolve(padded_filter, rotated_gradient, {1, 1});
             }
