@@ -8,27 +8,30 @@ extern cpp_timer::Timer global_timer;
 namespace my_cnn{
 
 template<typename InputDataType, typename OutputDataType>
-void ModelDescription<InputDataType, OutputDataType>::addKernel
+Kernel& ModelDescription<InputDataType, OutputDataType>::addKernel
     (dim3 size, size_t count, ModelActivationFunction activation)
 {
     auto& K = layers.emplace_back(new Kernel(size, count, 1));
     K->activation = activation;
     K->name = "Kernel_" + std::to_string(++kernel_count_);
+    return *std::dynamic_pointer_cast<Kernel>(K);
 }
 
 template<typename InputDataType, typename OutputDataType>
-void ModelDescription<InputDataType, OutputDataType>::addPooling
+Pooling& ModelDescription<InputDataType, OutputDataType>::addPooling
     (dim2 size, dim2 stride, PoolingType type)
 {
     auto& P = layers.emplace_back(new Pooling(size, stride, type));
     P->name = "Pooling_" + std::to_string(++pooling_count_);
+    return *std::dynamic_pointer_cast<Pooling>(P);
 }
 
 template<typename InputDataType, typename OutputDataType>
-void ModelDescription<InputDataType, OutputDataType>::addConnectedLayer(size_t output_size)
+ConnectedLayer& ModelDescription<InputDataType, OutputDataType>::addConnectedLayer(size_t output_size)
 {
     auto& C = layers.emplace_back(new ConnectedLayer(output_size));
     C->name = "FullyConnected_" + std::to_string(++fully_conn_count_);
+    return *std::dynamic_pointer_cast<ConnectedLayer>(C);
 }
 
 template<typename InputDataType, typename OutputDataType>

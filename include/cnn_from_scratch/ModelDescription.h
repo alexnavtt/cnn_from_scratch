@@ -39,9 +39,9 @@ public:
 
     bool saveModel(std::string filename);
     bool loadModel(std::string filename);
-    void addKernel(dim3 size, size_t count, ModelActivationFunction activation);
-    void addPooling(dim2 size, dim2 stride, PoolingType type);
-    void addConnectedLayer(size_t output_size);
+    Kernel& addKernel(dim3 size, size_t count, ModelActivationFunction activation);
+    Pooling& addPooling(dim2 size, dim2 stride, PoolingType type);
+    ConnectedLayer& addConnectedLayer(size_t output_size);
     void setOutputLabels(std::vector<OutputDataType> labels, OutputFunction output_function = SOFTMAX);
     ModelResults<OutputDataType> forwardPropagation(SimpleMatrix<InputDataType> input, OutputDataType* true_label = nullptr);
     void assignLoss(ModelResults<OutputDataType>& result, OutputDataType label);
