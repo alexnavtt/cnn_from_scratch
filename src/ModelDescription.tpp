@@ -27,9 +27,10 @@ Pooling& ModelDescription<InputDataType, OutputDataType>::addPooling
 }
 
 template<typename InputDataType, typename OutputDataType>
-ConnectedLayer& ModelDescription<InputDataType, OutputDataType>::addConnectedLayer(size_t output_size)
+ConnectedLayer& ModelDescription<InputDataType, OutputDataType>::addConnectedLayer(size_t output_size, ModelActivationFunction activation)
 {
     auto& C = layers.emplace_back(new ConnectedLayer(output_size));
+    C->activation = activation;
     C->name = "FullyConnected_" + std::to_string(++fully_conn_count_);
     return *std::dynamic_pointer_cast<ConnectedLayer>(C);
 }
@@ -110,12 +111,12 @@ void ModelDescription<InputDataType, OutputDataType>::backwardsPropagation(Model
 
     // For each of the layers, calculate the corresponding gradient and adjust the weights accordingly
     SimpleMatrix<double> dLdz;
-    for (int i = layers.size()-1; i > 0; i--){
+    for (int i = layers.size()-1; i >= 0; i--){
         stic(layers[i]->name.c_str());
 
         const SimpleMatrix<float>& layer_input  = result.layer_inputs.at(i);
         const SimpleMatrix<float>& layer_output = result.layer_inputs.at(i+1);
-        dLdz = layers[i]->propagateBackward(layer_input, layer_output, dLdz, learning_rate, 0);
+        dLdz = layers[i]->propagateBackward(layer_input, layer_output, dLdz, learning_rate, i == 0);
     }
     // std::cout << "\n============================================\n\n";
 }
