@@ -72,9 +72,8 @@ public:
     }
 
     SimpleMatrix<double> propagateBackward(
-        const SimpleMatrix<double>& X,    [[maybe_unused]] const SimpleMatrix<double>& Y, 
-        const SimpleMatrix<double>& dLdY, [[maybe_unused]] double learning_rate, [[maybe_unused]] double norm_penalty) 
-    override
+        const SimpleMatrix<double>& X,    const SimpleMatrix<double>&, 
+        const SimpleMatrix<double>& dLdY, double , bool) override
     {        
         SimpleMatrix<double> dLdx(X.dim());
         switch(type_){

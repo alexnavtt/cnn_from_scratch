@@ -55,8 +55,8 @@ public:
     }
 
     SimpleMatrix<double> propagateBackward(
-            const SimpleMatrix<double>& badly_shaped_X, const SimpleMatrix<double>& Y, 
-            const SimpleMatrix<double>& dLdY, double learning_rate, double norm_penalty) 
+            const SimpleMatrix<double>& badly_shaped_X, const SimpleMatrix<double>& Z, 
+            const SimpleMatrix<double>& dLdZ, double learning_rate, bool last_layer) 
     override
     {        
         // Need to reshape the input appropriately
@@ -64,21 +64,22 @@ public:
         X.reshape(badly_shaped_X.size(), 1, 1);
 
         TIC("activationGradient");
-        const SimpleMatrix<double> dLdz = dLdY * activationGradient(Y);
+        const SimpleMatrix<double> dLdY = dLdZ * activationGradient(Z);
         TOC("activationGradient");
         TIC("updateWeights");
-        weights -= learning_rate * matrixMultiply(dLdz, transpose(X));
-        weights *= (1 - norm_penalty);
+        weights -= learning_rate * matrixMultiply(dLdY, transpose(X));
         TOC("updateWeights");
         TIC("updateBiases");
-        biases -= learning_rate * dLdz;
+        biases -= learning_rate * dLdY;
         TOC("updateBiases");
 
         // We need to reshape the gradient to what the previous layer would be expecting
-        TIC("outputGradient");
-        SimpleMatrix<double> dLdX = matrixMultiply(transpose(weights), dLdz);
-        dLdX.reshape(badly_shaped_X.dim());
-        TOC("outputGradient");
+        SimpleMatrix<double> dLdX;
+        if (not last_layer){
+            stic("outputGradient");
+            dLdX = matrixMultiply(transpose(weights), dLdY);
+            dLdX.reshape(badly_shaped_X.dim());
+        }
         return dLdX;
     }
 
