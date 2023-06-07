@@ -83,6 +83,9 @@ public:
         std::enable_if_t<std::is_base_of_v<MatrixBase, std::remove_reference_t<Other>>, bool> = true>
     SubMatrixView<T>& operator=(Other&& M);
 
+    // Assign to another SubMatrixView
+    SubMatrixView<T>& operator=(const SubMatrixView<T>& M);
+
     // Iterators
     auto begin() {
         return MatrixIterator<SubMatrixView<T>&>(*this, dim3(0, 0, 0));

@@ -69,7 +69,15 @@ SubMatrixView<T>& SubMatrixView<T>::operator=(const Other& o){
 template<typename T>
 template<typename Other, std::enable_if_t<std::is_base_of_v<MatrixBase, std::remove_reference_t<Other>>, bool>>
 SubMatrixView<T>& SubMatrixView<T>::operator=(Other&& M){
-    std::copy(std::forward<Other>(M).begin(), std::forward<Other>(M).end(), std::begin(*this));
+    checkSize(*this, M);
+    std::copy(std::forward<Other>(M).begin(), std::forward<Other>(M).end(), this->begin());
+    return *this;
+}
+
+template<typename T>
+SubMatrixView<T>& SubMatrixView<T>::operator=(const SubMatrixView<T>& M){
+    checkSize(*this, M);
+    std::copy(M.begin(), M.end(), this->begin());
     return *this;
 }
 
