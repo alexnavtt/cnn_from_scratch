@@ -108,7 +108,7 @@ public:
         const SimpleMatrix<double>& output, 
         const SimpleMatrix<double>& output_grad, 
         double learning_rate, 
-        double norm_penalty
+        bool last_layer = false
     ) = 0;
 };
 

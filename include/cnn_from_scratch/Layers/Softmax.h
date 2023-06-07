@@ -47,7 +47,7 @@ public:
 
     SimpleMatrix<double> propagateBackward(
         const SimpleMatrix<double>& input, const SimpleMatrix<double>& output, 
-        const SimpleMatrix<double>&, double, double) override 
+        const SimpleMatrix<double>&, double, bool) override 
     {
         if (not knows_true_label_){
             throw ModelLayerException("Cannot backpropagate softmax layer without knowledge of true label");

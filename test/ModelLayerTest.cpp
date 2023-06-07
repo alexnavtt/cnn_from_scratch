@@ -22,8 +22,8 @@ public:
         const my_cnn::SimpleMatrix<double>& output, 
         const my_cnn::SimpleMatrix<double>& output_grad, 
         double learning_rate, 
-        double norm_penalty
-    ){return {};}
+        bool
+    ) override {return {};}
 
 protected:
     my_cnn::SimpleMatrix<type_t> M;
