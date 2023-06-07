@@ -38,6 +38,10 @@ add_executable(ForwardPassTest test/ForwardPassTest.cpp)
 target_link_libraries(ForwardPassTest GTest::gtest GTest::gtest_main -fsanitize=address ${cpp_timer_LIBRARIES})
 gtest_discover_tests(ForwardPassTest)
 
+add_executable(BackwardPassTest test/BackwardPassTest.cpp)
+target_link_libraries(BackwardPassTest GTest::gtest GTest::gtest_main -fsanitize=address ${cpp_timer_LIBRARIES})
+gtest_discover_tests(BackwardPassTest)
+
 add_executable(rvalue_detection src/rvalue_detection.cpp)
 target_compile_options(rvalue_detection PRIVATE -g)
 target_link_libraries(rvalue_detection -fsanitize=address)
