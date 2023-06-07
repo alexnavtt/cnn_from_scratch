@@ -90,9 +90,7 @@ public:
     [[nodiscard]]
     SimpleMatrix<double> getdLdY(const SimpleMatrix<double>& Z, const SimpleMatrix<double>& dLdZ){
         STIC;
-
-        const SimpleMatrix<double> dZdY = activationGradient(Z);
-        return dLdZ * dZdY;
+        return dLdZ * activationGradient(Z);
     }
 
     [[nodiscard]]
@@ -145,7 +143,9 @@ public:
                 const auto rotated_gradient = rotate<2>(output_gradient);
                 const auto padded_filter    = padInput(filter_channel, output_gradient.dim());
 
+                TIC("convolution");
                 filter_gradient.slice(channel_idx) = convolve(padded_filter, rotated_gradient, {1, 1});
+                TOC("convolution");
             }
 
             dLdX = dLdX + filter_gradient;
@@ -169,15 +169,13 @@ public:
     [[nodiscard]] 
     SimpleMatrix<double> propagateBackward(
             const SimpleMatrix<double>& X, const SimpleMatrix<double>& Z, 
-            const SimpleMatrix<double>& dLdZ, double learning_rate, double norm_penalty) 
+            const SimpleMatrix<double>& dLdZ, double learning_rate, bool last_layer) 
         override 
-        {
-
+    {
         SimpleMatrix<double> dLdY = getdLdY(Z, dLdZ);
         weights -= learning_rate * getdLdW(X, dLdY);       
         biases  -= learning_rate * getdLdB(biases, dLdY);
-        return getdLdX(X, dLdY);
-
+        return last_layer ? SimpleMatrix<double>() : getdLdX(X, dLdY);
     }
 
 private:
