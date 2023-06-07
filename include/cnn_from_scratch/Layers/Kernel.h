@@ -85,53 +85,83 @@ public:
         return output;
     }
 
-    [[nodiscard]] 
-    SimpleMatrix<double> propagateBackward(
-            const SimpleMatrix<double>& X, const SimpleMatrix<double>& Y, 
-            const SimpleMatrix<double>& dLdY, double learning_rate, double norm_penalty) 
-        override 
-        {
-        // Apply the gradient from the activation layer to get the output gradient
-        const SimpleMatrix<double> dLdZ = dLdY * activationGradient(Y);
-        const dim2 stride(1,1);
-        const double bias_norm = l2Norm(biases);
+    [[nodiscard]]
+    SimpleMatrix<double> getdLdY(const SimpleMatrix<double>& Z, const SimpleMatrix<double>& dLdZ){
+        STIC;
 
-        SimpleMatrix<double> dLdX(X.dim());
-        for (size_t i = 0; i < num_filters; i++){
-            // Extract the part of the gradient salient to this filter
-            SubMatrixView<const double> gradient_layer = dLdZ.slice(i);
-            SubMatrixView<double> filter = weights.slices(i*dim_.z, dim_.z);
+        const SimpleMatrix<double> dZdY = activationGradient(Z);
+        return dLdZ * dZdY;
+    }
 
-            // Update output gradient
-            TIC("inputGradient");
-            for (size_t j = 0; j < dim_.z; j++){
-                SubMatrixView<double> filter_layer = filter.slice(j);
-                SubMatrixView<double> input_gradient = dLdX.slice(j);
-                SimpleMatrix<double> padded_weights = padInput(rotate<2>(filter_layer), gradient_layer.dim());
+    [[nodiscard]]
+    SimpleMatrix<double> getdLdW(const SimpleMatrix<double>& X, const SimpleMatrix<double>& dLdY){
+        STIC;
+        SimpleMatrix<double> dLdW(weights.dim());
 
-                input_gradient += convolve(padded_weights, gradient_layer, stride);
+        const int num_channels = dim_.z;
+        for (int filter_idx = 0; filter_idx < num_filters; filter_idx++){
+            const auto gradient  = dLdY.slice(filter_idx);
+            auto filter_gradient = dLdW.slices(filter_idx*num_channels, num_channels);
+
+            for (int channel_idx = 0; channel_idx < num_channels; channel_idx++){
+                const auto input_layer = X.slice(channel_idx);
+                filter_gradient.slice(channel_idx) = convolve(input_layer, gradient, {1, 1});
             }
-            TOC("inputGradient");
-
-            // Update weights
-            TIC("updateWeights");
-            for (size_t j = 0; j < dim_.z; j++){
-                SubMatrixView<const double> input_layer = X.slice(j);
-                SubMatrixView<double> filter_layer = filter.slice(j);
-                filter_layer -= learning_rate * convolve(input_layer, gradient_layer, stride);
-            }
-            TOC("updateWeights");
-
-            // Update biases
-            TIC("updateBiases");
-            biases[i] -= learning_rate * sum(gradient_layer);
-            TOC("updateBiases");
         }
 
-        // Apply the norm penalty
-        weights *= (1 - norm_penalty);
+        return dLdW;
+    }
+
+    [[nodiscard]]
+    SimpleMatrix<double> getdLdX(const SimpleMatrix<double>& X, const SimpleMatrix<double>& dLdY){
+        STIC;
+        SimpleMatrix<double> dLdX(X.dim());
+
+        const int num_channels = dim_.z;
+        for (int filter_idx = 0; filter_idx < num_filters; filter_idx++){
+            // Grab the info relevant to this filter
+            const auto gradient = dLdY.slice(filter_idx);
+            const auto filter   = weights.slices(filter_idx*num_channels, num_channels);
+
+            SimpleMatrix<double> filter_gradient(dLdX.dim());
+            for (int channel_idx = 0; channel_idx < num_channels; channel_idx++){
+                const auto filter_channel   = filter.slice(channel_idx);
+                const auto rotated_gradient = rotate<2>(gradient);
+                const auto padded_filter    = padInput(filter_channel, gradient.dim());
+
+                filter_gradient.slice(channel_idx) = convolve(padded_filter, rotated_gradient, {1, 1});
+            }
+
+            dLdX = dLdX + filter_gradient;
+        }
 
         return dLdX;
+    }
+
+    [[nodiscard]]
+    SimpleMatrix<double> getdLdB(const SimpleMatrix<double>& B, const SimpleMatrix<double>& dLdY){
+        STIC;
+        
+        SimpleMatrix<double> dLdB(B.dim());
+        for (int filter_idx = 0; filter_idx < num_filters; filter_idx++){
+            dLdB[filter_idx] = sum(dLdY.slice(filter_idx));
+        }
+
+        return dLdB;
+    }
+
+    [[nodiscard]] 
+    SimpleMatrix<double> propagateBackward(
+            const SimpleMatrix<double>& X, const SimpleMatrix<double>& Z, 
+            const SimpleMatrix<double>& dLdZ, double learning_rate, double norm_penalty) 
+        override 
+        {
+
+        SimpleMatrix<double> dLdY = getdLdY(Z, dLdZ);
+        weights -= learning_rate * getdLdW(X, dLdY);       
+        biases  -= learning_rate * getdLdB(biases, dLdY);
+        return getdLdX(X, dLdY);
+
     }
 
 private:
