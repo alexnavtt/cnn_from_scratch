@@ -56,7 +56,7 @@ float ModelDescription<InputDataType, OutputDataType>::lossFcn(const SimpleMatri
         case CROSS_ENTROPY:
             // Find the index of the true label
             double loss = -1*log2(probabilities[true_label_idx] + eps);
-            return std::max(loss, 0);
+            return std::max(loss, 0.0);
     }
 }
 
