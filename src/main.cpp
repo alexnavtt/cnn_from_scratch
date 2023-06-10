@@ -105,6 +105,18 @@ void validate(ModelType& model){
         loadingBar(i, num_images);
     }
 
+    std::cout << "\n\n";
+
+    for (int i = 0; i < 5; i++){
+        int idx = (double)(rand())/RAND_MAX * num_images;
+        auto Data = db.getImage(idx);
+
+        my_cnn::ModelResults result = model.forwardPropagation(Data.data);
+        std::cout << "This image is a " << +model.output_labels[result.label_idx] << " (actual label " << +Data.label << ")\n";
+        my_cnn::printImage(Data.data);
+        std::cout << "\n\n";
+    }
+
     std::cout << "\nValidation accuracy was " << 100.0f * correct_count/num_images << "%\n";
 }
 
@@ -129,12 +141,12 @@ int main(int argc, char* argv[]){
     model.addConnectedLayer(10);
     model.setOutputLabels({0, 1, 2, 3, 4, 5, 6, 7, 8, 9}, my_cnn::SOFTMAX);
 
-    int num_epochs = 10;
-    int training_size = 500;
+    int num_epochs = 3;
+    int training_size = 60000;
     for (int j = 0; j < num_epochs; j++){
         
+        std::cout << "Starting epoch " << j << ":\n";
         int correct_count = runEpoch(model, db, training_size, 0.0001);
-
         std::cout << "Accuracy was " << 100.0*correct_count/training_size << "%\n";
     }
 
