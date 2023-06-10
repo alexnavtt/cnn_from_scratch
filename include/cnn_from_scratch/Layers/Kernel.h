@@ -34,6 +34,10 @@ public:
         biases /= l2Norm(biases);
     }
 
+    ModelFlowMode getType() const override {
+        return KERNEL;
+    }
+
     template<typename MatrixType>
     static SimpleMatrix<double> padInput(MatrixType&& input_data, const dim3 filter_dim){
         // Create the augmented input data

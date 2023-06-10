@@ -8,8 +8,10 @@ class Softmax : public ModelLayer{
 public:
     Softmax(size_t output_label_count) : 
     output_label_count_(output_label_count)
-    {
-        tag = OUTPUT;
+    {}
+
+    ModelFlowMode getType() const override {
+        return OUTPUT;
     }    
 
     bool checkSize(const SimpleMatrix<double>& input) override {

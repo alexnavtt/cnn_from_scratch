@@ -18,6 +18,10 @@ public:
     dim_(dim), stride_(stride), type_(type)
     {}
 
+    ModelFlowMode getType() const override {
+        return POOLING;
+    }
+
     bool checkSize(const SimpleMatrix<double>& input) override {
         return input.dim(0) >= dim_.x && input.dim(1) >= dim_.y;
     }

@@ -13,6 +13,10 @@ class ConnectedLayer : public ModelLayer{
 public:
     using ModelLayer::ModelLayer;
 
+    ModelFlowMode getType() const override {
+        return FULLY_CONNECTED;
+    }
+
     bool checkSize(const SimpleMatrix<double>& input_data) override{
         // If this is the first time at this layer, resize and apply random values
         dim3 expected_size(biases.size(), input_data.size(), 1);

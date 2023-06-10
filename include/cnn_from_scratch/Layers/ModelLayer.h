@@ -20,7 +20,6 @@ public:
     SimpleMatrix<double> weights;
     SimpleMatrix<double> biases;
     ModelActivationFunction activation = LINEAR;
-    ModelFlowMode tag;
 
     ModelLayer() = default;
 
@@ -101,6 +100,7 @@ public:
         }
     }
 
+    virtual ModelFlowMode getType() const = 0;
     virtual bool checkSize(const SimpleMatrix<double>& input) = 0;
     virtual SimpleMatrix<double> propagateForward(SimpleMatrix<double>&& input) = 0;
     virtual SimpleMatrix<double> propagateBackward(
