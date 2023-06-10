@@ -87,6 +87,17 @@ public:
         return dLdX;
     }
 
+    std::string serialize() const override {
+        std::stringstream ss;
+        ss << "Connected Layer";
+        ss << "\nx " << weights.dim().x << "\ny " << weights.dim().y << "\n";
+        ss << "weights\n";
+        weights.serialize(ss);
+        ss << "biases\n";
+        biases.serialize(ss);
+        return ss.str();
+    }
+
 private:
     bool initialized_ = false;
 };

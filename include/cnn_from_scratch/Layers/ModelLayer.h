@@ -110,6 +110,7 @@ public:
         double learning_rate, 
         bool last_layer = false
     ) = 0;
+    virtual std::string serialize() const = 0;
 };
 
 } // namespace my_cnn

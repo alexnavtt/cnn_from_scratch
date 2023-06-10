@@ -122,6 +122,11 @@ public:
     SubMatrixView<T> slice(int idx);
     SubMatrixView<const T> slices(int idx, int num) const;
     SubMatrixView<const T> slice(int idx) const;
+
+    /* === Serialization === */
+    void serialize(std::ostream& os) const;
+    void deserialize(std::istream& is);
+
 private:
     std::vector<T> values_;
 };

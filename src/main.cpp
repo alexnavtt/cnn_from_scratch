@@ -152,6 +152,7 @@ int main(int argc, char* argv[]){
 
     validate(model);
     debugLayerWeights(model);
+    model.saveModel(DATA_DIR + "/test.model_data"s);
     global_timer.summary();
 
     return 0;

@@ -216,5 +216,26 @@ size_t SimpleMatrix<T>::maxIndex() const{
     return std::distance(std::begin(*this), std::max_element(std::begin(*this), std::end(*this)));
 }
 
+// =================================== //
+// ========== SERIALIZATION ========== //
+// =================================== //
+
+template<typename T>
+void SimpleMatrix<T>::serialize(std::ostream& os) const {
+    os << std::fixed;
+    os << dim_.x << " " << dim_.y << " " << dim_.z << "\n";
+    for (int z = 0; z < dim_.z; z++){
+        for (int x = 0; x < dim_.x; x++){
+            for (int y = 0; y < dim_.y; y++){
+                const T& val = this->operator()(x, y, z);
+                os << std::setw(16) << val << " ";
+            }
+            os << "\n";
+        }
+        os << "\n";
+    }
+    os << std::defaultfloat;
+}
+
 } // namespace my_cnn
 

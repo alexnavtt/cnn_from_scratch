@@ -105,6 +105,22 @@ public:
         return dLdx;
     }
 
+    std::string serialize() const override {
+        std::stringstream ss;
+        
+        // Record the layer type
+        ss << "Pooling";
+
+        // Record the pool size 
+        ss << "\nx " << dim_.x << "\ny " << dim_.y << "\n";
+
+        // Record the stride
+        ss << "stride";
+        ss << "\nx " << stride_.x << "\ny " << stride_.y << "\n\n";
+
+        return ss.str();
+    }
+
 private:
     dim2 dim_;
     dim2 stride_;

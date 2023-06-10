@@ -1,3 +1,4 @@
+#include <fstream>
 #include "cnn_from_scratch/imageUtil.h"
 #include "cnn_from_scratch/timerConfig.h"
 #include "cnn_from_scratch/ModelDescription.h"
@@ -45,6 +46,31 @@ void ModelDescription<InputDataType, OutputDataType>::setOutputLabels(std::vecto
             auto& S = layers.emplace_back(new Softmax(labels.size()));
             S->name = "SoftmaxOutput";
     }
+}
+
+template<typename InputDataType, typename OutputDataType>
+bool ModelDescription<InputDataType, OutputDataType>::saveModel(std::string filename) {
+    STIC;
+    std::ofstream f(filename);
+
+    int i = 0;
+    try{
+        for (auto& layer : layers){
+            f << "(" << i++ << ") ----------\n";
+            f << layer->serialize();
+        }
+    }catch(...){
+        std::cout << "Something went wrong, file was not saved correctly\n";
+        return false;
+    }
+
+    f << "\nOutput labels " << output_labels.size() << "\n";
+    for (auto& label : output_labels){
+        f << std::to_string(label) << "\n";
+    }
+    f << std::endl;
+
+    return true;
 }
 
 template<typename InputDataType, typename OutputDataType>
@@ -106,7 +132,7 @@ void ModelDescription<InputDataType, OutputDataType>::backwardsPropagation(Model
     assignLoss(result, label);
 
     // Provide the label to the output layer for gradient calculations
-    assert(layers.back()->tag == OUTPUT);
+    assert(layers.back()->getType() == OUTPUT);
     auto output_layer = std::dynamic_pointer_cast<Softmax>(layers.back());
     output_layer->assignTrueLabel(result.true_label_idx);
 

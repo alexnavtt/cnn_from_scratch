@@ -15,6 +15,9 @@ public:
         M_copy = M;
     }
 
+    my_cnn::ModelFlowMode getType() const override{
+        return my_cnn::ModelFlowMode();
+    }
     bool checkSize(const my_cnn::SimpleMatrix<double>& input){return {};}
     my_cnn::SimpleMatrix<double> propagateForward(my_cnn::SimpleMatrix<double>&& input){return {};}
     my_cnn::SimpleMatrix<double> propagateBackward(
@@ -24,6 +27,9 @@ public:
         double learning_rate, 
         bool
     ) override {return {};}
+    std::string serialize() const override {
+        return "";
+    }
 
 protected:
     my_cnn::SimpleMatrix<type_t> M;

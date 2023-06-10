@@ -60,6 +60,10 @@ public:
         return gradient;
     }
 
+    std::string serialize() const override {
+        return "Softmax\n";
+    }
+
 private:
     bool knows_true_label_ = false;
     size_t true_label_idx_;

@@ -182,6 +182,17 @@ public:
         return last_layer ? SimpleMatrix<double>() : getdLdX(X, dLdY);
     }
 
+    std::string serialize() const override {
+        std::stringstream ss;
+        ss << "Kernel";
+        ss << "\nx " << dim_.x << "\ny " << dim_.y << "\nz " << dim_.z << "\nn " << num_filters << "\n";
+        ss << "weights\n";
+        weights.serialize(ss);
+        ss << "biases\n";
+        biases.serialize(ss);
+        return ss.str();
+    }
+
 private:
     dim3 dim_;
 
