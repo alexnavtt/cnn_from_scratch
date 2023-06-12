@@ -89,7 +89,7 @@ bool ModelDescription<InputDataType, OutputDataType>::loadModel(std::string file
         // Determine the type of layer coming next
         try{
             if (line == "Kernel"){
-                Kernel& K = addKernel({0, 0, 0}, 1, 1);
+                Kernel& K = addKernel({0, 0, 0}, 1, LINEAR);
                 if (not K.deserialize(f)) return false;
             }
 
@@ -99,18 +99,37 @@ bool ModelDescription<InputDataType, OutputDataType>::loadModel(std::string file
             }
 
             else if (line == "Connected Layer"){
-                ConnectedLayer& C = addConnectedLayer(1);
+                ConnectedLayer& C = addConnectedLayer(0);
                 if (not C.deserialize(f)) return false;
             }
             
             else if (line == "Softmax"){
-                Softmax& S = setOutputLabels(layers.back()->weights.dim().y);
+                // Determine the number of output labels
+                serialization::clearLine(f);
+                serialization::clearLine(f);
+                int size = serialization::expect<int>(f, "Output labels");
+
+                // Load the output vector
+                std::vector<OutputDataType> labels(size);
+                for (int i = 0; i < size; i++){
+                    OutputDataType label;
+                    f >> label;
+                    serialization::clearLine(f);
+                    labels[i] = label;
+                }
+
+                // Set the vector with softmax activation
+                setOutputLabels(labels, SOFTMAX);
             }
-        }catch(std::runtime_error& e){
+        }
+        
+        catch(std::runtime_error& e){
             std::cout << "loadModel runtime error: " << e.what() << "\n";
             return false;
         }
     }
+
+    return true;
 }
 
 template<typename InputDataType, typename OutputDataType>
