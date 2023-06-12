@@ -10,6 +10,7 @@ enum ModelFlowMode{
     KERNEL,
     POOLING,
     FULLY_CONNECTED,
+    ACTIVATION,
     OUTPUT
 };
 
