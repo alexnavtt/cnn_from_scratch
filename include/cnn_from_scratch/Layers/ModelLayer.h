@@ -33,7 +33,7 @@ static inline ModelActivationFunction fromString(const std::string& s){
     if (s == "TANGENT")     return TANGENT;
     if (s == "LEAKY_RELU")  return LEAKY_RELU;
     else
-        throw std::runtime_error("Unknown string for ModelActivationFunction");
+        throw std::runtime_error("Unknown string \"" + s + "\" for ModelActivationFunction");
 }
     
 class ModelLayer{
