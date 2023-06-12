@@ -91,6 +91,7 @@ public:
     std::string serialize() const override {
         std::stringstream ss;
         ss << "Connected Layer\n";
+        ss << toString(activation) << "\n";
         serialization::place(ss, weights.dim().x, "x");
         serialization::place(ss, weights.dim().y, "y");
         ss << "weights\n";
@@ -102,6 +103,9 @@ public:
 
     bool deserialize(std::istream& is) override {
         serialization::expect<void>(is, "Connected Layer\n");
+        std::string activation_string;
+        std::getline(is, activation_string);
+        activation = fromString(activation_string);
         dim2 stream_dim;
         stream_dim.x = serialization::expect<int>(is, "x");
         serialization::clearLine(is);

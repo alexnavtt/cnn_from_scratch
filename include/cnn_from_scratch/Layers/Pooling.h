@@ -111,6 +111,9 @@ public:
         
         // Record the layer type
         ss << "Pooling\n";
+        ss << (type_ == MAX ? "MAX\n" : 
+               type_ == MIN ? "MIN\n" : 
+                              "AVG\n");
 
         // Record the pool size 
         serialization::place(ss, dim_.x, "x");
@@ -127,6 +130,15 @@ public:
     bool deserialize(std::istream& is) override {
         // Check that the label is correct
         serialization::expect<void>(is, "Pooling\n");
+
+        // Get the layer type
+        std::string type_string;
+        std::getline(is, type_string);
+        if      (type_string == "MAX") type_ = MAX;
+        else if (type_string == "MIN") type_ = MIN;
+        else if (type_string == "AVG") type_ = AVG;
+        else 
+            throw std::runtime_error("Unknown pooling type: " + type_string);
 
         // Get the pool dim
         dim_.x = serialization::expect<int>(is, "x");

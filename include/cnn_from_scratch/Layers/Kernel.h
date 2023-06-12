@@ -186,6 +186,7 @@ public:
     std::string serialize() const override {
         std::stringstream ss;
         ss << "Kernel\n";
+        ss << toString(activation) << "\n";
         serialization::place(ss, dim_.x, "x");
         serialization::place(ss, dim_.y, "y");
         serialization::place(ss, dim_.z, "z");
@@ -200,14 +201,13 @@ public:
 
     bool deserialize(std::istream& is) override {
 
-        // For clearing remainders of lines
-        auto newline = [&is]() -> bool {
-            is.ignore(std::numeric_limits<int>::max(), '\n');
-            return true;
-        };
-
         // First line should be just the word "Kernel"
         serialization::expect<void>(is, "Kernel\n");
+
+        // Get the activation function 
+        std::string activation_string;
+        std::getline(is, activation_string);
+        activation = fromString(activation_string);
 
         // Get the dimension of the kernel
         dim_.x = serialization::expect<int>(is, "x");
