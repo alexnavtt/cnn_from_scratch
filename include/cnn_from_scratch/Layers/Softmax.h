@@ -66,7 +66,7 @@ public:
     }
 
     bool deserialize(std::istream& is) override {
-        serialization::expect<void>(is, "Softmax\n");
+        serialization::expect<void>(is, "Softmax");
         return true;
     }
 

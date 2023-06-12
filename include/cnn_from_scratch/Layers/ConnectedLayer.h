@@ -108,12 +108,10 @@ public:
         activation = fromString(activation_string);
         dim2 stream_dim;
         stream_dim.x = serialization::expect<int>(is, "x");
-        serialization::clearLine(is);
         stream_dim.y = serialization::expect<int>(is, "y");
-        serialization::clearLine(is);
-        serialization::expect<void>(is, "weights\n");
+        serialization::expect<void>(is, "weights");
         if (not weights.deserialize(is)) return false;
-        serialization::expect<void>(is, "biases\n");
+        serialization::expect<void>(is, "biases");
         if (not biases.deserialize(is)) return false;
         initialized_ = true;
         return true;

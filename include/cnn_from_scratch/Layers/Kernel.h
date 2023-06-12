@@ -211,22 +211,18 @@ public:
 
         // Get the dimension of the kernel
         dim_.x = serialization::expect<int>(is, "x");
-        serialization::clearLine(is);
         dim_.y = serialization::expect<int>(is, "y");
-        serialization::clearLine(is);
         dim_.z = serialization::expect<int>(is, "z");
-        serialization::clearLine(is);
 
         // Get the number of kernels
         num_filters = serialization::expect<unsigned>(is, "n");
-        serialization::clearLine(is);
 
         // Read the weights matrix
-        serialization::expect<void>(is, "weights\n");
+        serialization::expect<void>(is, "weights");
         if (not weights.deserialize(is)) return false;
 
         // Read the biases matrix
-        serialization::expect<void>(is, "biases\n");
+        serialization::expect<void>(is, "biases");
         if (not biases.deserialize(is)) return false;
 
         return true;

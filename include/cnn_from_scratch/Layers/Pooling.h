@@ -142,18 +142,14 @@ public:
 
         // Get the pool dim
         dim_.x = serialization::expect<int>(is, "x");
-        serialization::clearLine(is);
         dim_.y = serialization::expect<int>(is, "y");
-        serialization::clearLine(is);
 
         // Check for the stride label
-        serialization::expect<void>(is, "stride\n");
+        serialization::expect<void>(is, "stride");
 
         // Get the stride
         stride_.x = serialization::expect<int>(is, "x");
-        serialization::clearLine(is);
         stride_.y = serialization::expect<int>(is, "y");
-        serialization::clearLine(is);
 
         return true;
     }
