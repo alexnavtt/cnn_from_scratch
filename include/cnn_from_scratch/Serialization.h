@@ -17,6 +17,17 @@ static inline void clearLine(std::istream& S){
 }
 
 /**
+ * Given an input stream, read the next line without extracting it 
+ */
+static inline std::string readLine(std::istream& S){
+    std::string output;
+    std::streampos start_pos = S.tellg();
+    std::getline(S, output);
+    S.seekg(start_pos);
+    return output;
+}
+
+/**
  * Given an output stream, place a label and value on it's own line
  * such that that output is of the form "label value". This function
  * acts as the inverse of serialization::expect

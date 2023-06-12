@@ -82,28 +82,26 @@ bool ModelDescription<InputDataType, OutputDataType>::loadModel(std::string file
     std::string line;
     while (std::getline(f, line)){
         // Read the next line without extracting it
-        std::streampos pos = f.tellg();
-        std::getline(f, line);
-        f.seekg(pos);
+        std::string label = serialization::readLine(f);
         
         // Determine the type of layer coming next
         try{
-            if (line == "Kernel"){
+            if (label == "Kernel"){
                 Kernel& K = addKernel({0, 0, 0}, 1, LINEAR);
                 if (not K.deserialize(f)) return false;
             }
 
-            else if (line == "Pooling"){
+            else if (label == "Pooling"){
                 Pooling& P = addPooling({0, 0}, {0, 0}, MAX);
                 if (not P.deserialize(f)) return false;
             }
 
-            else if (line == "Connected Layer"){
+            else if (label == "Connected Layer"){
                 ConnectedLayer& C = addConnectedLayer(0);
                 if (not C.deserialize(f)) return false;
             }
             
-            else if (line == "Softmax"){
+            else if (label == "Softmax"){
                 // Determine the number of output labels
                 serialization::clearLine(f);
                 serialization::clearLine(f);
