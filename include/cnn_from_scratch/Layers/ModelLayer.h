@@ -25,6 +25,16 @@ static inline std::string toString(ModelActivationFunction f){
             throw std::runtime_error("Unknown ModelActivationFunction");
     }
 }
+
+static inline ModelActivationFunction fromString(const std::string& s){
+    if (s == "RELU")        return RELU;
+    if (s == "SIGMOID")     return SIGMOID;
+    if (s == "LINEAR")      return LINEAR;
+    if (s == "TANGENT")     return TANGENT;
+    if (s == "LEAKY_RELU")  return LEAKY_RELU;
+    else
+        throw std::runtime_error("Unknown string for ModelActivationFunction");
+}
     
 class ModelLayer{
 public:
