@@ -12,7 +12,7 @@ namespace serialization{
 /**
  * Given an input stream, ignore everything until the next line 
  */
-void clearLine(std::istream& S){
+static inline void clearLine(std::istream& S){
     S.ignore(std::numeric_limits<int>::max(), '\n');
 }
 
@@ -22,7 +22,7 @@ void clearLine(std::istream& S){
  * acts as the inverse of serialization::expect
  */
 template<typename T>
-void place(std::ostream& os, const T& val, const std::string& label){
+static inline void place(std::ostream& os, const T& val, const std::string& label){
     os << label << ' ' << val << '\n'; 
 }
 
@@ -36,7 +36,7 @@ void place(std::ostream& os, const T& val, const std::string& label){
  * @return          The T value immediately after expected in the stream
  */  
 template<typename T>
-T expect(std::istream& is, const std::string& expected){
+static inline T expect(std::istream& is, const std::string& expected){
     std::string result(expected.size(), ' ');
     is.read(result.data(), result.size());
     if (expected != result){
@@ -46,7 +46,10 @@ T expect(std::istream& is, const std::string& expected){
     if constexpr (not std::is_void_v<T>){
         T output;
         is >> output;
+        clearLine(is);
         return output;
+    }else{
+        clearLine(is);
     }
 }
 
