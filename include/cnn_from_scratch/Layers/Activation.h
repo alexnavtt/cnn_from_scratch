@@ -86,7 +86,10 @@ class Activation : public ModelLayer{
     }
 
     std::string serialize() const override {
-        return "Activation\n" + toString(activation) + "\n";
+        std::stringstream ss;
+        ss << "Activation\n";
+        ss << toString(activation) << "\n";
+        return ss.str();
     }
 
     bool deserialize(std::istream& is) override {

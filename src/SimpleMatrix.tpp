@@ -1,3 +1,4 @@
+#include "cnn_from_scratch/Serialization.h"
 #include "cnn_from_scratch/Matrix/SimpleMatrix.h"
 
 #define THROW_SUB_SIZE_EXCEPTION { \
@@ -244,10 +245,8 @@ bool SimpleMatrix<T>::deserialize(std::istream& is) {
     is >> dim.x;
     is >> dim.y;
     is >> dim.z;
-    std::cout << "Matrix dimension was read as " << dim << "\n";
 
     if (is.fail()) return false;
-    std::cout << "Success\n";
     this->resize(dim);
 
     // Retrieve the rows of the matrix
@@ -260,11 +259,11 @@ bool SimpleMatrix<T>::deserialize(std::istream& is) {
             }
 
             // Newline
-            is.ignore(std::numeric_limits<int>::max(), '\n');
+            serialization::clearLine(is);
         }
 
         // Newline
-        is.ignore(std::numeric_limits<int>::max(), '\n');
+        serialization::clearLine(is);
     }
 
     return true;
