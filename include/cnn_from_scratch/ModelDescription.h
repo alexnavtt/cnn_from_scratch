@@ -6,6 +6,7 @@
 #include "cnn_from_scratch/Layers/Kernel.h"
 #include "cnn_from_scratch/Layers/Pooling.h"
 #include "cnn_from_scratch/Layers/ModelFlow.h"
+#include "cnn_from_scratch/Layers/Activation.h"
 #include "cnn_from_scratch/Layers/ConnectedLayer.h"
 
 namespace my_cnn{
@@ -39,9 +40,10 @@ public:
 
     bool saveModel(std::string filename);
     bool loadModel(std::string filename);
-    Kernel& addKernel(dim3 size, size_t count, ModelActivationFunction activation);
+    Kernel& addKernel(dim3 size, size_t count);
     Pooling& addPooling(dim2 size, dim2 stride, PoolingType type);
-    ConnectedLayer& addConnectedLayer(size_t output_size, ModelActivationFunction activation = LINEAR);
+    ConnectedLayer& addConnectedLayer(size_t output_size);
+    Activation& addActivation(ModelActivationFunction activation);
     void setOutputLabels(std::vector<OutputDataType> labels, OutputFunction output_function = SOFTMAX);
     ModelResults<OutputDataType> forwardPropagation(SimpleMatrix<InputDataType> input, OutputDataType* true_label = nullptr);
     void assignLoss(ModelResults<OutputDataType>& result, OutputDataType label);
@@ -52,6 +54,7 @@ private:
     size_t kernel_count_     = 0;
     size_t pooling_count_    = 0;
     size_t fully_conn_count_ = 0;
+    size_t activation_count_ = 0;
     OutputFunction output_function_ = UNSPECIFIED_OUTPUT;
 };
 

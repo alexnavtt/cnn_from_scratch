@@ -13,7 +13,7 @@ TEST(Kernel, singleChannelSingleLayer){
     );
 
     my_cnn::ModelDescription<float, float> model;
-    model.addKernel(my_cnn::dim3(3, 3, 1), 1, my_cnn::ModelActivationFunction::TANGENT);
+    model.addKernel(my_cnn::dim3(3, 3, 1), 1);
     my_cnn::Kernel& kernel = *std::dynamic_pointer_cast<my_cnn::Kernel>(model.layers[0]);
 
     // Make sure their size is as expected
@@ -35,11 +35,8 @@ TEST(Kernel, singleChannelSingleLayer){
          40.6f + 1, 64.0f + 1}
     );
 
-    // Apply the activation function
-    my_cnn::SimpleMatrix<float> activated_output = my_cnn::apply(unactivated_output, (float(*)(float)) std::tanh);
-
     // Those two should be equal
-    EXPECT_TRUE(my_cnn::matrixEqual(output, activated_output, 1e-5));
+    EXPECT_TRUE(my_cnn::matrixEqual(output, unactivated_output, 1e-5));
 }
 
 TEST(Kernel, singleChannelMultipleLayer){
@@ -51,7 +48,7 @@ TEST(Kernel, singleChannelMultipleLayer){
     );
 
     my_cnn::ModelDescription<float, float> model;
-    model.addKernel(my_cnn::dim3(3, 3, 1), 2, my_cnn::ModelActivationFunction::RELU);
+    model.addKernel(my_cnn::dim3(3, 3, 1), 2);
     my_cnn::Kernel& kernel = *std::dynamic_pointer_cast<my_cnn::Kernel>(model.layers[0]);
 
     // Make sure their size is as expected
@@ -80,11 +77,8 @@ TEST(Kernel, singleChannelMultipleLayer){
          -40.6f - 1, -64.0f - 1}
     );
 
-    // Apply the activation function[
-    my_cnn::SimpleMatrix<float> activated_output = my_cnn::apply(unactivated_output, [](float f){return f > 0 ? f : 0;});
-
     // Those two should be equal
-    EXPECT_TRUE(my_cnn::matrixEqual(output, activated_output, 1e-5));
+    EXPECT_TRUE(my_cnn::matrixEqual(output, unactivated_output, 1e-5));
 }
 
 TEST(Kernel, multipleChannelSingleLayer){
@@ -101,7 +95,7 @@ TEST(Kernel, multipleChannelSingleLayer){
     );
 
     my_cnn::ModelDescription<float, float> model;
-    model.addKernel(my_cnn::dim3(3, 3, 2), 1, my_cnn::ModelActivationFunction::SIGMOID);
+    model.addKernel(my_cnn::dim3(3, 3, 2), 1);
     my_cnn::Kernel& kernel = *std::dynamic_pointer_cast<my_cnn::Kernel>(model.layers[0]);
 
     // Make sure their size is as expected
@@ -127,11 +121,8 @@ TEST(Kernel, multipleChannelSingleLayer){
           40.6 -  64.6 + 1,  64.0 - 41.06 + 1}
     );
 
-    // Apply the activation function[
-    my_cnn::SimpleMatrix<float> activated_output = my_cnn::apply(unactivated_output, [](float f){return 1/(1 + std::exp(-f));});
-
     // Those two should be equal
-    EXPECT_TRUE(my_cnn::matrixEqual(output, activated_output, 1e-5));
+    EXPECT_TRUE(my_cnn::matrixEqual(output, unactivated_output, 1e-5));
 }
 
 TEST(Pooling, singleChannelSingleStride){

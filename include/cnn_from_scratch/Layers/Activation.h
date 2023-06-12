@@ -6,6 +6,9 @@
 namespace my_cnn{
     
 class Activation : public ModelLayer{
+public:
+    Activation(ModelActivationFunction activation) : activation_(activation) {}
+
     ModelFlowMode getType() const override {
         return ACTIVATION;
     };
@@ -14,8 +17,12 @@ class Activation : public ModelLayer{
         return true;
     }
 
+    static double sigmoid(double f) {
+        return 1.0/(1.0 + std::exp(-f));
+    }
+
     SimpleMatrix<double> propagateForward(SimpleMatrix<double>&& input) override {
-        switch (activation){
+        switch (activation_){
             case RELU:
                 return apply(input, [](double f){return f > 0 ? f : 0;});
 
@@ -37,7 +44,7 @@ class Activation : public ModelLayer{
     auto activationGradient(const SimpleMatrix<double>& activated_output) const {
         using result_t = UnaryOperationResult<const SimpleMatrix<double>&, double(*)(const SimpleMatrix<double>&, const dim3&)>;
         
-        switch (activation){
+        switch (activation_){
             case RELU:
                 return result_t(activated_output, 
                     [](const SimpleMatrix<double>& M, const dim3& idx){
@@ -88,7 +95,7 @@ class Activation : public ModelLayer{
     std::string serialize() const override {
         std::stringstream ss;
         ss << "Activation\n";
-        ss << toString(activation) << "\n";
+        ss << toString(activation_) << "\n";
         return ss.str();
     }
 
@@ -97,10 +104,11 @@ class Activation : public ModelLayer{
 
         std::string activation_string;
         std::getline(is, activation_string);
-        activation = fromString(activation_string);
+        activation_ = fromString(activation_string);
+        return true;
     }
 
-private:
+protected:
     ModelActivationFunction activation_ = LINEAR;
 };
 

@@ -55,7 +55,6 @@ public:
         }
 
         SimpleMatrix<double> output = matrixMultiply(weights, input_data) + biases;
-        activate(output);
         return output;
     }
 
@@ -68,21 +67,18 @@ public:
         SimpleMatrix<double> X = badly_shaped_X;
         X.reshape(badly_shaped_X.size(), 1, 1);
 
-        TIC("activationGradient");
-        const SimpleMatrix<double> dLdY = dLdZ * activationGradient(Z);
-        TOC("activationGradient");
         TIC("updateWeights");
-        weights -= learning_rate * matrixMultiply(dLdY, transpose(X));
+        weights -= learning_rate * matrixMultiply(dLdZ, transpose(X));
         TOC("updateWeights");
         TIC("updateBiases");
-        biases -= learning_rate * dLdY;
+        biases -= learning_rate * dLdZ;
         TOC("updateBiases");
 
         // We need to reshape the gradient to what the previous layer would be expecting
         SimpleMatrix<double> dLdX;
         if (not last_layer){
             stic("outputGradient");
-            dLdX = matrixMultiply(transpose(weights), dLdY);
+            dLdX = matrixMultiply(transpose(weights), dLdZ);
             dLdX.reshape(badly_shaped_X.dim());
         }
         return dLdX;
@@ -91,7 +87,7 @@ public:
     std::string serialize() const override {
         std::stringstream ss;
         ss << "Connected Layer\n";
-        ss << toString(activation) << "\n";
+        // ss << toString(activation) << "\n";
         serialization::place(ss, weights.dim().x, "x");
         serialization::place(ss, weights.dim().y, "y");
         ss << "weights\n";
@@ -103,9 +99,6 @@ public:
 
     bool deserialize(std::istream& is) override {
         serialization::expect<void>(is, "Connected Layer");
-        std::string activation_string;
-        std::getline(is, activation_string);
-        activation = fromString(activation_string);
         dim2 stream_dim;
         stream_dim.x = serialization::expect<int>(is, "x");
         stream_dim.y = serialization::expect<int>(is, "y");

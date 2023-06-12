@@ -18,7 +18,7 @@ public:
         { 0.0, 77.2,
          35.4,  0.6})
     {
-        my_cnn::Kernel& K = model.addKernel(my_cnn::dim3(2, 2, 1), 1, my_cnn::RELU);
+        my_cnn::Kernel& K = model.addKernel(my_cnn::dim3(2, 2, 1), 1);
         K.weights.setEntries(
             {0.1, 3.0,
             -3.0, 9.0}
@@ -32,32 +32,14 @@ public:
     my_cnn::ModelDescription<double, double> model;
 };
 
-TEST_F(SingleKernelFixture, activationGradient){
-
-    // Get the kernel
-    my_cnn::Kernel& kernel = *std::dynamic_pointer_cast<my_cnn::Kernel>(model.layers.back());    
-
-    // Get the output loss gradient from the layer loss gradient
-    my_cnn::SimpleMatrix<double> dLdY = kernel.getdLdY(layer_output, layer_loss_gradient);
-
-    // Expected output gradient
-    my_cnn::SimpleMatrix<double> expected_output_gradient(my_cnn::dim3(2, 2, 1),
-        { 0.0, 0.3, 
-          0.4, 0.6}
-    );
-
-    ASSERT_TRUE(my_cnn::matrixEqual(expected_output_gradient, dLdY, 1e-5));
-}
 
 TEST_F(SingleKernelFixture, weightGradient){
     // Get the kernel
     my_cnn::Kernel& kernel = *std::dynamic_pointer_cast<my_cnn::Kernel>(model.layers.back());
 
-    // Get the output loss gradient from the layer loss gradient
-    my_cnn::SimpleMatrix<double> dLdY = kernel.getdLdY(layer_output, layer_loss_gradient);
-
     // Get the weight gradient
-    my_cnn::SimpleMatrix<double> dLdW = kernel.getdLdW(layer_input, dLdY);
+    my_cnn::SimpleMatrix<double> dLdY = layer_loss_gradient;
+    my_cnn::SimpleMatrix<double> dLdW = kernel.getdLdW(layer_input, layer_loss_gradient);
 
     my_cnn::SimpleMatrix<double> expected_weight_gradient(my_cnn::dim3(2, 2, 1));
     expected_weight_gradient(0, 0, 0) = dLdY(0, 0, 0) * layer_input(0, 0, 0)
@@ -88,10 +70,8 @@ TEST_F(SingleKernelFixture, inputGradient){
     my_cnn::Kernel& kernel = *std::dynamic_pointer_cast<my_cnn::Kernel>(model.layers.back());
     my_cnn::SimpleMatrix<double>& F = kernel.weights;
 
-    // Get the output loss gradient from the layer loss gradient
-    my_cnn::SimpleMatrix<double> dLdY = kernel.getdLdY(layer_output, layer_loss_gradient);
-
     // Get the weight gradient
+    my_cnn::SimpleMatrix<double> dLdY = layer_loss_gradient;
     my_cnn::SimpleMatrix<double> dLdX = kernel.getdLdX(layer_input, dLdY);
 
     my_cnn::SimpleMatrix<double> expected_input_gradient(my_cnn::dim3(3, 3, 1));

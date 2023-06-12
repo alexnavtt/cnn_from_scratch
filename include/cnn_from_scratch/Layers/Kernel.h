@@ -85,17 +85,8 @@ public:
             output.slice(i) += biases[i];
         }
 
-        // Apply the activation function
-        activate(output);
-
         // Return
         return output;
-    }
-
-    [[nodiscard]]
-    SimpleMatrix<double> getdLdY(const SimpleMatrix<double>& Z, const SimpleMatrix<double>& dLdZ){
-        STIC;
-        return dLdZ * activationGradient(Z);
     }
 
     [[nodiscard]]
@@ -177,16 +168,15 @@ public:
             const SimpleMatrix<double>& dLdZ, double learning_rate, bool last_layer) 
         override 
     {
-        SimpleMatrix<double> dLdY = getdLdY(Z, dLdZ);
-        weights -= learning_rate * getdLdW(X, dLdY);       
-        biases  -= learning_rate * getdLdB(biases, dLdY);
-        return last_layer ? SimpleMatrix<double>() : getdLdX(X, dLdY);
+        // SimpleMatrix<double> dLdY = getdLdY(Z, dLdZ);
+        weights -= learning_rate * getdLdW(X, dLdZ);       
+        biases  -= learning_rate * getdLdB(biases, dLdZ);
+        return last_layer ? SimpleMatrix<double>() : getdLdX(X, dLdZ);
     }
 
     std::string serialize() const override {
         std::stringstream ss;
         ss << "Kernel\n";
-        ss << toString(activation) << "\n";
         serialization::place(ss, dim_.x, "x");
         serialization::place(ss, dim_.y, "y");
         serialization::place(ss, dim_.z, "z");
@@ -202,11 +192,6 @@ public:
 
         // First line should be just the word "Kernel"
         serialization::expect<void>(is, "Kernel");
-
-        // Get the activation function 
-        std::string activation_string;
-        std::getline(is, activation_string);
-        activation = fromString(activation_string);
 
         // Get the dimension of the kernel
         dim_.x = serialization::expect<int>(is, "x");

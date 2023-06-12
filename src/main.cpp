@@ -135,14 +135,16 @@ int main(int argc, char* argv[]){
     my_cnn::ModelDescription<float, unsigned char> model;
 
     // Full model description
-    model.addKernel ({5, 5, 1},  2    , my_cnn::RELU);
-    model.addPooling({2, 2}   , {2, 2}, my_cnn::MAX);
-    model.addKernel ({3, 3, 2},  4    , my_cnn::RELU);
-    model.addPooling({2, 2}   , {2, 2}, my_cnn::MAX);
+    model.addKernel ({5, 5, 1},  2);
+    model.addActivation(my_cnn::RELU);
+    model.addPooling({2, 2}, {2, 2}, my_cnn::MAX);
+    model.addKernel ({3, 3, 2},  4);
+    model.addActivation(my_cnn::RELU);
+    model.addPooling({2, 2}, {2, 2}, my_cnn::MAX);
     model.addConnectedLayer(10);
     model.setOutputLabels({0, 1, 2, 3, 4, 5, 6, 7, 8, 9}, my_cnn::SOFTMAX);
 
-    int num_epochs = 3;
+    int num_epochs = 1;
     int training_size = 60000;
     for (int j = 0; j < num_epochs; j++){
         std::cout << "Starting epoch " << j << ":\n";

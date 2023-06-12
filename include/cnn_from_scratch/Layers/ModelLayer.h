@@ -41,7 +41,6 @@ public:
     std::string name;
     SimpleMatrix<double> weights;
     SimpleMatrix<double> biases;
-    ModelActivationFunction activation = LINEAR;
 
     ModelLayer() = default;
 
@@ -50,77 +49,6 @@ public:
     weights(weights_dim)
     {}
 
-    static double sigmoid(double f) {
-        return 1.0/(1.0 + std::exp(-f));
-    }
-
-    void activate(SimpleMatrix<double>& output_data) const{
-        switch (activation){
-            case RELU:
-                modify(output_data, [](double f){return f > 0 ? f : 0;});
-                break;
-
-            case SIGMOID:
-                modify(output_data, [](double f){return sigmoid(f);});
-                break;
-
-            default:
-            case LINEAR:
-                break;
-
-            case TANGENT:
-                modify(output_data, (double(*)(double))std::tanh);
-                break;
-                
-            case LEAKY_RELU:
-                modify(output_data, [](double f){return std::max(0.1f*f, f);});
-                break;
-        }
-    }
-
-    auto activationGradient(const SimpleMatrix<double>& activated_output) const {
-        using result_t = UnaryOperationResult<const SimpleMatrix<double>&, double(*)(const SimpleMatrix<double>&, const dim3&)>;
-        
-        switch (activation){
-            case RELU:
-                return result_t(activated_output, 
-                    [](const SimpleMatrix<double>& M, const dim3& idx){
-                        return (double)(M(idx) > 0);
-                    }
-                );
-
-            case SIGMOID:
-                return result_t(activated_output, 
-                    [](const SimpleMatrix<double>& M, const dim3& idx){
-                        const auto val = M(idx);
-                        return sigmoid(val)*(1 - sigmoid(val));
-                    }
-                );
-
-            default:
-            case LINEAR:
-                return result_t(activated_output, 
-                    [](const SimpleMatrix<double>& M, const dim3& idx){
-                        return 1.0;
-                    }
-                );
-
-            case TANGENT:
-                return result_t(activated_output, 
-                    [](const SimpleMatrix<double>& M, const dim3& idx){
-                        const auto val = M(idx);
-                        return 1.0f - std::tanh(val)*std::tanh(val);
-                    }
-                );
-
-            case LEAKY_RELU:
-                return result_t(activated_output, 
-                    [](const SimpleMatrix<double>& M, const dim3& idx){
-                        return M(idx) > 0 ? 1.0 : 0.1;
-                    }
-                );
-        }
-    }
 
     virtual ModelFlowMode getType() const = 0;
     virtual bool checkSize(const SimpleMatrix<double>& input) = 0;

@@ -11,10 +11,9 @@ namespace my_cnn{
 
 template<typename InputDataType, typename OutputDataType>
 Kernel& ModelDescription<InputDataType, OutputDataType>::addKernel
-    (dim3 size, size_t count, ModelActivationFunction activation)
+    (dim3 size, size_t count)
 {
     auto& K = layers.emplace_back(new Kernel(size, count, 1));
-    K->activation = activation;
     K->name = "Kernel_" + std::to_string(++kernel_count_);
     return *std::dynamic_pointer_cast<Kernel>(K);
 }
@@ -29,12 +28,19 @@ Pooling& ModelDescription<InputDataType, OutputDataType>::addPooling
 }
 
 template<typename InputDataType, typename OutputDataType>
-ConnectedLayer& ModelDescription<InputDataType, OutputDataType>::addConnectedLayer(size_t output_size, ModelActivationFunction activation)
+ConnectedLayer& ModelDescription<InputDataType, OutputDataType>::addConnectedLayer(size_t output_size)
 {
     auto& C = layers.emplace_back(new ConnectedLayer(output_size));
-    C->activation = activation;
     C->name = "FullyConnected_" + std::to_string(++fully_conn_count_);
     return *std::dynamic_pointer_cast<ConnectedLayer>(C);
+}
+
+template<typename InputDataType, typename OutputDataType>
+Activation& ModelDescription<InputDataType, OutputDataType>::addActivation(ModelActivationFunction activation)
+{
+    auto& A = layers.emplace_back(new Activation(activation));
+    A->name = "Activation_" + std::to_string(++activation_count_);
+    return *std::dynamic_pointer_cast<Activation>(A);
 }
 
 template<typename InputDataType, typename OutputDataType>
