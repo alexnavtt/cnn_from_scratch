@@ -129,7 +129,7 @@ public:
 
     bool deserialize(std::istream& is) override {
         // Check that the label is correct
-        serialization::expect<void>(is, "Pooling\n");
+        serialization::expect<void>(is, "Pooling");
 
         // Get the layer type
         std::string type_string;

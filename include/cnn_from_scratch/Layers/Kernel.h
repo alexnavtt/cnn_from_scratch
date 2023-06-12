@@ -191,7 +191,6 @@ public:
         serialization::place(ss, dim_.y, "y");
         serialization::place(ss, dim_.z, "z");
         serialization::place(ss, num_filters, "n");
-        // ss << "\nx " << dim_.x << "\ny " << dim_.y << "\nz " << dim_.z << "\nn " << num_filters << "\n";
         ss << "weights\n";
         weights.serialize(ss);
         ss << "biases\n";
@@ -202,7 +201,7 @@ public:
     bool deserialize(std::istream& is) override {
 
         // First line should be just the word "Kernel"
-        serialization::expect<void>(is, "Kernel\n");
+        serialization::expect<void>(is, "Kernel");
 
         // Get the activation function 
         std::string activation_string;

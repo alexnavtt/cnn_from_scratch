@@ -102,7 +102,7 @@ public:
     }
 
     bool deserialize(std::istream& is) override {
-        serialization::expect<void>(is, "Connected Layer\n");
+        serialization::expect<void>(is, "Connected Layer");
         std::string activation_string;
         std::getline(is, activation_string);
         activation = fromString(activation_string);
