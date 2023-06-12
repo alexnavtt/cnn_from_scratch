@@ -82,7 +82,7 @@ struct Dim{
     }
 
     size_t size() const{
-        size_t out = 0; 
+        size_t out = 1; 
         for (auto i = 0; i < N; i++){
             out *= data[i];
         }
