@@ -1,5 +1,6 @@
 #pragma once
 
+#include "cnn_from_scratch/Serialization.h"
 #include "cnn_from_scratch/Layers/ModelLayer.h"
 
 namespace my_cnn{
@@ -62,6 +63,11 @@ public:
 
     std::string serialize() const override {
         return "Softmax\n";
+    }
+
+    bool deserialize(std::istream& is) override {
+        serialization::expect<void>(is, "Softmax\n");
+        return true;
     }
 
 private:

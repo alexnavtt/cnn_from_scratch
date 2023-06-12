@@ -125,7 +125,7 @@ public:
 
     /* === Serialization === */
     void serialize(std::ostream& os) const;
-    void deserialize(std::istream& is);
+    bool deserialize(std::istream& is);
 
 private:
     std::vector<T> values_;

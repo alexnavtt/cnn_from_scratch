@@ -111,6 +111,7 @@ public:
         bool last_layer = false
     ) = 0;
     virtual std::string serialize() const = 0;
+    virtual bool deserialize(std::istream& is) = 0;
 };
 
 } // namespace my_cnn

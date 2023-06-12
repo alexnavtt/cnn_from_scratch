@@ -1,6 +1,7 @@
 #include <fstream>
 #include "cnn_from_scratch/imageUtil.h"
 #include "cnn_from_scratch/timerConfig.h"
+#include "cnn_from_scratch/Serialization.h"
 #include "cnn_from_scratch/ModelDescription.h"
 #include "cnn_from_scratch/Layers/Softmax.h"
 
@@ -71,6 +72,45 @@ bool ModelDescription<InputDataType, OutputDataType>::saveModel(std::string file
     f << std::endl;
 
     return true;
+}
+
+template<typename InputDataType, typename OutputDataType>
+bool ModelDescription<InputDataType, OutputDataType>::loadModel(std::string filename) {
+    STIC;
+    std::ifstream f(filename);
+
+    std::string line;
+    while (std::getline(f, line)){
+        // Read the next line without extracting it
+        std::streampos pos = f.tellg();
+        std::getline(f, line);
+        f.seekg(pos);
+        
+        // Determine the type of layer coming next
+        try{
+            if (line == "Kernel"){
+                Kernel& K = addKernel({0, 0, 0}, 1, 1);
+                if (not K.deserialize(f)) return false;
+            }
+
+            else if (line == "Pooling"){
+                Pooling& P = addPooling({0, 0}, {0, 0}, MAX);
+                if (not P.deserialize(f)) return false;
+            }
+
+            else if (line == "Connected Layer"){
+                ConnectedLayer& C = addConnectedLayer(1);
+                if (not C.deserialize(f)) return false;
+            }
+            
+            else if (line == "Softmax"){
+                Softmax& S = setOutputLabels(layers.back()->weights.dim().y);
+            }
+        }catch(std::runtime_error& e){
+            std::cout << "loadModel runtime error: " << e.what() << "\n";
+            return false;
+        }
+    }
 }
 
 template<typename InputDataType, typename OutputDataType>

@@ -4,6 +4,7 @@
 #include <valarray>
 #include "cnn_from_scratch/exceptions.h"
 #include "cnn_from_scratch/timerConfig.h"
+#include "cnn_from_scratch/Serialization.h"
 #include "cnn_from_scratch/Layers/ModelLayer.h"
 #include "cnn_from_scratch/Matrix/SimpleMatrix.h"
 
@@ -89,13 +90,29 @@ public:
 
     std::string serialize() const override {
         std::stringstream ss;
-        ss << "Connected Layer";
-        ss << "\nx " << weights.dim().x << "\ny " << weights.dim().y << "\n";
+        ss << "Connected Layer\n";
+        serialization::place(ss, weights.dim().x, "x");
+        serialization::place(ss, weights.dim().y, "y");
         ss << "weights\n";
         weights.serialize(ss);
         ss << "biases\n";
         biases.serialize(ss);
         return ss.str();
+    }
+
+    bool deserialize(std::istream& is) override {
+        serialization::expect<void>(is, "Connected Layer\n");
+        dim2 stream_dim;
+        stream_dim.x = serialization::expect<int>(is, "x");
+        serialization::clearLine(is);
+        stream_dim.y = serialization::expect<int>(is, "y");
+        serialization::clearLine(is);
+        serialization::expect<void>(is, "weights\n");
+        if (not weights.deserialize(is)) return false;
+        serialization::expect<void>(is, "biases\n");
+        if (not biases.deserialize(is)) return false;
+        initialized_ = true;
+        return true;
     }
 
 private:

@@ -7,6 +7,7 @@
 #include "cnn_from_scratch/Matrix/SimpleMatrix.h"
 #include "cnn_from_scratch/imageUtil.h"
 #include "cnn_from_scratch/timerConfig.h"
+#include "cnn_from_scratch/Serialization.h"
 
 #define debug(x) std::cout << #x << x
 
@@ -184,13 +185,51 @@ public:
 
     std::string serialize() const override {
         std::stringstream ss;
-        ss << "Kernel";
-        ss << "\nx " << dim_.x << "\ny " << dim_.y << "\nz " << dim_.z << "\nn " << num_filters << "\n";
+        ss << "Kernel\n";
+        serialization::place(ss, dim_.x, "x");
+        serialization::place(ss, dim_.y, "y");
+        serialization::place(ss, dim_.z, "z");
+        serialization::place(ss, num_filters, "n");
+        // ss << "\nx " << dim_.x << "\ny " << dim_.y << "\nz " << dim_.z << "\nn " << num_filters << "\n";
         ss << "weights\n";
         weights.serialize(ss);
         ss << "biases\n";
         biases.serialize(ss);
         return ss.str();
+    }
+
+    bool deserialize(std::istream& is) override {
+
+        // For clearing remainders of lines
+        auto newline = [&is]() -> bool {
+            is.ignore(std::numeric_limits<int>::max(), '\n');
+            return true;
+        };
+
+        // First line should be just the word "Kernel"
+        serialization::expect<void>(is, "Kernel\n");
+
+        // Get the dimension of the kernel
+        dim_.x = serialization::expect<int>(is, "x");
+        serialization::clearLine(is);
+        dim_.y = serialization::expect<int>(is, "y");
+        serialization::clearLine(is);
+        dim_.z = serialization::expect<int>(is, "z");
+        serialization::clearLine(is);
+
+        // Get the number of kernels
+        num_filters = serialization::expect<unsigned>(is, "n");
+        serialization::clearLine(is);
+
+        // Read the weights matrix
+        serialization::expect<void>(is, "weights\n");
+        if (not weights.deserialize(is)) return false;
+
+        // Read the biases matrix
+        serialization::expect<void>(is, "biases\n");
+        if (not biases.deserialize(is)) return false;
+
+        return true;
     }
 
 private:

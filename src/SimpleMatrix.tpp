@@ -237,5 +237,38 @@ void SimpleMatrix<T>::serialize(std::ostream& os) const {
     os << std::defaultfloat;
 }
 
+template<typename T>
+bool SimpleMatrix<T>::deserialize(std::istream& is) {
+    // Retreive the dimensions of the matrix
+    dim3 dim;
+    is >> dim.x;
+    is >> dim.y;
+    is >> dim.z;
+    std::cout << "Matrix dimension was read as " << dim << "\n";
+
+    if (is.fail()) return false;
+    std::cout << "Success\n";
+    this->resize(dim);
+
+    // Retrieve the rows of the matrix
+    for (int z = 0; z < dim.z; z++){
+        for (int x = 0; x < dim.x; x++){
+            // For each entry, write to the corresponding value
+            for (int y = 0; y < dim.y; y++){
+                is >> this->operator()(x, y, z);
+                if (is.fail()) return false;
+            }
+
+            // Newline
+            is.ignore(std::numeric_limits<int>::max(), '\n');
+        }
+
+        // Newline
+        is.ignore(std::numeric_limits<int>::max(), '\n');
+    }
+
+    return true;
+}
+
 } // namespace my_cnn
 

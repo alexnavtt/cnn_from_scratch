@@ -1,6 +1,7 @@
 #pragma once
 
 #include "cnn_from_scratch/imageUtil.h"
+#include "cnn_from_scratch/Serialization.h"
 #include "cnn_from_scratch/Layers/ModelLayer.h"
 #include "cnn_from_scratch/Matrix/SimpleMatrix.h"
 
@@ -109,16 +110,40 @@ public:
         std::stringstream ss;
         
         // Record the layer type
-        ss << "Pooling";
+        ss << "Pooling\n";
 
         // Record the pool size 
-        ss << "\nx " << dim_.x << "\ny " << dim_.y << "\n";
+        serialization::place(ss, dim_.x, "x");
+        serialization::place(ss, dim_.y, "y");
 
         // Record the stride
-        ss << "stride";
-        ss << "\nx " << stride_.x << "\ny " << stride_.y << "\n\n";
+        ss << "stride\n";
+        serialization::place(ss, dim_.x, "x");
+        serialization::place(ss, dim_.y, "y");
 
         return ss.str();
+    }
+
+    bool deserialize(std::istream& is) override {
+        // Check that the label is correct
+        serialization::expect<void>(is, "Pooling\n");
+
+        // Get the pool dim
+        dim_.x = serialization::expect<int>(is, "x");
+        serialization::clearLine(is);
+        dim_.y = serialization::expect<int>(is, "y");
+        serialization::clearLine(is);
+
+        // Check for the stride label
+        serialization::expect<void>(is, "stride\n");
+
+        // Get the stride
+        stride_.x = serialization::expect<int>(is, "x");
+        serialization::clearLine(is);
+        stride_.y = serialization::expect<int>(is, "y");
+        serialization::clearLine(is);
+
+        return true;
     }
 
 private:

@@ -30,6 +30,7 @@ public:
     std::string serialize() const override {
         return "";
     }
+    bool deserialize(std::istream&) override {return false;}
 
 protected:
     my_cnn::SimpleMatrix<type_t> M;
