@@ -13,6 +13,18 @@ enum ModelActivationFunction{
     TANGENT,
     LEAKY_RELU
 };
+
+static inline std::string toString(ModelActivationFunction f){
+    switch (f){
+        case RELU:          return "RELU";
+        case SIGMOID:       return "SIGMOID";
+        case LINEAR:        return "LINEAR";
+        case TANGENT:       return "TANGENT";
+        case LEAKY_RELU:    return "LEAKY_RELU";
+        default: 
+            throw std::runtime_error("Unknown ModelActivationFunction");
+    }
+}
     
 class ModelLayer{
 public:
