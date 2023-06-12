@@ -16,6 +16,7 @@
 cpp_timer::Timer global_timer;
 
 using namespace std::string_literals;
+static const std::string data_dir(DATA_DIR); 
 
 template<typename ModelType>
 void debugLayerWeights(const ModelType& model){
@@ -127,8 +128,8 @@ int main(int argc, char* argv[]){
 
     // Load the database images and labels
     my_cnn::MNISTReader db
-        (DATA_DIR + "/MNIST Train Images.ubyte-img"s, 
-         DATA_DIR + "/MNIST Train Labels.ubyte-label"s);        
+        (data_dir + "/MNIST Train Images.ubyte-img"s, 
+         data_dir + "/MNIST Train Labels.ubyte-label"s);        
 
     // Create a model to put the images through
     my_cnn::ModelDescription<float, unsigned char> model;
@@ -144,7 +145,6 @@ int main(int argc, char* argv[]){
     int num_epochs = 3;
     int training_size = 60000;
     for (int j = 0; j < num_epochs; j++){
-        
         std::cout << "Starting epoch " << j << ":\n";
         int correct_count = runEpoch(model, db, training_size, 0.0001);
         std::cout << "Accuracy was " << 100.0*correct_count/training_size << "%\n";
@@ -152,7 +152,14 @@ int main(int argc, char* argv[]){
 
     validate(model);
     debugLayerWeights(model);
-    model.saveModel(DATA_DIR + "/test.model_data"s);
+
+    if (argc < 2){
+        std::cout << "No file provided, model training results will not be saved\n";
+    }else{
+        std::string filename = data_dir + "/" + std::string(argv[1]) + ".model_data";
+        std::cout << "Saving model to \"" << filename << "\"\n";
+        model.saveModel(filename);
+    }
     global_timer.summary();
 
     return 0;
