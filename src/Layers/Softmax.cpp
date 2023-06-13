@@ -74,7 +74,7 @@ SimpleMatrix<double> Softmax::getdLdX(const SimpleMatrix<double> output, size_t 
 // ----------------------------------------------------------------------------
 
 SimpleMatrix<double> Softmax::propagateBackward(
-        const SimpleMatrix<double>& input, const SimpleMatrix<double>& output, 
+        const SimpleMatrix<double>&, const SimpleMatrix<double>& output, 
         const SimpleMatrix<double>&, double, bool) 
 {
     if (not knows_true_label_){
