@@ -53,7 +53,7 @@ MatrixType& operator+=(MatrixType&& M, const Scalar& other){
     return M;
 }
 
-template<typename MatrixType, typename Other, std::enable_if_t<std::is_base_of_v<MatrixBase, Other>, bool> = true>
+template<typename MatrixType, typename Other, typename = IsMatrixBase<MatrixType, Other>>
 MatrixType& operator+=(MatrixType&& M, Other&& other){
     checkSize(M, other);
     for (auto it = std::begin(M); it != std::end(M); it++){
@@ -68,7 +68,7 @@ MatrixType& operator-=(MatrixType&& M, const Scalar& other){
     return M;
 }
 
-template<typename MatrixType, typename Other, std::enable_if_t<std::is_base_of_v<MatrixBase, Other>, bool> = true>
+template<typename MatrixType, typename Other, typename = IsMatrixBase<MatrixType, Other>>
 MatrixType& operator-=(MatrixType&& M, Other&& other){
     checkSize(M, other);
     for (auto it = std::begin(M); it != std::end(M); it++){
@@ -83,7 +83,7 @@ MatrixType& operator*=(MatrixType&& M, const Scalar& other){
     return M;
 }
 
-template<typename MatrixType, typename Other, std::enable_if_t<std::is_base_of_v<MatrixBase, Other>, bool> = true>
+template<typename MatrixType, typename Other, typename = IsMatrixBase<MatrixType, Other>>
 MatrixType& operator*=(MatrixType&& M, Other&& other){
     checkSize(M, other);
     for (auto it = std::begin(M); it != std::end(M); it++){
@@ -98,7 +98,7 @@ MatrixType& operator/=(MatrixType&& M, const Scalar& other){
     return M;
 }
 
-template<typename MatrixType, typename Other, std::enable_if_t<std::is_base_of_v<MatrixBase, Other>, bool> = true>
+template<typename MatrixType, typename Other, typename = IsMatrixBase<MatrixType, Other>>
 MatrixType& operator/=(MatrixType&& M, Other&& other){
     checkSize(M, other);
     for (auto it = std::begin(M); it != std::end(M); it++){
