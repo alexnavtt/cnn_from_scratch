@@ -15,153 +15,73 @@ enum PoolingType{
     
 class Pooling : public ModelLayer{
 public:
-    Pooling(dim2 dim, dim2 stride, PoolingType type = MAX):
-    dim_(dim), stride_(stride), type_(type)
-    {}
+    /**
+     * Constructor: Set the pooling layer size, stride and type 
+     */
+    Pooling(dim2 dim, dim2 stride, PoolingType type = MAX);
 
-    ModelFlowMode getType() const override {
-        return POOLING;
-    }
+    /**
+     * Inform the caller that this layer is a Pooling layer 
+     */
+    ModelFlowMode getType() const override;
 
-    bool checkSize(const SimpleMatrix<double>& input) override {
-        return input.dim(0) >= dim_.x && input.dim(1) >= dim_.y;
-    }
+    /**
+     * Ensure that the input size is at least as big as the pool size
+     */
+    bool checkSize(const SimpleMatrix<double>& input) override;
 
-    // Get the appropriate output size given the input size
-    dim3 outputSize(const dim3& input_dim) const{
-        const int x_size = std::ceil((input_dim.x - dim_.x + 1.0f)/stride_.x);
-        const int y_size = std::ceil((input_dim.y - dim_.y + 1.0f)/stride_.y);
-        const int z_size = input_dim.z;
-        return dim3(x_size, y_size, z_size); 
-    }
+    /**
+     * Get the appropriate output size given the input size
+     * @param input_dim         The dimensions of the input data
+     * @return                  The dimensions of the output data
+     */
+    dim3 outputSize(const dim3& input_dim) const;
 
-    SimpleMatrix<double> propagateForward(SimpleMatrix<double>&& input) override {
-        // Create the approriately sized output
-        SimpleMatrix<double> output(outputSize(input.dim()));
+    /**
+     * Pool an input data point 
+     */
+    SimpleMatrix<double> propagateForward(SimpleMatrix<double>&& input) override;
 
-        // Reset the affected indices vector
-        affected_indices_.resize(output.dim());
+    /**
+     * Get the loss derivative with respect to the input for the most recent 
+     * data to pass through the layer
+     * @param X                 The input data that had last been passed to this layer
+     * @param dLdY              The loss gradient from the previous layer
+     * @return                  The loss gradient to pass to subsequent layers
+     */
+    SimpleMatrix<double> getdLdX(const SimpleMatrix<double>& X, const SimpleMatrix<double>& dLdY);
 
-        const dim3 pool_size{dim_.x, dim_.y, 1};
-        for (auto it = output.begin(); it != output.end(); ++it){
-
-            dim3 out_idx = it.idx();
-            dim3 in_idx(out_idx.x*stride_.x, out_idx.y*stride_.y, out_idx.z);
-
-            const auto AoI = input.subMatView(in_idx, pool_size);
-
-            switch (type_){
-                case MIN:
-                {
-                    const dim3 min_index = in_idx + minIndex(AoI);
-                    affected_indices_(out_idx) = min_index;
-                    output(out_idx) = input(min_index);
-                    break;
-                }
-
-                case MAX: 
-                {
-                    const dim3 max_index= in_idx + maxIndex(AoI);
-                    affected_indices_(out_idx) = max_index;
-                    output(out_idx) = input(max_index);
-                    break;
-                }
-
-                case AVG:
-                    output(out_idx) = mean(AoI);
-                    break;
-            }
-
-        }
-        return output;
-    }
-
-    SimpleMatrix<double> getdLdX(const SimpleMatrix<double>& X, const SimpleMatrix<double>& dLdY){
-        SimpleMatrix<double> dLdx(X.dim());
-        switch(type_){
-            case MIN:
-            case MAX:
-            {
-                for (auto it = affected_indices_.begin(); it != affected_indices_.end(); ++it){
-                    dLdx(*it) += dLdY(it.idx());
-                }
-                break;
-            }
-
-            case AVG:
-            {
-                const dim3 pool_size{dim_.x, dim_.y, 1};
-                const size_t size = dim_.size();
-                for (auto out_it = dLdY.begin(); out_it != dLdY.end(); ++out_it){
-                    dim3 in_idx(out_it.idx().x*stride_.x, out_it.idx().y*stride_.y, out_it.idx().z);
-                    dLdx.subMatView(in_idx, pool_size) += (*out_it)/size;
-                }
-                break;
-            }
-        }
-
-        return dLdx;
-    }
-
+    /**
+     * Update the layer given the previous layer gradient. For a pooling layer there
+     * is no data to update, and so this simply returns the loss gradient with respect
+     * to the input X 
+     */
     SimpleMatrix<double> propagateBackward(
         const SimpleMatrix<double>& X,    const SimpleMatrix<double>&, 
-        const SimpleMatrix<double>& dLdY, double , bool) override
-    {        
-        return getdLdX(X, dLdY);
-    }
+        const SimpleMatrix<double>& dLdY, double , bool) override;
 
-    std::string serialize() const override {
-        std::stringstream ss;
-        
-        // Record the layer type
-        ss << "Pooling\n";
-        ss << (type_ == MAX ? "MAX\n" : 
-               type_ == MIN ? "MIN\n" : 
-                              "AVG\n");
+    /**
+     * Convert the pooling layer configuration to a standard ascii text format 
+     */
+    std::string serialize() const override;
 
-        // Record the pool size 
-        serialization::place(ss, dim_.x, "x");
-        serialization::place(ss, dim_.y, "y");
-
-        // Record the stride
-        ss << "stride\n";
-        serialization::place(ss, dim_.x, "x");
-        serialization::place(ss, dim_.y, "y");
-
-        return ss.str();
-    }
-
-    bool deserialize(std::istream& is) override {
-        // Check that the label is correct
-        serialization::expect<void>(is, "Pooling");
-
-        // Get the layer type
-        std::string type_string;
-        std::getline(is, type_string);
-        if      (type_string == "MAX") type_ = MAX;
-        else if (type_string == "MIN") type_ = MIN;
-        else if (type_string == "AVG") type_ = AVG;
-        else 
-            throw std::runtime_error("Unknown pooling type: " + type_string);
-
-        // Get the pool dim
-        dim_.x = serialization::expect<int>(is, "x");
-        dim_.y = serialization::expect<int>(is, "y");
-
-        // Check for the stride label
-        serialization::expect<void>(is, "stride");
-
-        // Get the stride
-        stride_.x = serialization::expect<int>(is, "x");
-        stride_.y = serialization::expect<int>(is, "y");
-
-        return true;
-    }
+    /**
+     * Given an input stream holding data written by Pooling::serialize, update
+     * the configuration of this layer to match the configuration in the stream 
+     */
+    bool deserialize(std::istream& is) override;
 
 private:
+    // Pool size
     dim2 dim_;
+
+    // Stride
     dim2 stride_;
+
+    // Pooling type. Can be MAX, MIN, or AVG
     PoolingType type_;
+
+    // Stored incdices affected by the last pooling operation. Used in backpropagation
     SimpleMatrix<dim3> affected_indices_;
 };
 
