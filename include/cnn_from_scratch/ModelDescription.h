@@ -3,6 +3,7 @@
 #include <vector>
 #include <string>
 #include <memory>
+#include <optional>
 #include "cnn_from_scratch/Layers/Kernel.h"
 #include "cnn_from_scratch/Layers/Pooling.h"
 #include "cnn_from_scratch/Layers/ModelFlow.h"
@@ -13,8 +14,7 @@ namespace my_cnn{
 
 template<typename OutputDataType>
 struct ModelResults{
-    bool knows_true_value = false;
-    OutputDataType true_label;
+    std::optional<OutputDataType> true_label;
     size_t label_idx;
     size_t true_label_idx;
     float loss = -1.0f;

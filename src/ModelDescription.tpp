@@ -183,7 +183,6 @@ template<typename InputDataType, typename OutputDataType>
 void ModelDescription<InputDataType, OutputDataType>::assignLoss(ModelResults<OutputDataType>& result, OutputDataType label){
     result.true_label_idx = std::distance(std::begin(output_labels), std::find(std::begin(output_labels), std::end(output_labels), label));
     result.true_label = label;
-    result.knows_true_value = true;
     result.loss = lossFcn(result.layer_inputs.back(), result.true_label_idx);
 }
 
@@ -208,7 +207,6 @@ void ModelDescription<InputDataType, OutputDataType>::backwardsPropagation(Model
         const SimpleMatrix<float>& layer_output = result.layer_inputs.at(i+1);
         dLdz = layers[i]->propagateBackward(layer_input, layer_output, dLdz, learning_rate, i == 0);
     }
-    // std::cout << "\n============================================\n\n";
 }
 
 } // namespace my_cnn
