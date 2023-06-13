@@ -2,8 +2,6 @@
 #include <gtest/gtest.h>
 #include "cnn_from_scratch/ModelDescription.h"
 
-cpp_timer::Timer global_timer;
-
 class SingleKernelFixture : public testing::Test {
 public:
     SingleKernelFixture() :

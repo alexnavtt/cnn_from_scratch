@@ -12,9 +12,6 @@
 #include "cnn_from_scratch/MNISTReader.h"
 #include "cnn_from_scratch/LoadingBar.h"
 
-// Define global timer used by all translation units
-cpp_timer::Timer global_timer;
-
 using namespace std::string_literals;
 static const std::string data_dir(DATA_DIR); 
 

@@ -2,8 +2,6 @@
 #include <gtest/gtest.h>
 #include "cnn_from_scratch/ModelDescription.h"
 
-cpp_timer::Timer global_timer;
-
 TEST(Kernel, singleChannelSingleLayer){
     my_cnn::SimpleMatrix<float> input(my_cnn::dim3(4, 4, 1),
         {1, 2, 3, 4,

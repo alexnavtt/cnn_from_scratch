@@ -22,7 +22,10 @@ add_library(ModelLayers SHARED
     src/Layers/Pooling.cpp
     src/Layers/Activation.cpp
     src/Layers/Softmax.cpp
+    src/Layers/ConnectedLayer.cpp
+    src/timerConfig.cpp
 )
+target_link_libraries(ModelLayers ${cpp_timer_LIBRARIES})
 target_compile_options(ModelLayers PRIVATE -g -O3)
 
 set(CORE_LIBS
