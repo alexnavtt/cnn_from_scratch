@@ -11,6 +11,7 @@
 #include "cnn_from_scratch/ModelDescription.h"
 #include "cnn_from_scratch/MNISTReader.h"
 #include "cnn_from_scratch/LoadingBar.h"
+#include "cnn_from_scratch/DataGenerator.h"
 
 using namespace std::string_literals;
 static const std::string data_dir(DATA_DIR); 
@@ -117,6 +118,25 @@ void validate(ModelType& model){
 
     std::cout << "\nValidation accuracy was " << 100.0f * correct_count/num_images << "%\n";
 }
+
+// ------------------------------------------------------------------------------------------------
+// ------------------------------------------------------------------------------------------------
+
+class MNistGenerator : public my_cnn::DataGenerator<float> {
+    MNistGenerator(std::string image_filepath, std::string label_filepath) :
+    db_(image_filepath, label_filepath)
+    {}
+
+    my_cnn::LabeledInput<float> getNextDataPoint() override {
+        my_cnn::LabeledInput<float> labeled_input;
+        auto Data = db_.nextImage();
+        labeled_input.data = Data.data;
+        labeled_input.label = Data.label;
+    }
+
+private:
+    my_cnn::MNISTReader db_;
+};
 
 // ------------------------------------------------------------------------------------------------
 // ------------------------------------------------------------------------------------------------
