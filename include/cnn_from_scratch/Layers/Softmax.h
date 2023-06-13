@@ -7,72 +7,59 @@ namespace my_cnn{
 
 class Softmax : public ModelLayer{
 public:
-    Softmax(size_t output_label_count) : 
-    output_label_count_(output_label_count)
-    {}
+    /**
+     * Constructor: set number of output labels 
+     */
+    Softmax(size_t output_label_count);
 
-    ModelFlowMode getType() const override {
-        return OUTPUT;
-    }    
+    /**
+     * Inform the caller that this layer is an output layer 
+     */
+    ModelFlowMode getType() const override; 
 
-    bool checkSize(const SimpleMatrix<double>& input) override {
-        return (input.isColumn() || input.isRow()) && 
-               (input.size() == output_label_count_);
-    }
+    /**
+     * Confirm that the input is a 1D vector with the number of elements
+     * equal to the number of output labels for the network
+     */
+    bool checkSize(const SimpleMatrix<double>& input) override;
 
-    void assignTrueLabel(size_t true_label_idx){
-        if (true_label_idx >= output_label_count_){
-            std::stringstream ss;
-            ss << "Cannot assign true label of " << true_label_idx << " when there are only " << output_label_count_ << " labels";
-            throw std::out_of_range(ss.str());
-        }
+    /**
+     * Inform the layer which output label is correct. Used in backpropagation
+     */
+    void assignTrueLabel(size_t true_label_idx);
 
-        true_label_idx_ = true_label_idx;
-        knows_true_label_ = true;
-    }
+    /**
+     * The actual softmax function 
+     */
+    SimpleMatrix<double> softMax(const SimpleMatrix<double>& X);
 
-    SimpleMatrix<double> softMax(const SimpleMatrix<double>& X){
-        // Offset the data by the max to keep numerical feasibility
-        const double max_val = my_cnn::max(X);
-        const auto  offset_X = X - max_val;
+    /**
+     * Return the final output vector after applying the softMax function
+     */
+    SimpleMatrix<double> propagateForward(SimpleMatrix<double>&& input) override;
 
-        // Apply the softmax formula
-        const SimpleMatrix<double> exp_X = my_cnn::exp(offset_X);
-        return exp_X/my_cnn::sum(exp_X);
-    }
+    /**
+     * Given the output and the true label, return the loss gradient with respect to the input 
+     */
+    SimpleMatrix<double> getdLdX(const SimpleMatrix<double> output, size_t true_label_idx);
 
-    SimpleMatrix<double> propagateForward(SimpleMatrix<double>&& input) override {
-        if (not checkSize(input))
-            throw ModelLayerException("Softmax input size is ill formed");
-
-        return softMax(input);   
-    }
-
-    SimpleMatrix<double> getdLdX(const SimpleMatrix<double> output, size_t true_label_idx){
-        SimpleMatrix<double> dLdX = output;
-        dLdX[true_label_idx] -= 1;
-        return dLdX;
-    }
-
+    /**
+     * Given the output and the true label, return the loss gradient with respect to the input 
+     */
     SimpleMatrix<double> propagateBackward(
         const SimpleMatrix<double>& input, const SimpleMatrix<double>& output, 
-        const SimpleMatrix<double>&, double, bool) override 
-    {
-        if (not knows_true_label_){
-            throw ModelLayerException("Cannot backpropagate softmax layer without knowledge of true label");
-        }
+        const SimpleMatrix<double>&, double, bool) override;
 
-        return getdLdX(output, true_label_idx_);
-    }
+    /**
+     * Convert the layer configuration to a standard ascii text format 
+     */
+    std::string serialize() const override;
 
-    std::string serialize() const override {
-        return "Softmax\n";
-    }
-
-    bool deserialize(std::istream& is) override {
-        serialization::expect<void>(is, "Softmax");
-        return true;
-    }
+    /**
+     * Given an input stream holding data written by serialize, update the
+     * configuration of this layer to match the configuration in the stream 
+     */
+    bool deserialize(std::istream& is) override;
 
 private:
     bool knows_true_label_ = false;
