@@ -14,106 +14,70 @@ class ConnectedLayer : public ModelLayer{
 public:
     using ModelLayer::ModelLayer;
 
-    ModelFlowMode getType() const override {
-        return FULLY_CONNECTED;
-    }
+    /**
+     * Inform the caller that this layer is a Fully Connected layer 
+     */
+    ModelFlowMode getType() const override;
 
-    bool checkSize(const SimpleMatrix<double>& input_data) override{
-        // If this is the first time at this layer, resize and apply random values
-        dim3 expected_size(biases.size(), input_data.size(), 1);
-        if (not initialized_){
-            initialized_ = true;
-            input_dim_ = input_data.dim();
-            std::srand(std::chrono::steady_clock::now().time_since_epoch().count());
-            // Set random weights in the interval [0, 1] upon construction
-            weights = SimpleMatrix<double>(expected_size);
-            for (double& w : weights){
-                w = 1 - 2*static_cast<double>(std::rand()) / RAND_MAX;
-            }
-            for (double& b : biases){
-                b = 1 - 2*static_cast<double>(std::rand()) / RAND_MAX;
-            }
+    /**
+     * Checks that the input (regardless of whether it has already been flattened)
+     * contains the appropriate number of elements for forward propagation. The first
+     * time that this function is called, the dimensions of the input (which should not
+     * be flattened) are taken as the ground truth value for all future calls
+     * TODO: Move size determination to constructor and have ModelDescription handle 
+     *       figuring out what size it should be at the time of construction 
+     */
+    bool checkSize(const SimpleMatrix<double>& input_data) override;
 
-            // Normalize weights and biases so they start on stable footing
-            weights /= l2Norm(weights);
-            biases /= l2Norm(biases);
+    /**
+     * Given an input matrix of any shape, reshape it to a column vector V and return 
+     * the matrix M = W*V + B where W are the layer weights and B are the layer biases 
+     */
+    SimpleMatrix<double> propagateForward(SimpleMatrix<double>&& input_data) override;
 
-            return true;
-        }
-        // Otherwise check to make sure the size is correct
-        else{
-            return ( weights.dims() == expected_size );
-        }
-    }
+    /**
+     * Given the input and the corresponding resulting loss gradient from the next layer, 
+     * determine the loss gradient with respect to the weight matrix
+     */
+    SimpleMatrix<double> getdLdW(const SimpleMatrix<double>& X, const SimpleMatrix<double>& dLdY);
 
-    SimpleMatrix<double> propagateForward(SimpleMatrix<double>&& input_data) override{
-        if (not checkSize(input_data)){
-            throw ModelLayerException("Invalid input size for fully connected layer. Input has size " + 
-                std::to_string(input_data.size()) + " and this layer has size " + std::to_string(weights.dim(0)));
-        }
+    /**
+     * Given the loss gradient with respect the output, determine the loss gradient with
+     * respect to the input 
+     */
+    SimpleMatrix<double> getdLdX(const SimpleMatrix<double>& dLdY);
 
-        // The input size is always a column vector
-        input_data.reshape(input_data.size(), 1, 1);
+    /**
+     * Given the loss gradient with respect the output, determine the loss gradient with
+     * respect to the bias vector 
+     */
+    SimpleMatrix<double> getdLdB(const SimpleMatrix<double>& dLdY);
 
-        SimpleMatrix<double> output = matrixMultiply(weights, input_data) + biases;
-        return output;
-    }
-
-    SimpleMatrix<double> getdLdW(const SimpleMatrix<double>& X, const SimpleMatrix<double>& dLdY){
-        STIC;
-        SimpleMatrix<double> flatX = X;
-        flatX.reshape(X.size(), 1, 1);
-        return matrixMultiply(dLdY, transpose(flatX));
-    }
-
-    SimpleMatrix<double> getdLdX(const SimpleMatrix<double>& dLdY){
-        STIC;
-        SimpleMatrix<double> dLdX = matrixMultiply(transpose(weights), dLdY);
-        dLdX.reshape(input_dim_);
-        return dLdX;
-    }
-
-    SimpleMatrix<double> getdLdB(const SimpleMatrix<double>& dLdY){
-        return dLdY;
-    }
-
+    /**
+     * Update the weights and biases of the fully connected layer, and return the loss
+     * gradient with respect to the input for further backpropagation in other layers
+     * @param X             The input matrix from the forward pass
+     * @param Y             The (unactivated) output matrix from the forward pass
+     * @param dLdZ          The loss gradient with respect to the output
+     * @param learning_rate The step size with which to change the weight matrices
+     * @param last_layer    Flag indicating whether or not there are layers previous to this one.
+     *                      This is a small optimization the prevents calculation of the input 
+     *                      loss gradient for the final layer 
+     */
     SimpleMatrix<double> propagateBackward(
-            const SimpleMatrix<double>& X, const SimpleMatrix<double>& Z, 
-            const SimpleMatrix<double>& dLdZ, double learning_rate, bool last_layer) 
-    override
-    {        
-        weights -= learning_rate * getdLdW(X, dLdZ);
-        biases  -= learning_rate * getdLdB(dLdZ);
+            const SimpleMatrix<double>& X, const SimpleMatrix<double>& Y, 
+            const SimpleMatrix<double>& dLdZ, double learning_rate, bool last_layer) override;
 
-        // We need to reshape the gradient to what the previous layer would be expecting
-        SimpleMatrix<double> dLdX = last_layer ? SimpleMatrix<double>() : getdLdX(dLdZ);
-        return dLdX;
-    }
+    /**
+     * Convert the layer configuration to a standard ascii text format 
+     */
+    std::string serialize() const override;
 
-    std::string serialize() const override {
-        std::stringstream ss;
-        ss << "Connected Layer\n";
-        serialization::place(ss, weights.dim().x, "x");
-        serialization::place(ss, weights.dim().y, "y");
-        ss << "weights\n";
-        weights.serialize(ss);
-        ss << "biases\n";
-        biases.serialize(ss);
-        return ss.str();
-    }
-
-    bool deserialize(std::istream& is) override {
-        serialization::expect<void>(is, "Connected Layer");
-        dim2 stream_dim;
-        stream_dim.x = serialization::expect<int>(is, "x");
-        stream_dim.y = serialization::expect<int>(is, "y");
-        serialization::expect<void>(is, "weights");
-        if (not weights.deserialize(is)) return false;
-        serialization::expect<void>(is, "biases");
-        if (not biases.deserialize(is)) return false;
-        initialized_ = true;
-        return true;
-    }
+    /**
+     * Given an input stream holding data written by serialize, update the
+     * configuration of this layer to match the configuration in the stream 
+     */
+    bool deserialize(std::istream& is) override;
 
 private:
     dim3 input_dim_;
