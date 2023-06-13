@@ -23,6 +23,7 @@ add_library(ModelLayers SHARED
     src/Layers/Activation.cpp
     src/Layers/Softmax.cpp
     src/Layers/ConnectedLayer.cpp
+    src/Layers/Kernel.cpp
     src/timerConfig.cpp
 )
 target_link_libraries(ModelLayers ${cpp_timer_LIBRARIES})
