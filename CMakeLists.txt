@@ -20,6 +20,7 @@ add_compile_definitions(DATA_DIR="${CMAKE_SOURCE_DIR}/data")
 
 add_library(ModelLayers SHARED
     src/Layers/Pooling.cpp
+    src/Layers/Activation.cpp
 )
 target_compile_options(ModelLayers PRIVATE -g -O3)
 

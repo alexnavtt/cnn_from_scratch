@@ -1,115 +1,107 @@
 #pragma once
 
+#include <array>
 #include "cnn_from_scratch/Serialization.h"
 #include "cnn_from_scratch/Layers/ModelLayer.h"
 
 namespace my_cnn{
-    
-class Activation : public ModelLayer{
-public:
-    Activation(ModelActivationFunction activation) : activation_(activation) {}
 
-    ModelFlowMode getType() const override {
-        return ACTIVATION;
+// All activation functions supported by this library
+enum ModelActivationFunction{
+    RELU        = 0,
+    SIGMOID     = 1,
+    LINEAR      = 2,
+    TANGENT     = 3,
+    LEAKY_RELU  = 4
+};
+
+// Enum to string conversion
+static inline std::string toString(ModelActivationFunction f){
+    static const std::array<std::string, 5> activation_strings{
+        "RELU",
+        "SIGMOID",
+        "LINEAR",
+        "TANGENT",
+        "LEAKY_RELU"
     };
 
-    bool checkSize(const SimpleMatrix<double>& input) override {
-        return true;
+    try{
+        return activation_strings.at(f);
+    }catch(std::out_of_range){
+        throw std::runtime_error("Unknown ModelActivationFunction: " + std::to_string((int)f));
     }
+}
 
-    static double sigmoid(double f) {
-        return 1.0/(1.0 + std::exp(-f));
-    }
+// String to enum conversion
+static inline ModelActivationFunction fromString(const std::string& s){
+    if (s == "RELU")        return RELU;
+    if (s == "SIGMOID")     return SIGMOID;
+    if (s == "LINEAR")      return LINEAR;
+    if (s == "TANGENT")     return TANGENT;
+    if (s == "LEAKY_RELU")  return LEAKY_RELU;
+    else
+        throw std::runtime_error("Unknown string \"" + s + "\" for ModelActivationFunction");
+}
 
-    SimpleMatrix<double> propagateForward(SimpleMatrix<double>&& input) override {
-        switch (activation_){
-            case RELU:
-                return apply(input, [](double f){return f > 0 ? f : 0;});
+// Actual activation functions themselves
+double reluFcn(double val);
+double sigmoidFcn(double val);
+double linearFcn(double val);
+double tangentFcn(double val);
+double leakyRelyFcn(double val);
 
-            case SIGMOID:
-                return apply(input, [](double f){return sigmoid(f);});
+double reluGradFcn(double val);
+double sigmoidGradFcn(double val);
+double linearGradFcn(double val);
+double tangentGradFcn(double val);
+double leakyRelyGradFcn(double val);
+    
+// Network layer responsible for handling activations
+class Activation : public ModelLayer{
+public:
+    /**
+     * Constructor: Sets activation function 
+     */
+    Activation(ModelActivationFunction activation);
 
-            default:
-            case LINEAR:
-                return input;
+    /**
+     * Inform the caller that this layer is an Activation layer 
+     */
+    ModelFlowMode getType() const override;
 
-            case TANGENT:
-                return apply(input, (double(*)(double))std::tanh);
-                
-            case LEAKY_RELU:
-                return apply(input, [](double f){return std::max(0.1f*f, f);});
-        }
-    }
+    /**
+     * Return the activated form of the given input matrix 
+     */
+    SimpleMatrix<double> propagateForward(SimpleMatrix<double>&& input) override;
 
-    auto activationGradient(const SimpleMatrix<double>& activated_output) const {
-        using result_t = UnaryOperationResult<const SimpleMatrix<double>&, double(*)(const SimpleMatrix<double>&, const dim3&)>;
-        
-        switch (activation_){
-            case RELU:
-                return result_t(activated_output, 
-                    [](const SimpleMatrix<double>& M, const dim3& idx){
-                        return (double)(M(idx) > 0);
-                    }
-                );
+    /**
+     * Return the gradient of the activation function for the given activated matrix 
+     */
+    SimpleMatrix<double> activationGradient(const SimpleMatrix<double>& activated_output) const;
 
-            case SIGMOID:
-                return result_t(activated_output, 
-                    [](const SimpleMatrix<double>& M, const dim3& idx){
-                        const auto val = M(idx);
-                        return sigmoid(val)*(1 - sigmoid(val));
-                    }
-                );
-
-            default:
-            case LINEAR:
-                return result_t(activated_output, 
-                    [](const SimpleMatrix<double>& M, const dim3& idx){
-                        return 1.0;
-                    }
-                );
-
-            case TANGENT:
-                return result_t(activated_output, 
-                    [](const SimpleMatrix<double>& M, const dim3& idx){
-                        const auto val = M(idx);
-                        return 1.0f - std::tanh(val)*std::tanh(val);
-                    }
-                );
-
-            case LEAKY_RELU:
-                return result_t(activated_output, 
-                    [](const SimpleMatrix<double>& M, const dim3& idx){
-                        return M(idx) > 0 ? 1.0 : 0.1;
-                    }
-                );
-        }
-    }
-
+    /**
+     * Given the loss gradient from the previous layer, return the loss gradient
+     * to be propagated to subsequent layers 
+     */
     SimpleMatrix<double> propagateBackward(
         const SimpleMatrix<double>&, const SimpleMatrix<double>& Z, 
-        const SimpleMatrix<double>& dLdZ, double, bool) override
-    {
-        return dLdZ * activationGradient(Z);
-    }
+        const SimpleMatrix<double>& dLdZ, double, bool) override;
 
-    std::string serialize() const override {
-        std::stringstream ss;
-        ss << "Activation\n";
-        ss << toString(activation_) << "\n";
-        return ss.str();
-    }
+    /**
+     * Convert the layer configuration to a standard ascii text format 
+     */
+    std::string serialize() const override;
 
-    bool deserialize(std::istream& is) override {
-        serialization::expect<void>(is, "Activation");
-
-        std::string activation_string;
-        std::getline(is, activation_string);
-        activation_ = fromString(activation_string);
-        return true;
-    }
+    /**
+     * Given an input stream holding data written by serialize, update the
+     * configuration of this layer to match the configuration in the stream 
+     */
+    bool deserialize(std::istream& is) override;
 
 protected:
-    ModelActivationFunction activation_ = LINEAR;
+    ModelActivationFunction activation_;
+    double(*activationFunction_)(double);
+    double(*activationGradientFunction_)(double);
 };
 
 } // namespace my_cnn

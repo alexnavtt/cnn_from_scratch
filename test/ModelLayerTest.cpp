@@ -4,12 +4,11 @@
 
 cpp_timer::Timer global_timer;
 
-class FixtureBase : public testing::Test, public my_cnn::Activation {
+class FixtureBase : public testing::Test {
 public:
     using type_t = typename decltype(my_cnn::Kernel::weights)::type;
 
     FixtureBase() :
-    Activation(my_cnn::LINEAR),
     M(my_cnn::dim3(5, 5, 1))
     {
         my_cnn::modify(M, [](type_t){return 1 - 2*(type_t)(rand())/RAND_MAX;});
@@ -24,8 +23,8 @@ protected:
 using ActivationTest = FixtureBase;
 
 TEST_F(ActivationTest, linear){
-    activation_ = my_cnn::ModelActivationFunction::LINEAR;
-    auto N = propagateForward(std::move(M));
+    my_cnn::Activation A(my_cnn::ModelActivationFunction::LINEAR);
+    auto N = A.propagateForward(std::move(M));
 
     for (auto it = N.begin(); it != N.end(); ++it){
         EXPECT_EQ(M(it.idx()), N(it.idx()));
@@ -33,8 +32,8 @@ TEST_F(ActivationTest, linear){
 }
 
 TEST_F(ActivationTest, relu){
-    activation_ = my_cnn::ModelActivationFunction::RELU;
-    auto N = propagateForward(std::move(M));
+    my_cnn::Activation A(my_cnn::ModelActivationFunction::RELU);
+    auto N = A.propagateForward(std::move(M));
 
     for (auto it = M.begin(); it != M.end(); ++it){
         auto val = *it;
@@ -46,8 +45,8 @@ TEST_F(ActivationTest, relu){
 }
 
 TEST_F(ActivationTest, sigmoid){
-    activation_ = my_cnn::ModelActivationFunction::SIGMOID;
-    auto N = propagateForward(std::move(M));
+    my_cnn::Activation A(my_cnn::ModelActivationFunction::SIGMOID);
+    auto N = A.propagateForward(std::move(M));
 
     for (auto it = M.begin(); it != M.end(); ++it){
         auto val = *it;
@@ -57,8 +56,8 @@ TEST_F(ActivationTest, sigmoid){
 }
 
 TEST_F(ActivationTest, tangent){
-    activation_ = my_cnn::ModelActivationFunction::TANGENT;
-    auto N = propagateForward(std::move(M));
+    my_cnn::Activation A(my_cnn::ModelActivationFunction::TANGENT);
+    auto N = A.propagateForward(std::move(M));
 
     for (auto it = M.begin(); it != M.end(); ++it){
         auto val = *it;
@@ -68,8 +67,8 @@ TEST_F(ActivationTest, tangent){
 }
 
 TEST_F(ActivationTest, leakyRelu){
-    activation_ = my_cnn::ModelActivationFunction::LEAKY_RELU;
-    auto N = propagateForward(std::move(M));
+    my_cnn::Activation A(my_cnn::ModelActivationFunction::LEAKY_RELU);
+    auto N = A.propagateForward(std::move(M));
 
     for (auto it = M.begin(); it != M.end(); ++it){
         auto val = *it;
@@ -83,9 +82,9 @@ TEST_F(ActivationTest, leakyRelu){
 using ActivationGradient = FixtureBase;
 
 TEST_F(ActivationGradient, linear){
-    activation_ = my_cnn::ModelActivationFunction::LINEAR;
-    auto N = propagateForward(std::move(M));
-    auto grad = activationGradient(M);
+    my_cnn::Activation A(my_cnn::ModelActivationFunction::LINEAR);
+    auto N = A.propagateForward(std::move(M));
+    auto grad = A.activationGradient(M);
     EXPECT_EQ(grad.dim(), M.dim());
 
     for (auto v : grad){
@@ -94,9 +93,9 @@ TEST_F(ActivationGradient, linear){
 }
 
 TEST_F(ActivationGradient, relu){
-    activation_ = my_cnn::ModelActivationFunction::RELU;
-    auto N = propagateForward(std::move(M));
-    auto grad = activationGradient(M);
+    my_cnn::Activation A(my_cnn::ModelActivationFunction::RELU);
+    auto N = A.propagateForward(std::move(M));
+    auto grad = A.activationGradient(M);
     EXPECT_EQ(grad.dim(), M.dim());
 
     for (auto it = M.begin(); it != M.end(); ++it){
@@ -106,9 +105,9 @@ TEST_F(ActivationGradient, relu){
 }
 
 TEST_F(ActivationGradient, sigmoid){
-    activation_ = my_cnn::ModelActivationFunction::SIGMOID;
-    auto N = propagateForward(std::move(M));
-    auto grad = activationGradient(M);
+    my_cnn::Activation A(my_cnn::ModelActivationFunction::SIGMOID);
+    auto N = A.propagateForward(std::move(M));
+    auto grad = A.activationGradient(M);
     EXPECT_EQ(grad.dim(), M.dim());
 
     for (auto it = M.begin(); it != M.end(); ++it){
@@ -119,9 +118,9 @@ TEST_F(ActivationGradient, sigmoid){
 }
 
 TEST_F(ActivationGradient, tangent){
-    activation_ = my_cnn::ModelActivationFunction::TANGENT;
-    auto N = propagateForward(std::move(M));
-    auto grad = activationGradient(M);
+    my_cnn::Activation A(my_cnn::ModelActivationFunction::TANGENT);
+    auto N = A.propagateForward(std::move(M));
+    auto grad = A.activationGradient(M);
     EXPECT_EQ(grad.dim(), M.dim());
 
     for (auto it = M.begin(); it != M.end(); ++it){
@@ -132,9 +131,9 @@ TEST_F(ActivationGradient, tangent){
 }
 
 TEST_F(ActivationGradient, leakyRelu){
-    activation_ = my_cnn::ModelActivationFunction::LEAKY_RELU;
-    auto N = propagateForward(std::move(M));
-    auto grad = activationGradient(M);
+    my_cnn::Activation A(my_cnn::ModelActivationFunction::LEAKY_RELU);
+    auto N = A.propagateForward(std::move(M));
+    auto grad = A.activationGradient(M);
     EXPECT_EQ(grad.dim(), M.dim());
 
     for (auto it = M.begin(); it != M.end(); ++it){
