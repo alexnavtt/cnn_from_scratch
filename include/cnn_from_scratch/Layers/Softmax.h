@@ -48,6 +48,12 @@ public:
         return softMax(input);   
     }
 
+    SimpleMatrix<double> getdLdX(const SimpleMatrix<double> output, size_t true_label_idx){
+        SimpleMatrix<double> dLdX = output;
+        dLdX[true_label_idx] -= 1;
+        return dLdX;
+    }
+
     SimpleMatrix<double> propagateBackward(
         const SimpleMatrix<double>& input, const SimpleMatrix<double>& output, 
         const SimpleMatrix<double>&, double, bool) override 
@@ -56,9 +62,7 @@ public:
             throw ModelLayerException("Cannot backpropagate softmax layer without knowledge of true label");
         }
 
-        SimpleMatrix<double> gradient = output;
-        gradient[true_label_idx_] -= 1;
-        return gradient;
+        return getdLdX(output, true_label_idx_);
     }
 
     std::string serialize() const override {

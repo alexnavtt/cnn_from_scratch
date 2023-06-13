@@ -144,7 +144,7 @@ int main(int argc, char* argv[]){
     model.addConnectedLayer(10);
     model.setOutputLabels({0, 1, 2, 3, 4, 5, 6, 7, 8, 9}, my_cnn::SOFTMAX);
 
-    int num_epochs = 1;
+    int num_epochs = 3;
     int training_size = 60000;
     for (int j = 0; j < num_epochs; j++){
         std::cout << "Starting epoch " << j << ":\n";

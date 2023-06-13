@@ -23,6 +23,7 @@ public:
         dim3 expected_size(biases.size(), input_data.size(), 1);
         if (not initialized_){
             initialized_ = true;
+            input_dim_ = input_data.dim();
             std::srand(std::chrono::steady_clock::now().time_since_epoch().count());
             // Set random weights in the interval [0, 1] upon construction
             weights = SimpleMatrix<double>(expected_size);
@@ -46,48 +47,52 @@ public:
     }
 
     SimpleMatrix<double> propagateForward(SimpleMatrix<double>&& input_data) override{
-        // The input size is always a column vector
-        input_data.reshape(dim3(input_data.size(), 1, 1));
-
         if (not checkSize(input_data)){
             throw ModelLayerException("Invalid input size for fully connected layer. Input has size " + 
                 std::to_string(input_data.size()) + " and this layer has size " + std::to_string(weights.dim(0)));
         }
 
+        // The input size is always a column vector
+        input_data.reshape(input_data.size(), 1, 1);
+
         SimpleMatrix<double> output = matrixMultiply(weights, input_data) + biases;
         return output;
     }
 
+    SimpleMatrix<double> getdLdW(const SimpleMatrix<double>& X, const SimpleMatrix<double>& dLdY){
+        STIC;
+        SimpleMatrix<double> flatX = X;
+        flatX.reshape(X.size(), 1, 1);
+        return matrixMultiply(dLdY, transpose(flatX));
+    }
+
+    SimpleMatrix<double> getdLdX(const SimpleMatrix<double>& dLdY){
+        STIC;
+        SimpleMatrix<double> dLdX = matrixMultiply(transpose(weights), dLdY);
+        dLdX.reshape(input_dim_);
+        return dLdX;
+    }
+
+    SimpleMatrix<double> getdLdB(const SimpleMatrix<double>& dLdY){
+        return dLdY;
+    }
+
     SimpleMatrix<double> propagateBackward(
-            const SimpleMatrix<double>& badly_shaped_X, const SimpleMatrix<double>& Z, 
+            const SimpleMatrix<double>& X, const SimpleMatrix<double>& Z, 
             const SimpleMatrix<double>& dLdZ, double learning_rate, bool last_layer) 
     override
     {        
-        // Need to reshape the input appropriately
-        SimpleMatrix<double> X = badly_shaped_X;
-        X.reshape(badly_shaped_X.size(), 1, 1);
-
-        TIC("updateWeights");
-        weights -= learning_rate * matrixMultiply(dLdZ, transpose(X));
-        TOC("updateWeights");
-        TIC("updateBiases");
-        biases -= learning_rate * dLdZ;
-        TOC("updateBiases");
+        weights -= learning_rate * getdLdW(X, dLdZ);
+        biases  -= learning_rate * getdLdB(dLdZ);
 
         // We need to reshape the gradient to what the previous layer would be expecting
-        SimpleMatrix<double> dLdX;
-        if (not last_layer){
-            stic("outputGradient");
-            dLdX = matrixMultiply(transpose(weights), dLdZ);
-            dLdX.reshape(badly_shaped_X.dim());
-        }
+        SimpleMatrix<double> dLdX = last_layer ? SimpleMatrix<double>() : getdLdX(dLdZ);
         return dLdX;
     }
 
     std::string serialize() const override {
         std::stringstream ss;
         ss << "Connected Layer\n";
-        // ss << toString(activation) << "\n";
         serialization::place(ss, weights.dim().x, "x");
         serialization::place(ss, weights.dim().y, "y");
         ss << "weights\n";
@@ -111,6 +116,7 @@ public:
     }
 
 private:
+    dim3 input_dim_;
     bool initialized_ = false;
 };
 

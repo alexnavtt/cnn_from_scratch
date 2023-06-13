@@ -76,10 +76,7 @@ public:
         return output;
     }
 
-    SimpleMatrix<double> propagateBackward(
-        const SimpleMatrix<double>& X,    const SimpleMatrix<double>&, 
-        const SimpleMatrix<double>& dLdY, double , bool) override
-    {        
+    SimpleMatrix<double> getdLdX(const SimpleMatrix<double>& X, const SimpleMatrix<double>& dLdY){
         SimpleMatrix<double> dLdx(X.dim());
         switch(type_){
             case MIN:
@@ -104,6 +101,13 @@ public:
         }
 
         return dLdx;
+    }
+
+    SimpleMatrix<double> propagateBackward(
+        const SimpleMatrix<double>& X,    const SimpleMatrix<double>&, 
+        const SimpleMatrix<double>& dLdY, double , bool) override
+    {        
+        return getdLdX(X, dLdY);
     }
 
     std::string serialize() const override {

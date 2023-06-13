@@ -40,15 +40,18 @@ public:
 
     bool saveModel(std::string filename);
     bool loadModel(std::string filename);
+
     Kernel& addKernel(dim3 size, size_t count);
     Pooling& addPooling(dim2 size, dim2 stride, PoolingType type);
     ConnectedLayer& addConnectedLayer(size_t output_size);
     Activation& addActivation(ModelActivationFunction activation);
     void setOutputLabels(std::vector<OutputDataType> labels, OutputFunction output_function = SOFTMAX);
+
     ModelResults<OutputDataType> forwardPropagation(SimpleMatrix<InputDataType> input, OutputDataType* true_label = nullptr);
-    void assignLoss(ModelResults<OutputDataType>& result, OutputDataType label);
-    void backwardsPropagation(ModelResults<OutputDataType>& result, OutputDataType label, float learning_rate);
     float lossFcn(const SimpleMatrix<double>& probabilities, size_t true_label_idx) const;
+    void assignLoss(ModelResults<OutputDataType>& result, OutputDataType label);
+    std::vector<SimpleMatrix<double>> getLayerGradients(const std::vector<ModelResults<OutputDataType>>&, const std::vector<OutputDataType>& labels);
+    void backwardsPropagation(ModelResults<OutputDataType>& result, OutputDataType label, float learning_rate);
 
 private:
     size_t kernel_count_     = 0;
