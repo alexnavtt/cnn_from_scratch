@@ -36,7 +36,7 @@ public:
     /**
      * Return the final output vector after applying the softMax function
      */
-    SimpleMatrix<double> propagateForward(SimpleMatrix<double>&& input) override;
+    SimpleMatrix<double> propagateForward(SimpleMatrix<double>&& input, size_t) override;
 
     /**
      * Given the output and the true label, return the loss gradient with respect to the input 
@@ -48,7 +48,7 @@ public:
      */
     SimpleMatrix<double> propagateBackward(
         const SimpleMatrix<double>& input, const SimpleMatrix<double>& output, 
-        const SimpleMatrix<double>&, double, bool) override;
+        const SimpleMatrix<double>&, size_t, bool) override;
 
     /**
      * Convert the layer configuration to a standard ascii text format 

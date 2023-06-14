@@ -20,6 +20,17 @@ public:
     ModelFlowMode getType() const override;
 
     /**
+     * Set the batch size for backpropagation so the layer knows how
+     * many results to store for gradient calculation 
+     */
+    void setBatchSize(size_t batch_size) override;
+
+    /**
+     * Apply the stored gradients for the batch to the weight and bias matrices 
+     */
+    void applyBatch(double learning_rate) override;
+
+    /**
      * Checks that the input (regardless of whether it has already been flattened)
      * contains the appropriate number of elements for forward propagation. The first
      * time that this function is called, the dimensions of the input (which should not
@@ -33,7 +44,7 @@ public:
      * Given an input matrix of any shape, reshape it to a column vector V and return 
      * the matrix M = W*V + B where W are the layer weights and B are the layer biases 
      */
-    SimpleMatrix<double> propagateForward(SimpleMatrix<double>&& input_data) override;
+    SimpleMatrix<double> propagateForward(SimpleMatrix<double>&& input_data, size_t idx = 0) override;
 
     /**
      * Given the input and the corresponding resulting loss gradient from the next layer, 
@@ -59,14 +70,14 @@ public:
      * @param X             The input matrix from the forward pass
      * @param Y             The (unactivated) output matrix from the forward pass
      * @param dLdZ          The loss gradient with respect to the output
-     * @param learning_rate The step size with which to change the weight matrices
+     * @param batch_idx     The index within a batch for this particular input/output/gradient set
      * @param last_layer    Flag indicating whether or not there are layers previous to this one.
      *                      This is a small optimization the prevents calculation of the input 
      *                      loss gradient for the final layer 
      */
     SimpleMatrix<double> propagateBackward(
             const SimpleMatrix<double>& X, const SimpleMatrix<double>& Y, 
-            const SimpleMatrix<double>& dLdZ, double learning_rate, bool last_layer) override;
+            const SimpleMatrix<double>& dLdZ, size_t batch_idx, bool last_layer) override;
 
     /**
      * Convert the layer configuration to a standard ascii text format 
@@ -82,6 +93,10 @@ public:
 private:
     dim3 input_dim_;
     bool initialized_ = false;
+
+    // Vectors of gradient matrices for batch backpropagation
+    std::vector<SimpleMatrix<double>> weight_gradients_;
+    std::vector<SimpleMatrix<double>> bias_gradients_;
 };
 
 } // namespace my_cnn

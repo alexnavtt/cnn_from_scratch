@@ -12,6 +12,39 @@ ModelFlowMode ConnectedLayer::getType() const {
 // ----------------------------------------------------------------------------
 // ----------------------------------------------------------------------------
 
+void ConnectedLayer::setBatchSize(size_t batch_size) {
+    weight_gradients_.clear();
+    bias_gradients_.clear();
+
+    weight_gradients_.resize(batch_size);
+    bias_gradients_.resize(batch_size);
+}
+
+// ----------------------------------------------------------------------------
+// ----------------------------------------------------------------------------
+
+void ConnectedLayer::applyBatch(double learning_rate){
+    SimpleMatrix<double> avg_weight_grad(weights.dim(), 0.0);
+    SimpleMatrix<double> avg_bias_grad(biases.dim(), 0.0);
+
+    // Accumulate the stored gradientss
+    for (size_t i = 0; i < weight_gradients_.size(); i++){
+        avg_weight_grad += weight_gradients_[i]; 
+        avg_bias_grad += bias_gradients_[i];  
+    }
+
+    // Average the gradients
+    avg_weight_grad /= weight_gradients_.size();
+    avg_bias_grad /= bias_gradients_.size();
+
+    // Apply
+    weights -= learning_rate * avg_weight_grad;
+    biases  -= learning_rate * avg_bias_grad;
+}
+
+// ----------------------------------------------------------------------------
+// ----------------------------------------------------------------------------
+
 bool ConnectedLayer::checkSize(const SimpleMatrix<double>& input_data){
     // If this is the first time at this layer, resize and apply random values
     dim3 expected_size(biases.size(), input_data.size(), 1);
@@ -43,10 +76,10 @@ bool ConnectedLayer::checkSize(const SimpleMatrix<double>& input_data){
 // ----------------------------------------------------------------------------
 // ----------------------------------------------------------------------------
 
-SimpleMatrix<double> ConnectedLayer::propagateForward(SimpleMatrix<double>&& input_data) {
+SimpleMatrix<double> ConnectedLayer::propagateForward(SimpleMatrix<double>&& input_data, size_t) {
     if (not checkSize(input_data)){
         throw ModelLayerException("Invalid input size for fully connected layer. Input has size " + 
-            std::to_string(input_data.size()) + " and this layer has size " + std::to_string(weights.dim(0)));
+            std::to_string(input_data.size()) + " and this layer has size " + std::to_string(weights.dim(1)));
     }
 
     // The input size is always a column vector
@@ -60,7 +93,7 @@ SimpleMatrix<double> ConnectedLayer::propagateForward(SimpleMatrix<double>&& inp
 // ----------------------------------------------------------------------------
 
 SimpleMatrix<double> ConnectedLayer::getdLdW(const SimpleMatrix<double>& X, const SimpleMatrix<double>& dLdY){
-    STIC;
+    // STIC;
     SimpleMatrix<double> flatX = X;
     flatX.reshape(X.size(), 1, 1);
     return matrixMultiply(dLdY, transpose(flatX));
@@ -70,7 +103,7 @@ SimpleMatrix<double> ConnectedLayer::getdLdW(const SimpleMatrix<double>& X, cons
 // ----------------------------------------------------------------------------
 
 SimpleMatrix<double> ConnectedLayer::getdLdX(const SimpleMatrix<double>& dLdY){
-    STIC;
+    // STIC;
     SimpleMatrix<double> dLdX = matrixMultiply(transpose(weights), dLdY);
     dLdX.reshape(input_dim_);
     return dLdX;
@@ -88,10 +121,12 @@ SimpleMatrix<double> ConnectedLayer::getdLdB(const SimpleMatrix<double>& dLdY){
 
 SimpleMatrix<double> ConnectedLayer::propagateBackward(
             const SimpleMatrix<double>& X, const SimpleMatrix<double>&, 
-            const SimpleMatrix<double>& dLdZ, double learning_rate, bool last_layer)
+            const SimpleMatrix<double>& dLdZ, size_t batch_idx, bool last_layer)
 {        
-    weights -= learning_rate * getdLdW(X, dLdZ);
-    biases  -= learning_rate * getdLdB(dLdZ);
+    weight_gradients_[batch_idx] = getdLdW(X, dLdZ);
+    bias_gradients_[batch_idx]   = getdLdB(dLdZ);
+    // weights -= learning_rate * getdLdW(X, dLdZ);
+    // biases  -= learning_rate * getdLdB(dLdZ);
 
     // We need to reshape the gradient to what the previous layer would be expecting
     SimpleMatrix<double> dLdX = last_layer ? SimpleMatrix<double>() : getdLdX(dLdZ);

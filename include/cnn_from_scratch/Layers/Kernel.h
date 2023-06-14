@@ -26,6 +26,16 @@ public:
     ModelFlowMode getType() const override;
 
     /**
+     * Clear and resize the storage for weight and bias gradients 
+     */
+    void setBatchSize(size_t batch_size) override;
+
+    /**
+     * Update the weights and biases based on the batch-stored gradients 
+     */
+    void applyBatch(double learning_rate) override;
+
+    /**
      * Given an input matrix and filter dimension, return a version of the input matrix that
      * is padded to allow a full convolution between the filter and the padded input 
      */
@@ -45,7 +55,7 @@ public:
     /**
      * Pass the given input matrix through a convolutional filter and return the result  
      */
-    SimpleMatrix<double> propagateForward(SimpleMatrix<double>&& input_data) override;
+    SimpleMatrix<double> propagateForward(SimpleMatrix<double>&& input_data, size_t idx = 0) override;
 
     /**
      * Given the input and the loss gradient with respect to the output, get the loss
@@ -78,7 +88,7 @@ public:
      */
     SimpleMatrix<double> propagateBackward(
             const SimpleMatrix<double>& X, const SimpleMatrix<double>& Z, 
-            const SimpleMatrix<double>& dLdZ, double learning_rate, bool last_layer) override;
+            const SimpleMatrix<double>& dLdZ, size_t batch_idx, bool last_layer) override;
 
     /**
      * Convert the layer configuration to a standard ascii text format 
@@ -93,6 +103,10 @@ public:
 
 private:
     dim3 dim_;
+
+    // Vectors of gradient matrices for batch backpropagation
+    std::vector<SimpleMatrix<double>> weight_gradients_;
+    std::vector<SimpleMatrix<double>> bias_gradients_;
 
 public:
     unsigned stride = 1;

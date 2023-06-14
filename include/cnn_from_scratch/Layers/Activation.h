@@ -72,7 +72,7 @@ public:
     /**
      * Return the activated form of the given input matrix 
      */
-    SimpleMatrix<double> propagateForward(SimpleMatrix<double>&& input) override;
+    SimpleMatrix<double> propagateForward(SimpleMatrix<double>&& input, size_t idx = 0) override;
 
     /**
      * Return the gradient of the activation function for the given activated matrix 
@@ -85,7 +85,7 @@ public:
      */
     SimpleMatrix<double> propagateBackward(
         const SimpleMatrix<double>&, const SimpleMatrix<double>& Z, 
-        const SimpleMatrix<double>& dLdZ, double, bool) override;
+        const SimpleMatrix<double>& dLdZ, size_t, bool) override;
 
     /**
      * Convert the layer configuration to a standard ascii text format 

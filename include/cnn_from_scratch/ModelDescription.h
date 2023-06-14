@@ -4,6 +4,7 @@
 #include <string>
 #include <memory>
 #include <optional>
+#include "cnn_from_scratch/DataGenerator.h"
 #include "cnn_from_scratch/Layers/Kernel.h"
 #include "cnn_from_scratch/Layers/Pooling.h"
 #include "cnn_from_scratch/Layers/ModelFlow.h"
@@ -47,11 +48,13 @@ public:
     Activation& addActivation(ModelActivationFunction activation);
     void setOutputLabels(std::vector<OutputDataType> labels, OutputFunction output_function = SOFTMAX);
 
-    ModelResults<OutputDataType> forwardPropagation(SimpleMatrix<InputDataType> input, OutputDataType* true_label = nullptr);
+    ModelResults<OutputDataType> forwardPropagation(SimpleMatrix<InputDataType> input, size_t batch_idx = 0);
     float lossFcn(const SimpleMatrix<double>& probabilities, size_t true_label_idx) const;
     void assignLoss(ModelResults<OutputDataType>& result, OutputDataType label);
     std::vector<SimpleMatrix<double>> getLayerGradients(const std::vector<ModelResults<OutputDataType>>&, const std::vector<OutputDataType>& labels);
-    void backwardsPropagation(ModelResults<OutputDataType>& result, OutputDataType label, float learning_rate);
+    void backwardsPropagation(ModelResults<OutputDataType>& result, OutputDataType label, size_t batch_idx);
+
+    int train(DataGenerator<InputDataType>& data_source, int batch_size, double learning_rate, size_t num_threads = 1);
 
 private:
     size_t kernel_count_     = 0;

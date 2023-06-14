@@ -35,6 +35,39 @@ ModelFlowMode Kernel::getType() const {
 // ----------------------------------------------------------------------------
 // ----------------------------------------------------------------------------
 
+void Kernel::setBatchSize(size_t batch_size) {
+    weight_gradients_.clear();
+    bias_gradients_.clear();
+
+    weight_gradients_.resize(batch_size);
+    bias_gradients_.resize(batch_size);
+}
+
+// ----------------------------------------------------------------------------
+// ----------------------------------------------------------------------------
+
+void Kernel::applyBatch(double learning_rate){
+    SimpleMatrix<double> avg_weight_grad(weights.dim(), 0.0);
+    SimpleMatrix<double> avg_bias_grad(biases.dim(), 0.0);
+
+    // Accumulate the stored gradientss
+    for (size_t i = 0; i < weight_gradients_.size(); i++){
+        avg_weight_grad += weight_gradients_[i]; 
+        avg_bias_grad   += bias_gradients_[i];  
+    }
+
+    // Average the gradients
+    avg_weight_grad /= weight_gradients_.size();
+    avg_bias_grad   /= bias_gradients_.size();
+
+    // Apply
+    weights -= learning_rate * avg_weight_grad;
+    biases  -= learning_rate * avg_bias_grad;
+}
+
+// ----------------------------------------------------------------------------
+// ----------------------------------------------------------------------------
+
 template<typename MatrixType>
 SimpleMatrix<double> Kernel::padInput(MatrixType&& input_data, const dim3 filter_dim){
     // Create the augmented input data
@@ -69,7 +102,7 @@ dim3 Kernel::outputSize(const SimpleMatrix<double>& input_data) const{
 // ----------------------------------------------------------------------------
 // ----------------------------------------------------------------------------
 
-SimpleMatrix<double> Kernel::propagateForward(SimpleMatrix<double>&& input_data) {
+SimpleMatrix<double> Kernel::propagateForward(SimpleMatrix<double>&& input_data, size_t) {
     // Make sure the input size is what we expect based on weights and biases dimensions
     if (not checkSize(input_data))
         throw ModelLayerException("Mismatched channel count for convolution");
@@ -80,7 +113,7 @@ SimpleMatrix<double> Kernel::propagateForward(SimpleMatrix<double>&& input_data)
     for (size_t i = 0; i < num_filters; i++){
         const auto filter = weights.slices(i*dim_.z, dim_.z);
         for (size_t j = 0; j < dim_.z; j++){
-            auto _ = global_timer.scopedTic("Convolution");
+            // stic("Convolution");
             const auto W = filter.slice(j);
             const auto I = input_data.slice(j);
             output.slice(i) += convolve(I, W, dim2(stride, stride));
@@ -96,7 +129,7 @@ SimpleMatrix<double> Kernel::propagateForward(SimpleMatrix<double>&& input_data)
 // ----------------------------------------------------------------------------
 
 SimpleMatrix<double> Kernel::getdLdW(const SimpleMatrix<double>& X, const SimpleMatrix<double>& dLdY){
-    STIC;
+    // STIC;
     const int num_channels = dim_.z;
 
     // Create the output matrix
@@ -125,7 +158,7 @@ SimpleMatrix<double> Kernel::getdLdW(const SimpleMatrix<double>& X, const Simple
 // ----------------------------------------------------------------------------
 
 SimpleMatrix<double> Kernel::getdLdX(const SimpleMatrix<double>& X, const SimpleMatrix<double>& dLdY){
-    STIC;
+    // STIC;
     const int num_channels = dim_.z;
 
     // Create the output matrix
@@ -146,9 +179,7 @@ SimpleMatrix<double> Kernel::getdLdX(const SimpleMatrix<double>& X, const Simple
             const auto rotated_gradient = rotate<2>(output_gradient);
             const auto padded_filter    = padInput(filter_channel, output_gradient.dim());
 
-            TIC("convolution");
             filter_gradient.slice(channel_idx) = convolve(padded_filter, rotated_gradient, {1, 1});
-            TOC("convolution");
         }
 
         dLdX = dLdX + filter_gradient;
@@ -161,7 +192,7 @@ SimpleMatrix<double> Kernel::getdLdX(const SimpleMatrix<double>& X, const Simple
 // ----------------------------------------------------------------------------
 
 SimpleMatrix<double> Kernel::getdLdB(const SimpleMatrix<double>& dLdY){
-    STIC;
+    // STIC;
     
     SimpleMatrix<double> dLdB(biases.dim());
     for (int filter_idx = 0; filter_idx < num_filters; filter_idx++){
@@ -176,11 +207,13 @@ SimpleMatrix<double> Kernel::getdLdB(const SimpleMatrix<double>& dLdY){
     
 SimpleMatrix<double> Kernel::propagateBackward(
         const SimpleMatrix<double>& X, const SimpleMatrix<double>& Z, 
-        const SimpleMatrix<double>& dLdZ, double learning_rate, bool last_layer) 
+        const SimpleMatrix<double>& dLdZ, size_t batch_idx, bool last_layer) 
 {
     // SimpleMatrix<double> dLdY = getdLdY(Z, dLdZ);
-    weights -= learning_rate * getdLdW(X, dLdZ);       
-    biases  -= learning_rate * getdLdB(dLdZ);
+    weight_gradients_[batch_idx] = getdLdW(X, dLdZ);
+    bias_gradients_[batch_idx]   = getdLdB(dLdZ);
+    // weights -= learning_rate * getdLdW(X, dLdZ);       
+    // biases  -= learning_rate * getdLdB(dLdZ);
     return last_layer ? SimpleMatrix<double>() : getdLdX(X, dLdZ);
 }
 

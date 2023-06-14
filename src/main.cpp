@@ -36,9 +36,9 @@ std::ostream& operator<<(std::ostream& os, const my_cnn::ModelResults<T>& mr){
     os << "Layer Results:\n";
     os << "\tLabel Index: " << mr.label_idx << "\n";
     os << "\tConfidence:  " << mr.confidence << "\n";
-    if (mr.knows_true_value){
+    if (mr.true_label){
         os << "\tLoss:        " << mr.loss << "\n";
-        os << "\tTrue value:  " << std::to_string(mr.true_label) << "\n";
+        os << "\tTrue value:  " << mr.true_label.value() << "\n";
         os << "\tTrue index:  " << mr.true_label_idx << "\n";
     }
     os << "\n";
@@ -56,8 +56,8 @@ size_t runEpoch(ModelType& model, my_cnn::MNISTReader& image_source, size_t trai
         auto Data = image_source.getImage(i);
 
         // Run forwards and backwards propagation
-        my_cnn::ModelResults result = model.forwardPropagation(Data.data);
-        model.backwardsPropagation(result, Data.label, learning_rate);
+        my_cnn::ModelResults result = model.forwardPropagation(Data.data, 0);
+        model.backwardsPropagation(result, Data.label, 0);
         total_loss += result.loss;
 
         // Try to catch where it happens
@@ -100,7 +100,7 @@ void validate(ModelType& model){
 
         // Run forwards and backwards propagation
         my_cnn::ModelResults result = model.forwardPropagation(Data.data);
-        correct_count += model.output_labels[result.label_idx] == Data.label;
+        correct_count += model.output_labels[result.label_idx] == std::to_string(Data.label);
         loadingBar(i, num_images);
     }
 
@@ -111,9 +111,9 @@ void validate(ModelType& model){
         auto Data = db.getImage(idx);
 
         my_cnn::ModelResults result = model.forwardPropagation(Data.data);
-        std::cout << "This image is a " << +model.output_labels[result.label_idx] << " (actual label " << +Data.label << ")\n";
+        std::cout << "This image is a " << model.output_labels[result.label_idx] << " (actual label " << +Data.label << ")\n";
         my_cnn::printImage(Data.data);
-        std::cout << "\n\n";
+        std::cout << result << "\n\n";
     }
 
     std::cout << "\nValidation accuracy was " << 100.0f * correct_count/num_images << "%\n";
@@ -123,15 +123,27 @@ void validate(ModelType& model){
 // ------------------------------------------------------------------------------------------------
 
 class MNistGenerator : public my_cnn::DataGenerator<float> {
+public:
     MNistGenerator(std::string image_filepath, std::string label_filepath) :
     db_(image_filepath, label_filepath)
-    {}
+    {
+        reset();
+    }
 
     my_cnn::LabeledInput<float> getNextDataPoint() override {
         my_cnn::LabeledInput<float> labeled_input;
         auto Data = db_.nextImage();
         labeled_input.data = Data.data;
-        labeled_input.label = Data.label;
+        labeled_input.label = std::to_string(Data.label);
+        return labeled_input;
+    }
+
+    size_t size() override {
+        return db_.numImages() - 1;
+    }
+
+    void reset() {
+        db_.getImage(0);
     }
 
 private:
@@ -146,10 +158,14 @@ int main(int argc, char* argv[]){
     // Load the database images and labels
     my_cnn::MNISTReader db
         (data_dir + "/MNIST Train Images.ubyte-img"s, 
-         data_dir + "/MNIST Train Labels.ubyte-label"s);        
+         data_dir + "/MNIST Train Labels.ubyte-label"s);     
+
+    MNistGenerator data_source(
+         data_dir + "/MNIST Train Images.ubyte-img"s, 
+         data_dir + "/MNIST Train Labels.ubyte-label"s);   
 
     // Create a model to put the images through
-    my_cnn::ModelDescription<float, unsigned char> model;
+    my_cnn::ModelDescription<float, std::string> model;
 
     // Full model description
     model.addKernel ({5, 5, 1},  2);
@@ -159,14 +175,12 @@ int main(int argc, char* argv[]){
     model.addActivation(my_cnn::RELU);
     model.addPooling({2, 2}, {2, 2}, my_cnn::MAX);
     model.addConnectedLayer(10);
-    model.setOutputLabels({0, 1, 2, 3, 4, 5, 6, 7, 8, 9}, my_cnn::SOFTMAX);
+    model.setOutputLabels({"0", "1", "2", "3", "4", "5", "6", "7", "8", "9"}, my_cnn::SOFTMAX);
 
-    int num_epochs = 3;
-    int training_size = 60000;
-    for (int j = 0; j < num_epochs; j++){
-        std::cout << "Starting epoch " << j << ":\n";
-        int correct_count = runEpoch(model, db, training_size, 0.0001);
-        std::cout << "Accuracy was " << 100.0*correct_count/training_size << "%\n";
+    for (int epoch = 0; epoch < 5; epoch++){
+        int correct_count = model.train(data_source, 32, 0.05, 8);
+        std::cout << "Epoch " << epoch << ": Accuracy was " << 100.0 * correct_count / data_source.size() << "%\n";
+        data_source.reset();
     }
 
     validate(model);

@@ -57,7 +57,7 @@ ModelFlowMode Activation::getType() const {
 // ----------------------------------------------------------------------------
 // ----------------------------------------------------------------------------
 
-SimpleMatrix<double> Activation::propagateForward(SimpleMatrix<double>&& input) {
+SimpleMatrix<double> Activation::propagateForward(SimpleMatrix<double>&& input, size_t) {
     return apply(input, activationFunction_);
 }
 
@@ -73,7 +73,7 @@ SimpleMatrix<double> Activation::activationGradient(const SimpleMatrix<double>& 
 
 SimpleMatrix<double> Activation::propagateBackward(
     const SimpleMatrix<double>&, const SimpleMatrix<double>& Z, 
-    const SimpleMatrix<double>& dLdZ, double, bool)
+    const SimpleMatrix<double>& dLdZ, size_t, bool)
 {
     return dLdZ * activationGradient(Z);
 }

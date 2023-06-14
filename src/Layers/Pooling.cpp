@@ -7,7 +7,7 @@ Pooling::Pooling(dim2 dim, dim2 stride, PoolingType type) :
     stride_(stride), 
     type_(type)
 {
-
+    affected_indices_.resize(1);
 }
 
 // ----------------------------------------------------------------------------
@@ -27,6 +27,13 @@ bool Pooling::checkSize(const SimpleMatrix<double>& input)  {
 // ----------------------------------------------------------------------------
 // ----------------------------------------------------------------------------
 
+void Pooling::setBatchSize(size_t batch_size) {
+    affected_indices_.resize(batch_size);
+}
+
+// ----------------------------------------------------------------------------
+// ----------------------------------------------------------------------------
+
 dim3 Pooling::outputSize(const dim3& input_dim) const {
     const int x_size = std::ceil((input_dim.x - dim_.x + 1.0f)/stride_.x);
     const int y_size = std::ceil((input_dim.y - dim_.y + 1.0f)/stride_.y);
@@ -37,12 +44,13 @@ dim3 Pooling::outputSize(const dim3& input_dim) const {
 // ----------------------------------------------------------------------------
 // ----------------------------------------------------------------------------
 
-SimpleMatrix<double> Pooling::propagateForward(SimpleMatrix<double>&& input) {
+SimpleMatrix<double> Pooling::propagateForward(SimpleMatrix<double>&& input, size_t batch_idx) {
     // Create the approriately sized output
     SimpleMatrix<double> output(outputSize(input.dim()));
 
     // Reset the affected indices vector
-    affected_indices_.resize(output.dim());
+    SimpleMatrix<dim3>& indices = affected_indices_[batch_idx];
+    indices.resize(output.dim());
 
     const dim3 pool_size{dim_.x, dim_.y, 1};
     for (auto it = output.begin(); it != output.end(); ++it){
@@ -56,7 +64,7 @@ SimpleMatrix<double> Pooling::propagateForward(SimpleMatrix<double>&& input) {
             case MIN:
             {
                 const dim3 min_index = in_idx + minIndex(AoI);
-                affected_indices_(out_idx) = min_index;
+                indices(out_idx) = min_index;
                 output(out_idx) = input(min_index);
                 break;
             }
@@ -64,7 +72,7 @@ SimpleMatrix<double> Pooling::propagateForward(SimpleMatrix<double>&& input) {
             case MAX: 
             {
                 const dim3 max_index= in_idx + maxIndex(AoI);
-                affected_indices_(out_idx) = max_index;
+                indices(out_idx) = max_index;
                 output(out_idx) = input(max_index);
                 break;
             }
@@ -81,13 +89,15 @@ SimpleMatrix<double> Pooling::propagateForward(SimpleMatrix<double>&& input) {
 // ----------------------------------------------------------------------------
 // ----------------------------------------------------------------------------
 
-SimpleMatrix<double> Pooling::getdLdX(const SimpleMatrix<double>& X, const SimpleMatrix<double>& dLdY){
+SimpleMatrix<double> Pooling::getdLdX(const SimpleMatrix<double>& X, const SimpleMatrix<double>& dLdY, size_t batch_idx){
     SimpleMatrix<double> dLdx(X.dim());
+    SimpleMatrix<dim3>& indices = affected_indices_[batch_idx];
+
     switch(type_){
         case MIN:
         case MAX:
         {
-            for (auto it = affected_indices_.begin(); it != affected_indices_.end(); ++it){
+            for (auto it = indices.begin(); it != indices.end(); ++it){
                 dLdx(*it) += dLdY(it.idx());
             }
             break;
@@ -113,9 +123,9 @@ SimpleMatrix<double> Pooling::getdLdX(const SimpleMatrix<double>& X, const Simpl
 
 SimpleMatrix<double> Pooling::propagateBackward(
     const SimpleMatrix<double>& X,    const SimpleMatrix<double>&, 
-    const SimpleMatrix<double>& dLdY, double , bool)
+    const SimpleMatrix<double>& dLdY, size_t batch_idx , bool)
 {        
-    return getdLdX(X, dLdY);
+    return getdLdX(X, dLdY, batch_idx);
 }
 
 // ----------------------------------------------------------------------------

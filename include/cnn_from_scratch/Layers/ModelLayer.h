@@ -22,12 +22,14 @@ public:
 
     virtual ModelFlowMode getType() const = 0;
     virtual bool checkSize(const SimpleMatrix<double>& input){return true;}
-    virtual SimpleMatrix<double> propagateForward(SimpleMatrix<double>&& input) = 0;
+    virtual void setBatchSize(size_t batch_size) {}
+    virtual void applyBatch(double learning_rate) {}
+    virtual SimpleMatrix<double> propagateForward(SimpleMatrix<double>&& input, size_t batch_idx = 0) = 0;
     virtual SimpleMatrix<double> propagateBackward(
         const SimpleMatrix<double>& input, 
         const SimpleMatrix<double>& output, 
         const SimpleMatrix<double>& output_grad, 
-        double learning_rate, 
+        size_t batch_idx, 
         bool last_layer = false
     ) = 0;
     virtual std::string serialize() const = 0;

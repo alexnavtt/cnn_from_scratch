@@ -31,6 +31,11 @@ public:
     bool checkSize(const SimpleMatrix<double>& input) override;
 
     /**
+     * Set the number of affected indices to remember
+     */
+    void setBatchSize(size_t batch_size) override;
+
+    /**
      * Get the appropriate output size given the input size
      * @param input_dim         The dimensions of the input data
      * @return                  The dimensions of the output data
@@ -40,7 +45,7 @@ public:
     /**
      * Pool an input data point 
      */
-    SimpleMatrix<double> propagateForward(SimpleMatrix<double>&& input) override;
+    SimpleMatrix<double> propagateForward(SimpleMatrix<double>&& input, size_t batch_idx = 0) override;
 
     /**
      * Get the loss derivative with respect to the input for the most recent 
@@ -49,7 +54,7 @@ public:
      * @param dLdY              The loss gradient from the previous layer
      * @return                  The loss gradient to pass to subsequent layers
      */
-    SimpleMatrix<double> getdLdX(const SimpleMatrix<double>& X, const SimpleMatrix<double>& dLdY);
+    SimpleMatrix<double> getdLdX(const SimpleMatrix<double>& X, const SimpleMatrix<double>& dLdY, size_t batch_idx);
 
     /**
      * Update the layer given the previous layer gradient. For a pooling layer there
@@ -58,7 +63,7 @@ public:
      */
     SimpleMatrix<double> propagateBackward(
         const SimpleMatrix<double>& X,    const SimpleMatrix<double>&, 
-        const SimpleMatrix<double>& dLdY, double , bool) override;
+        const SimpleMatrix<double>& dLdY, size_t batch_idx , bool) override;
 
     /**
      * Convert the pooling layer configuration to a standard ascii text format 
@@ -82,7 +87,7 @@ private:
     PoolingType type_;
 
     // Stored incdices affected by the last pooling operation. Used in backpropagation
-    SimpleMatrix<dim3> affected_indices_;
+    std::vector<SimpleMatrix<dim3>> affected_indices_;
 };
 
 } // namespace my_cnn

@@ -1,9 +1,12 @@
+#include <thread>
 #include <fstream>
+#include <atomic>
 #include "cnn_from_scratch/imageUtil.h"
 #include "cnn_from_scratch/timerConfig.h"
 #include "cnn_from_scratch/Serialization.h"
 #include "cnn_from_scratch/ModelDescription.h"
 #include "cnn_from_scratch/Layers/Softmax.h"
+#include "cnn_from_scratch/LoadingBar.h"
 
 extern cpp_timer::Timer global_timer;
 
@@ -73,7 +76,7 @@ bool ModelDescription<InputDataType, OutputDataType>::saveModel(std::string file
 
     f << "\nOutput labels " << output_labels.size() << "\n";
     for (auto& label : output_labels){
-        f << std::to_string(label) << "\n";
+        f << label << "\n";
     }
     f << std::endl;
 
@@ -150,9 +153,9 @@ float ModelDescription<InputDataType, OutputDataType>::lossFcn(const SimpleMatri
 }
 
 template<typename InputDataType, typename OutputDataType>
-ModelResults<OutputDataType> ModelDescription<InputDataType, OutputDataType>::forwardPropagation(SimpleMatrix<InputDataType> input, OutputDataType* true_label)
+ModelResults<OutputDataType> ModelDescription<InputDataType, OutputDataType>::forwardPropagation(SimpleMatrix<InputDataType> input, size_t batch_idx)
 {
-    STIC;
+    // STIC;
 
     // If necessary, convert the input data type to double
     SimpleMatrix<double> active_data = std::move(input);
@@ -164,10 +167,10 @@ ModelResults<OutputDataType> ModelDescription<InputDataType, OutputDataType>::fo
 
     // For each stage of the model, apply the necessary step
     for (std::shared_ptr<ModelLayer>& layer : layers){
-        stic(layer->name.c_str());
+        // stic(layer->name.c_str());
 
         // Record the input for this layer (to be used in back propagation)
-        active_data = layer->propagateForward(std::move(active_data));
+        active_data = layer->propagateForward(std::move(active_data), batch_idx);
         result.layer_inputs.push_back(active_data);
     }
 
@@ -187,8 +190,8 @@ void ModelDescription<InputDataType, OutputDataType>::assignLoss(ModelResults<Ou
 }
 
 template<typename InputDataType, typename OutputDataType>
-void ModelDescription<InputDataType, OutputDataType>::backwardsPropagation(ModelResults<OutputDataType>& result, OutputDataType label, float learning_rate){
-    STIC;
+void ModelDescription<InputDataType, OutputDataType>::backwardsPropagation(ModelResults<OutputDataType>& result, OutputDataType label, size_t batch_idx){
+    // STIC;
 
     // Calculate the loss based on the given label
     assignLoss(result, label);
@@ -201,12 +204,76 @@ void ModelDescription<InputDataType, OutputDataType>::backwardsPropagation(Model
     // For each of the layers, calculate the corresponding gradient and adjust the weights accordingly
     SimpleMatrix<double> dLdz;
     for (int i = layers.size()-1; i >= 0; i--){
-        stic(layers[i]->name.c_str());
+        // stic(layers[i]->name.c_str());
 
         const SimpleMatrix<float>& layer_input  = result.layer_inputs.at(i);
         const SimpleMatrix<float>& layer_output = result.layer_inputs.at(i+1);
-        dLdz = layers[i]->propagateBackward(layer_input, layer_output, dLdz, learning_rate, i == 0);
+        dLdz = layers[i]->propagateBackward(layer_input, layer_output, dLdz, batch_idx, i == 0);
     }
+}
+
+template<typename InputDataType, typename OutputDataType>
+int ModelDescription<InputDataType, OutputDataType>::train(DataGenerator<InputDataType>& data_source, int batch_size, double learning_rate, size_t num_threads){
+    // Set up all layers to expect the incoming batch size
+    for (auto& layer : layers){
+        layer->setBatchSize(batch_size);
+    }
+    
+    // Create a pool of worker threads to operate on the inputs
+    std::vector<std::thread> workers(num_threads);
+
+    // Determine how much work each thread has to do
+    const int work_count  = std::ceil((float)batch_size / num_threads);
+
+    // Create a vector to store the results of each individual forward propagation
+    std::vector<ModelResults<OutputDataType>> batch_results(batch_size);
+    std::atomic_int success_count = 0;
+
+    const int num_batches = std::ceil((float)data_source.size() / batch_size);
+    for (int n = 0; n < num_batches; n++){
+
+        // Assign each thread to propagate the values
+        int thread_idx = 0;
+        std::mutex data_mtx;
+        for (std::thread& t : workers){
+            t = std::thread([&, thread_idx](){
+                // Determine the final input index that this thread is responsible for
+                size_t start  = thread_idx * work_count;
+                size_t cutoff = std::min((thread_idx+1) * work_count, batch_size);
+
+                // Process each data input invidually
+                for (int batch_idx = start; batch_idx < cutoff; batch_idx++){
+                    data_mtx.lock();
+                    LabeledInput<InputDataType> data_point = data_source.getNextDataPoint();
+                    data_mtx.unlock();
+
+                    ModelResults<OutputDataType>& result = batch_results[batch_idx];
+                    result = forwardPropagation(data_point.data, batch_idx);
+                    backwardsPropagation(result, data_point.label, batch_idx);
+
+                    if (result.label_idx == result.true_label_idx)
+                        success_count++;
+                }
+            });
+
+            thread_idx++;
+        }
+
+        // Wait for all threads to finish
+        for (std::thread& t : workers){
+            t.join();
+        }
+
+        // Apply the update step
+        for (auto& layer : layers){
+            layer->applyBatch(learning_rate);
+        }
+
+        loadingBar(n, num_batches);
+    }
+
+    // Return the number of inputs that successfully classified the input
+    return success_count;
 }
 
 } // namespace my_cnn
