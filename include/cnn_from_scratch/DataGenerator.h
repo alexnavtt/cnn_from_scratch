@@ -13,7 +13,9 @@ struct LabeledInput{
 
 template<typename ModelInputType>
 class DataGenerator {
+public:
     virtual LabeledInput<ModelInputType> getNextDataPoint() = 0;
+    virtual size_t size() = 0;
 };
 
 } // namespace my_cnn
