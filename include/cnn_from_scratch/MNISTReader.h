@@ -22,6 +22,8 @@ public:
 
     size_t numImages() const {return num_images_;}
 
+    size_t imageIndex() const {return current_index_;}
+
 private:
     std::fstream image_stream_;
     std::fstream label_stream_;

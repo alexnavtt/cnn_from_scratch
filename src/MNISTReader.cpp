@@ -2,6 +2,9 @@
 #include <filesystem>
 #include "cnn_from_scratch/MNISTReader.h"
 
+#define DATA_NUM_HEADER_LINES 4
+#define LABEL_NUM_HEADER_LINES 2
+
 namespace my_cnn{
     
 MNISTReader::MNISTReader(std::string image_filename, std::string label_filename)
@@ -48,17 +51,21 @@ Image MNISTReader::getImage(size_t idx){
     current_index_ = idx;
 
     // Set the index for the image stream
-    size_t img_char_start_idx = 4*sizeof(int32_t) + idx * image_height_ * image_width_;
+    size_t img_char_start_idx = DATA_NUM_HEADER_LINES*sizeof(int32_t) + idx * image_height_ * image_width_;
     image_stream_.seekg(img_char_start_idx);
 
     // Set the index for the label stream
-    size_t label_char_start_idx = 2*sizeof(int32_t) + idx;
+    size_t label_char_start_idx = LABEL_NUM_HEADER_LINES*sizeof(int32_t) + idx;
     label_stream_.seekg(label_char_start_idx);
 
     return nextImage();
 }
 
 Image MNISTReader::nextImage(){
+    if (current_index_ >= num_images_){
+        throw std::runtime_error("Cannot extract image " + std::to_string(current_index_) + " out of " + std::to_string(num_images_) + " images");
+    }
+
     Image img;
 
     SimpleMatrix<unsigned char> out({image_height_, image_width_, 1});

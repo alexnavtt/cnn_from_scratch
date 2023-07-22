@@ -244,6 +244,9 @@ int ModelDescription<InputDataType, OutputDataType>::train(DataGenerator<InputDa
                 // Process each data input invidually
                 for (int batch_idx = start; batch_idx < cutoff; batch_idx++){
                     data_mtx.lock();
+                    if (not data_source.hasAvailableData()){
+                        break;
+                    }
                     LabeledInput<InputDataType> data_point = data_source.getNextDataPoint();
                     data_mtx.unlock();
 

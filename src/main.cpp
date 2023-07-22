@@ -142,6 +142,10 @@ public:
         return db_.numImages() - 1;
     }
 
+    bool hasAvailableData() override {
+        return db_.imageIndex() < db_.numImages();
+    }
+
     void reset() {
         db_.getImage(0);
     }
@@ -153,12 +157,7 @@ private:
 // ------------------------------------------------------------------------------------------------
 // ------------------------------------------------------------------------------------------------
 
-int main(int argc, char* argv[]){ 
-
-    // Load the database images and labels
-    my_cnn::MNISTReader db
-        (data_dir + "/MNIST Train Images.ubyte-img"s, 
-         data_dir + "/MNIST Train Labels.ubyte-label"s);     
+int main(int argc, char* argv[]){   
 
     MNistGenerator data_source(
          data_dir + "/MNIST Train Images.ubyte-img"s, 
@@ -169,7 +168,7 @@ int main(int argc, char* argv[]){
 
     // Full model description
     model.addKernel ({5, 5, 1},  2);
-    model.addActivation(my_cnn::RELU);
+    model.addActivation(my_cnn::SIGMOID);
     model.addPooling({2, 2}, {2, 2}, my_cnn::MAX);
     model.addKernel ({3, 3, 2},  4);
     model.addActivation(my_cnn::RELU);
@@ -177,9 +176,9 @@ int main(int argc, char* argv[]){
     model.addConnectedLayer(10);
     model.setOutputLabels({"0", "1", "2", "3", "4", "5", "6", "7", "8", "9"}, my_cnn::SOFTMAX);
 
-    for (int epoch = 0; epoch < 5; epoch++){
-        int correct_count = model.train(data_source, 32, 0.05, 8);
-        std::cout << "Epoch " << epoch << ": Accuracy was " << 100.0 * correct_count / data_source.size() << "%\n";
+    for (int epoch = 0; epoch < 2; epoch++){
+        int correct_count = model.train(data_source, 32, 0.03, 8);
+        std::cout << "\nEpoch " << epoch << ": Accuracy was " << 100.0 * correct_count / data_source.size() << "%\n";
         data_source.reset();
     }
 

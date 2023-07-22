@@ -16,6 +16,7 @@ class DataGenerator {
 public:
     virtual LabeledInput<ModelInputType> getNextDataPoint() = 0;
     virtual size_t size() = 0;
+    virtual bool hasAvailableData() = 0;
 };
 
 } // namespace my_cnn
