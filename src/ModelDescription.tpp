@@ -213,24 +213,25 @@ void ModelDescription<InputDataType, OutputDataType>::backwardsPropagation(Model
 }
 
 template<typename InputDataType, typename OutputDataType>
-int ModelDescription<InputDataType, OutputDataType>::train(DataGenerator<InputDataType>& data_source, int batch_size, double learning_rate, size_t num_threads){
+int ModelDescription<InputDataType, OutputDataType>::train(DataGenerator<InputDataType>& data_source, Hyperparameters params){
     // Set up all layers to expect the incoming batch size
     for (auto& layer : layers){
-        layer->setBatchSize(batch_size);
+        layer->setBatchSize(params.batch_size);
     }
     
     // Create a pool of worker threads to operate on the inputs
-    std::vector<std::thread> workers(num_threads);
+    std::vector<std::thread> workers(params.num_threads);
 
     // Determine how much work each thread has to do
-    const int work_count  = std::ceil((float)batch_size / num_threads);
+    const int work_count  = std::ceil((float)params.batch_size / params.num_threads);
 
     // Create a vector to store the results of each individual forward propagation
-    std::vector<ModelResults<OutputDataType>> batch_results(batch_size);
+    std::vector<ModelResults<OutputDataType>> batch_results(params.batch_size);
     std::atomic_int success_count = 0;
 
-    const int num_batches = std::ceil((float)data_source.size() / batch_size);
+    const int num_batches = std::ceil((float)data_source.size() / params.batch_size);
     for (int n = 0; n < num_batches; n++){
+        TIC("Run Batch");
 
         // Assign each thread to propagate the values
         int thread_idx = 0;
@@ -239,7 +240,7 @@ int ModelDescription<InputDataType, OutputDataType>::train(DataGenerator<InputDa
             t = std::thread([&, thread_idx](){
                 // Determine the final input index that this thread is responsible for
                 size_t start  = thread_idx * work_count;
-                size_t cutoff = std::min((thread_idx+1) * work_count, batch_size);
+                size_t cutoff = std::min((thread_idx+1) * work_count, params.batch_size);
 
                 // Process each data input invidually
                 for (int batch_idx = start; batch_idx < cutoff; batch_idx++){
@@ -269,8 +270,9 @@ int ModelDescription<InputDataType, OutputDataType>::train(DataGenerator<InputDa
 
         // Apply the update step
         for (auto& layer : layers){
-            layer->applyBatch(learning_rate);
+            layer->applyBatch(params.learning_rate);
         }
+        TOC("Run Batch");
 
         loadingBar(n, num_batches);
     }

@@ -176,11 +176,18 @@ int main(int argc, char* argv[]){
     model.addConnectedLayer(10);
     model.setOutputLabels({"0", "1", "2", "3", "4", "5", "6", "7", "8", "9"}, my_cnn::SOFTMAX);
 
+    my_cnn::ModelDescription<float, std::string>::Hyperparameters params;
+    params.learning_rate = 0.03;
+    params.batch_size    = 32;
+    params.num_threads   = 8; 
+
+    TIC("Train");
     for (int epoch = 0; epoch < 2; epoch++){
-        int correct_count = model.train(data_source, 32, 0.03, 8);
+        int correct_count = model.train(data_source, params);
         std::cout << "\nEpoch " << epoch << ": Accuracy was " << 100.0 * correct_count / data_source.size() << "%\n";
         data_source.reset();
     }
+    TOC("Train");
 
     validate(model);
     debugLayerWeights(model);
