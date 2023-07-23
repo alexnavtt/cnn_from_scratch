@@ -40,7 +40,7 @@ public:
      * @param input_dim         The dimensions of the input data
      * @return                  The dimensions of the output data
      */
-    dim3 outputSize(const dim3& input_dim) const;
+    Dim3 outputSize(const Dim3& input_dim) const;
 
     /**
      * Pool an input data point 
@@ -87,7 +87,7 @@ private:
     PoolingType type_;
 
     // Stored incdices affected by the last pooling operation. Used in backpropagation
-    std::vector<SimpleMatrix<dim3>> affected_indices_;
+    std::vector<SimpleMatrix<Dim3>> affected_indices_;
 };
 
 } // namespace my_cnn

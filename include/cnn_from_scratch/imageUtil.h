@@ -9,7 +9,7 @@ void printImageBWImpl(const MatrixType& M, typename MatrixType::type max_val){
     using T = typename MatrixType::type;
     T min = my_cnn::min(M);
     T range = max_val - min;
-    dim3 idx;
+    Dim3 idx;
     for (idx.x = 0; idx.x < M.dim().x; idx.x++){
         for (idx.y = 0; idx.y < M.dim().y; idx.y++){
             const T& val = M(idx);
@@ -25,7 +25,7 @@ void printImageBWImpl(const MatrixType& M, typename MatrixType::type max_val){
 template <typename MatrixType>
 void printImageColorImpl(const MatrixType& M, typename MatrixType::type max_val){
     using T = typename MatrixType::type;
-    dim3 idx;
+    Dim3 idx;
     for (idx.x = 0; idx.x < M.dim().x; idx.x++){
         for (idx.y = 0; idx.y < M.dim().y; idx.y++){
             std::stringstream ss;

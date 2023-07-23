@@ -7,7 +7,7 @@ public:
     using type_t = typename decltype(my_cnn::Kernel::weights)::type;
 
     FixtureBase() :
-    M(my_cnn::dim3(5, 5, 1))
+    M(my_cnn::Dim3(5, 5, 1))
     {
         my_cnn::modify(M, [](type_t){return 1 - 2*(type_t)(rand())/RAND_MAX;});
     }

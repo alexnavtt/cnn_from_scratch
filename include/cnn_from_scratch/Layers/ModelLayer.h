@@ -14,8 +14,8 @@ public:
 
     ModelLayer() = default;
 
-    ModelLayer(unsigned num_outputs, dim3 weights_dim = dim3{}) :
-    biases(dim3(num_outputs, 1, 1)),
+    ModelLayer(unsigned num_outputs, Dim3 weights_dim = Dim3{}) :
+    biases(Dim3(num_outputs, 1, 1)),
     weights(weights_dim)
     {}
 

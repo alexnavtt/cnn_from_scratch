@@ -7,7 +7,7 @@ namespace my_cnn{
 class MatrixBase{
 public: 
     MatrixBase() = default;
-    MatrixBase(const dim3& dim) : dim_(dim) {}
+    MatrixBase(const Dim3& dim) : dim_(dim) {}
 
     bool isSquare() const{
         return dim_.x == dim_.y;
@@ -29,12 +29,12 @@ public:
         return dim_.x*dim_.y*dim_.z;
     }
 
-    const dim3& dim() const{
+    const Dim3& dim() const{
         return dim_;
     }
 
 protected:
-    dim3 dim_;
+    Dim3 dim_;
 };
 
 } // namespace my_cnn

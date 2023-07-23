@@ -49,7 +49,7 @@ public:
     bool saveModel(std::string filename);
     bool loadModel(std::string filename);
 
-    Kernel& addKernel(dim3 size, size_t count);
+    Kernel& addKernel(Dim3 size, size_t count);
     Pooling& addPooling(dim2 size, dim2 stride, PoolingType type);
     ConnectedLayer& addConnectedLayer(size_t output_size);
     Activation& addActivation(ModelActivationFunction activation);

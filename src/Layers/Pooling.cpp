@@ -34,11 +34,11 @@ void Pooling::setBatchSize(size_t batch_size) {
 // ----------------------------------------------------------------------------
 // ----------------------------------------------------------------------------
 
-dim3 Pooling::outputSize(const dim3& input_dim) const {
+Dim3 Pooling::outputSize(const Dim3& input_dim) const {
     const int x_size = std::ceil((input_dim.x - dim_.x + 1.0f)/stride_.x);
     const int y_size = std::ceil((input_dim.y - dim_.y + 1.0f)/stride_.y);
     const int z_size = input_dim.z;
-    return dim3(x_size, y_size, z_size); 
+    return Dim3(x_size, y_size, z_size); 
 }
 
 // ----------------------------------------------------------------------------
@@ -49,21 +49,21 @@ SimpleMatrix<double> Pooling::propagateForward(SimpleMatrix<double>&& input, siz
     SimpleMatrix<double> output(outputSize(input.dim()));
 
     // Reset the affected indices vector
-    SimpleMatrix<dim3>& indices = affected_indices_[batch_idx];
+    SimpleMatrix<Dim3>& indices = affected_indices_[batch_idx];
     indices.resize(output.dim());
 
-    const dim3 pool_size{dim_.x, dim_.y, 1};
+    const Dim3 pool_size{dim_.x, dim_.y, 1};
     for (auto it = output.begin(); it != output.end(); ++it){
 
-        dim3 out_idx = it.idx();
-        dim3 in_idx(out_idx.x*stride_.x, out_idx.y*stride_.y, out_idx.z);
+        Dim3 out_idx = it.idx();
+        Dim3 in_idx(out_idx.x*stride_.x, out_idx.y*stride_.y, out_idx.z);
 
         const auto AoI = input.subMatView(in_idx, pool_size);
 
         switch (type_){
             case MIN:
             {
-                const dim3 min_index = in_idx + minIndex(AoI);
+                const Dim3 min_index = in_idx + minIndex(AoI);
                 indices(out_idx) = min_index;
                 output(out_idx) = input(min_index);
                 break;
@@ -71,7 +71,7 @@ SimpleMatrix<double> Pooling::propagateForward(SimpleMatrix<double>&& input, siz
 
             case MAX: 
             {
-                const dim3 max_index= in_idx + maxIndex(AoI);
+                const Dim3 max_index= in_idx + maxIndex(AoI);
                 indices(out_idx) = max_index;
                 output(out_idx) = input(max_index);
                 break;
@@ -91,7 +91,7 @@ SimpleMatrix<double> Pooling::propagateForward(SimpleMatrix<double>&& input, siz
 
 SimpleMatrix<double> Pooling::getdLdX(const SimpleMatrix<double>& X, const SimpleMatrix<double>& dLdY, size_t batch_idx){
     SimpleMatrix<double> dLdx(X.dim());
-    SimpleMatrix<dim3>& indices = affected_indices_[batch_idx];
+    SimpleMatrix<Dim3>& indices = affected_indices_[batch_idx];
 
     switch(type_){
         case MIN:
@@ -105,10 +105,10 @@ SimpleMatrix<double> Pooling::getdLdX(const SimpleMatrix<double>& X, const Simpl
 
         case AVG:
         {
-            const dim3 pool_size{dim_.x, dim_.y, 1};
+            const Dim3 pool_size{dim_.x, dim_.y, 1};
             const size_t size = dim_.size();
             for (auto out_it = dLdY.begin(); out_it != dLdY.end(); ++out_it){
-                dim3 in_idx(out_it.idx().x*stride_.x, out_it.idx().y*stride_.y, out_it.idx().z);
+                Dim3 in_idx(out_it.idx().x*stride_.x, out_it.idx().y*stride_.y, out_it.idx().z);
                 dLdx.subMatView(in_idx, pool_size) += (*out_it)/size;
             }
             break;

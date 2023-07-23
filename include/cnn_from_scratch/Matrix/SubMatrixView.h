@@ -30,10 +30,10 @@ public:
     >;
     using type = T;
 
-    SubMatrixView(MatrixType& mat, dim3 start, dim3 dim) : 
+    SubMatrixView(MatrixType& mat, Dim3 start, Dim3 dim) : 
     MatrixBase(dim), mat_ptr_(&mat), start_(start) 
     {
-        dim3 end = start + dim;
+        Dim3 end = start + dim;
         if (end.x > mat_ptr_->dim().x ||
             end.y > mat_ptr_->dim().y ||
             end.z > mat_ptr_->dim().z)
@@ -45,10 +45,10 @@ public:
         }
     }
 
-    SubMatrixView(const SubMatrixView<T>& other_view, dim3 start, dim3 dim) : 
+    SubMatrixView(const SubMatrixView<T>& other_view, Dim3 start, Dim3 dim) : 
     SubMatrixView(*other_view.mat_ptr_, other_view.start_ + start, dim)
     {
-        dim3 end = start + dim;
+        Dim3 end = start + dim;
         if (end.x > other_view.dim_.x ||
             end.y > other_view.dim_.y ||
             end.z > other_view.dim_.z)
@@ -61,13 +61,13 @@ public:
     }
 
     // Indexing - const
-    const type& operator()(const dim3& idx) const;
+    const type& operator()(const Dim3& idx) const;
     const type& operator()(uint x, uint y, uint z) const;
-    const type& at(const dim3& idx) const;
+    const type& at(const Dim3& idx) const;
     // Indexing - non-const
-    type& operator()(const dim3& idx);
+    type& operator()(const Dim3& idx);
     type& operator()(uint x, uint y, uint z);
-    type& at(const dim3& idx);
+    type& at(const Dim3& idx);
 
     // Slice of the view
     SubMatrixView<T> slices(int idx, int num) const;
@@ -88,22 +88,22 @@ public:
 
     // Iterators
     auto begin() {
-        return MatrixIterator<SubMatrixView<T>&>(*this, dim3(0, 0, 0));
+        return MatrixIterator<SubMatrixView<T>&>(*this, Dim3(0, 0, 0));
     }
     auto end() {
-        MatrixIterator<SubMatrixView<T>&> it(*this, dim_ - dim3(1));
+        MatrixIterator<SubMatrixView<T>&> it(*this, dim_ - Dim3(1));
         return ++it;
     }
     auto begin() const {
-        return MatrixIterator<const SubMatrixView<T>&>(*this, dim3(0, 0, 0));
+        return MatrixIterator<const SubMatrixView<T>&>(*this, Dim3(0, 0, 0));
     }
     auto end() const {
-        MatrixIterator<const SubMatrixView<T>&> it(*this, dim_ - dim3(1));
+        MatrixIterator<const SubMatrixView<T>&> it(*this, dim_ - Dim3(1));
         return ++it;
     }
 
 private:
-    dim3 start_;
+    Dim3 start_;
     MatrixType* mat_ptr_;
 };
 

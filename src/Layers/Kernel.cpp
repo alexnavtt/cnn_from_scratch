@@ -5,7 +5,7 @@ namespace my_cnn{
 // ----------------------------------------------------------------------------
 // ----------------------------------------------------------------------------
 
-Kernel::Kernel(dim3 filter_dim, unsigned num_filters_in, unsigned stride) :
+Kernel::Kernel(Dim3 filter_dim, unsigned num_filters_in, unsigned stride) :
 ModelLayer(num_filters_in, {filter_dim.x, filter_dim.y, filter_dim.z*num_filters_in}),
 dim_(filter_dim),
 stride(stride),
@@ -69,7 +69,7 @@ void Kernel::applyBatch(double learning_rate){
 // ----------------------------------------------------------------------------
 
 template<typename MatrixType>
-SimpleMatrix<double> Kernel::padInput(MatrixType&& input_data, const dim3 filter_dim){
+SimpleMatrix<double> Kernel::padInput(MatrixType&& input_data, const Dim3 filter_dim){
     // Create the augmented input data
     SimpleMatrix<double> padded({
         input_data.dim().x + 2*(filter_dim.x - 1),
@@ -91,8 +91,8 @@ bool Kernel::checkSize(const SimpleMatrix<double>& input_data) {
 // ----------------------------------------------------------------------------
 // ----------------------------------------------------------------------------
 
-dim3 Kernel::outputSize(const SimpleMatrix<double>& input_data) const{
-    return dim3(
+Dim3 Kernel::outputSize(const SimpleMatrix<double>& input_data) const{
+    return Dim3(
         input_data.dim(0) - dim_.x + 1,
         input_data.dim(1) - dim_.y + 1,
         num_filters

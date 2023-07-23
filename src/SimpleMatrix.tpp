@@ -19,7 +19,7 @@ namespace my_cnn{
 
 // Initial value based constructor
 template<typename T>
-SimpleMatrix<T>::SimpleMatrix(dim3 dim, T initial_val):
+SimpleMatrix<T>::SimpleMatrix(Dim3 dim, T initial_val):
 MatrixBase(dim),
 values_(dim.x*dim.y*dim.z, initial_val)
 {}
@@ -36,7 +36,7 @@ values_(M.size())
 
 // Full matrix description constructor
 template<typename T>
-SimpleMatrix<T>::SimpleMatrix(dim3 dim, std::vector<T>&& vals):
+SimpleMatrix<T>::SimpleMatrix(Dim3 dim, std::vector<T>&& vals):
 MatrixBase(dim),
 values_(size())
 {
@@ -104,13 +104,13 @@ uint SimpleMatrix<T>::dim(size_t idx) const{
 }
 
 template<typename T>
-const dim3& SimpleMatrix<T>::dims() const{
+const Dim3& SimpleMatrix<T>::dims() const{
     return dim_;
 }
 
 template<typename T>
 void SimpleMatrix<T>::resize(int x, int y, int z){
-    dim_ = dim3(x, y, z);
+    dim_ = Dim3(x, y, z);
     values_.resize(x*y*z, T{});
 }
 
@@ -118,10 +118,10 @@ template<typename T>
 void SimpleMatrix<T>::reshape(int x, int y, int z){
     if(x*y*z != dim_.x*dim_.y*dim_.z){
         std::stringstream ss;
-        ss << "Cannot transform matrix from size " << dim_ << " to size " << dim3(x,y,z) << "\n";
+        ss << "Cannot transform matrix from size " << dim_ << " to size " << Dim3(x,y,z) << "\n";
         throw MatrixTransformException(ss.str());
     }
-    dim_ = dim3(x, y, z);
+    dim_ = Dim3(x, y, z);
 }
 
 // ================================== //
@@ -134,7 +134,7 @@ size_t SimpleMatrix<T>::getIndex(size_t x_idx, size_t y_idx, size_t z_idx) const
 }
 
 template<typename T>
-size_t SimpleMatrix<T>::getIndex(dim3 dim) const{
+size_t SimpleMatrix<T>::getIndex(Dim3 dim) const{
     return getIndex(dim.x, dim.y, dim.z);
 }
 
@@ -149,27 +149,27 @@ T& SimpleMatrix<T>::operator()(size_t x_idx, size_t y_idx, size_t z_idx) {
 }
 
 template<typename T>
-const T& SimpleMatrix<T>::operator()(dim3 idx) const {
+const T& SimpleMatrix<T>::operator()(Dim3 idx) const {
     return values_[getIndex(idx.x, idx.y, idx.z)];
 }
 
 template<typename T>
-T& SimpleMatrix<T>::operator()(dim3 idx) {
+T& SimpleMatrix<T>::operator()(Dim3 idx) {
     return values_[getIndex(idx.x, idx.y, idx.z)];
 }
     
 template<typename T>
-SimpleMatrix<T> SimpleMatrix<T>::subMatCopy(dim3 idx, dim3 sub_dim) const{
+SimpleMatrix<T> SimpleMatrix<T>::subMatCopy(Dim3 idx, Dim3 sub_dim) const{
     return static_cast<SimpleMatrix<T>>(subMatView(idx, sub_dim));
 }
 
 template<typename T>
-SubMatrixView<T> SimpleMatrix<T>::subMatView(dim3 idx, dim3 sub_dim){
+SubMatrixView<T> SimpleMatrix<T>::subMatView(Dim3 idx, Dim3 sub_dim){
     return SubMatrixView<T>(*this, idx, sub_dim);
 }
 
 template<typename T>
-SubMatrixView<const T> SimpleMatrix<T>::subMatView(dim3 idx, dim3 sub_dim) const{
+SubMatrixView<const T> SimpleMatrix<T>::subMatView(Dim3 idx, Dim3 sub_dim) const{
     return SubMatrixView<const T>(*this, idx, sub_dim);
 }
 
@@ -241,7 +241,7 @@ void SimpleMatrix<T>::serialize(std::ostream& os) const {
 template<typename T>
 bool SimpleMatrix<T>::deserialize(std::istream& is) {
     // Retreive the dimensions of the matrix
-    dim3 dim;
+    Dim3 dim;
     is >> dim.x;
     is >> dim.y;
     is >> dim.z;

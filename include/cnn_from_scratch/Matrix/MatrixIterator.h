@@ -21,10 +21,10 @@ public:
     using difference_type = std::ptrdiff_t;
     using value_type = typename MT::type;
     using pointer = std::conditional_t<std::is_const_v<MT> || std::is_const_v<typename MT::type>, const value_type*, value_type*>;
-    using reference = decltype(std::declval<MatrixType>().operator()(std::declval<dim3>()));
+    using reference = decltype(std::declval<MatrixType>().operator()(std::declval<Dim3>()));
 
     template<typename = std::enable_if_t<std::is_reference_v<MatrixType>>>
-    MatrixIterator(MatrixType&& parent, dim3 idx) : 
+    MatrixIterator(MatrixType&& parent, Dim3 idx) : 
     parent_(&parent), 
     dim_it_(parent.dim(), idx),
     scalar_idx_(idx.z*dim_it_.dim.x*dim_it_.dim.y + idx.y*dim_it_.dim.x + idx.x) {}
@@ -37,7 +37,7 @@ public:
     }
     pointer operator->() {return &this->operator*();}
 
-    const dim3& idx(){
+    const Dim3& idx(){
         return dim_it_.idx;
     }
 
@@ -58,7 +58,7 @@ public:
 
     // Difference of two iterators
     difference_type operator-(const MatrixIterator& other){
-        dim3 diff = dim_it_.idx - other.dim_it_.idx;
+        Dim3 diff = dim_it_.idx - other.dim_it_.idx;
         return (diff.z * dim_it_.dim.x * dim_it_.dim.y) + (diff.y * dim_it_.dim.x) + diff.x;
     }
 

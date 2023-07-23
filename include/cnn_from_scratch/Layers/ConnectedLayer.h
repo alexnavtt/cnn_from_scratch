@@ -91,7 +91,7 @@ public:
     bool deserialize(std::istream& is) override;
 
 private:
-    dim3 input_dim_;
+    Dim3 input_dim_;
     bool initialized_ = false;
 
     // Vectors of gradient matrices for batch backpropagation

@@ -3,7 +3,7 @@
 #include "cnn_from_scratch/ModelDescription.h"
 
 TEST(Kernel, singleChannelSingleLayer){
-    my_cnn::SimpleMatrix<float> input(my_cnn::dim3(4, 4, 1),
+    my_cnn::SimpleMatrix<float> input(my_cnn::Dim3(4, 4, 1),
         {1, 2, 3, 4,
          5, 6, 7, 8,
          2, 4, 6, 8,
@@ -11,12 +11,12 @@ TEST(Kernel, singleChannelSingleLayer){
     );
 
     my_cnn::ModelDescription<float, float> model;
-    model.addKernel(my_cnn::dim3(3, 3, 1), 1);
+    model.addKernel(my_cnn::Dim3(3, 3, 1), 1);
     my_cnn::Kernel& kernel = *std::dynamic_pointer_cast<my_cnn::Kernel>(model.layers[0]);
 
     // Make sure their size is as expected
-    EXPECT_EQ(kernel.weights.dim(), my_cnn::dim3(3, 3, 1));
-    EXPECT_EQ(kernel.biases.dim() , my_cnn::dim3(1, 1, 1));
+    EXPECT_EQ(kernel.weights.dim(), my_cnn::Dim3(3, 3, 1));
+    EXPECT_EQ(kernel.biases.dim() , my_cnn::Dim3(1, 1, 1));
 
     // Set the values to known quantities
     kernel.weights.setEntries(
@@ -28,7 +28,7 @@ TEST(Kernel, singleChannelSingleLayer){
 
     // Get the output and set the expected output
     my_cnn::SimpleMatrix<float> output = kernel.propagateForward(input);
-    my_cnn::SimpleMatrix<float> unactivated_output(my_cnn::dim3(2, 2, 1),
+    my_cnn::SimpleMatrix<float> unactivated_output(my_cnn::Dim3(2, 2, 1),
         {66.8f + 1, 83.2f + 1,
          40.6f + 1, 64.0f + 1}
     );
@@ -38,7 +38,7 @@ TEST(Kernel, singleChannelSingleLayer){
 }
 
 TEST(Kernel, singleChannelMultipleLayer){
-    my_cnn::SimpleMatrix<float> input(my_cnn::dim3(4, 4, 1),
+    my_cnn::SimpleMatrix<float> input(my_cnn::Dim3(4, 4, 1),
         {1, 2, 3, 4,
          5, 6, 7, 8,
          2, 4, 6, 8,
@@ -46,12 +46,12 @@ TEST(Kernel, singleChannelMultipleLayer){
     );
 
     my_cnn::ModelDescription<float, float> model;
-    model.addKernel(my_cnn::dim3(3, 3, 1), 2);
+    model.addKernel(my_cnn::Dim3(3, 3, 1), 2);
     my_cnn::Kernel& kernel = *std::dynamic_pointer_cast<my_cnn::Kernel>(model.layers[0]);
 
     // Make sure their size is as expected
-    EXPECT_EQ(kernel.weights.dim(), my_cnn::dim3(3, 3, 2));
-    EXPECT_EQ(kernel.biases.dim() , my_cnn::dim3(2, 1, 1));
+    EXPECT_EQ(kernel.weights.dim(), my_cnn::Dim3(3, 3, 2));
+    EXPECT_EQ(kernel.biases.dim() , my_cnn::Dim3(2, 1, 1));
 
     // Set the values to known quantities
     kernel.weights.setEntries(
@@ -67,7 +67,7 @@ TEST(Kernel, singleChannelMultipleLayer){
 
     // Get the output and set the expected output
     my_cnn::SimpleMatrix<float> output = kernel.propagateForward(input);
-    my_cnn::SimpleMatrix<float> unactivated_output(my_cnn::dim3(2, 2, 2),
+    my_cnn::SimpleMatrix<float> unactivated_output(my_cnn::Dim3(2, 2, 2),
         { 66.8f + 1,  83.2f + 1,
           40.6f + 1,  64.0f + 1,
          
@@ -80,7 +80,7 @@ TEST(Kernel, singleChannelMultipleLayer){
 }
 
 TEST(Kernel, multipleChannelSingleLayer){
-    my_cnn::SimpleMatrix<float> input(my_cnn::dim3(4, 4, 2),
+    my_cnn::SimpleMatrix<float> input(my_cnn::Dim3(4, 4, 2),
         {1, 2, 3, 4,
          5, 6, 7, 8,
          2, 4, 6, 8,
@@ -93,12 +93,12 @@ TEST(Kernel, multipleChannelSingleLayer){
     );
 
     my_cnn::ModelDescription<float, float> model;
-    model.addKernel(my_cnn::dim3(3, 3, 2), 1);
+    model.addKernel(my_cnn::Dim3(3, 3, 2), 1);
     my_cnn::Kernel& kernel = *std::dynamic_pointer_cast<my_cnn::Kernel>(model.layers[0]);
 
     // Make sure their size is as expected
-    EXPECT_EQ(kernel.weights.dim(), my_cnn::dim3(3, 3, 2));
-    EXPECT_EQ(kernel.biases.dim() , my_cnn::dim3(1, 1, 1));
+    EXPECT_EQ(kernel.weights.dim(), my_cnn::Dim3(3, 3, 2));
+    EXPECT_EQ(kernel.biases.dim() , my_cnn::Dim3(1, 1, 1));
 
     // Set the values to known quantities
     kernel.weights.setEntries(
@@ -114,7 +114,7 @@ TEST(Kernel, multipleChannelSingleLayer){
 
     // Get the output and set the expected output
     my_cnn::SimpleMatrix<float> output = kernel.propagateForward(input);
-    my_cnn::SimpleMatrix<float> unactivated_output(my_cnn::dim3(2, 2, 1),
+    my_cnn::SimpleMatrix<float> unactivated_output(my_cnn::Dim3(2, 2, 1),
         { 66.8 - 266.6 + 1,  83.2 - 11.26 + 1,
           40.6 -  64.6 + 1,  64.0 - 41.06 + 1}
     );
@@ -124,7 +124,7 @@ TEST(Kernel, multipleChannelSingleLayer){
 }
 
 TEST(Pooling, singleChannelSingleStride){
-    my_cnn::SimpleMatrix<float> input(my_cnn::dim3(4, 4, 1),
+    my_cnn::SimpleMatrix<float> input(my_cnn::Dim3(4, 4, 1),
         {1, 2, 3, 4,
          5, 6, 7, 8,
          2, 4, 6, 8,
@@ -136,7 +136,7 @@ TEST(Pooling, singleChannelSingleStride){
     my_cnn::Pooling& pool = *std::dynamic_pointer_cast<my_cnn::Pooling>(model.layers[0]);
 
     my_cnn::SimpleMatrix<float> result = pool.propagateForward(input);
-    my_cnn::SimpleMatrix<float> expected(my_cnn::dim3(3, 3, 1),
+    my_cnn::SimpleMatrix<float> expected(my_cnn::Dim3(3, 3, 1),
         {6, 7, 8,
          6, 7, 8,
          4, 6, 8}
@@ -146,7 +146,7 @@ TEST(Pooling, singleChannelSingleStride){
 }
 
 TEST(Pooling, multipleChannelSingleStride){
-    my_cnn::SimpleMatrix<float> input(my_cnn::dim3(4, 4, 2),
+    my_cnn::SimpleMatrix<float> input(my_cnn::Dim3(4, 4, 2),
         {1, 2, 3, 4,
          5, 6, 7, 8,
          2, 4, 6, 8,
@@ -163,7 +163,7 @@ TEST(Pooling, multipleChannelSingleStride){
     my_cnn::Pooling& pool = *std::dynamic_pointer_cast<my_cnn::Pooling>(model.layers[0]);
 
     my_cnn::SimpleMatrix<float> result = pool.propagateForward(input);
-    my_cnn::SimpleMatrix<float> expected(my_cnn::dim3(3, 3, 2),
+    my_cnn::SimpleMatrix<float> expected(my_cnn::Dim3(3, 3, 2),
         {1, 2, 3,
          2, 4, 6,
          1, 3, 5,
@@ -177,7 +177,7 @@ TEST(Pooling, multipleChannelSingleStride){
 }
 
 TEST(Pooling, singleChannelLargeStride){
-    my_cnn::SimpleMatrix<float> input(my_cnn::dim3(4, 4, 1),
+    my_cnn::SimpleMatrix<float> input(my_cnn::Dim3(4, 4, 1),
         {1, 2, 3, 4,
          5, 6, 7, 8,
          2, 4, 6, 8,
@@ -189,7 +189,7 @@ TEST(Pooling, singleChannelLargeStride){
     my_cnn::Pooling& pool = *std::dynamic_pointer_cast<my_cnn::Pooling>(model.layers[0]);
 
     my_cnn::SimpleMatrix<float> result = pool.propagateForward(input);
-    my_cnn::SimpleMatrix<float> expected(my_cnn::dim3(2, 2, 1),
+    my_cnn::SimpleMatrix<float> expected(my_cnn::Dim3(2, 2, 1),
         {3.5, 5.5,
          2.5, 6.5}
     );

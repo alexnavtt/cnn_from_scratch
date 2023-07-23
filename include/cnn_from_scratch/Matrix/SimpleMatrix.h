@@ -49,10 +49,10 @@ public:
     SimpleMatrix(MatrixType&& M);
 
     // Initial value based constructor
-    SimpleMatrix(dim3 dim, T initial_val=T{});
+    SimpleMatrix(Dim3 dim, T initial_val=T{});
 
     // Full matrix description constructor
-    SimpleMatrix(dim3 dim, std::vector<T>&& vals);
+    SimpleMatrix(Dim3 dim, std::vector<T>&& vals);
 
     /* == Assignment === */
 
@@ -79,20 +79,20 @@ public:
 
     // Get the scalar index into the matrix given a 3d index
     size_t getIndex(size_t x_idx, size_t y_idx, size_t z_idx=0) const;
-    size_t getIndex(dim3 dim) const;
+    size_t getIndex(Dim3 dim) const;
 
     T& operator()(size_t x_idx, size_t y_idx, size_t z_idx=0);
     const T& operator()(size_t x_idx, size_t y_idx, size_t z_idx=0) const;
-    T& operator()(dim3 idx);
-    const T& operator()(dim3 idx) const;
+    T& operator()(Dim3 idx);
+    const T& operator()(Dim3 idx) const;
 
     T& operator[](size_t idx){return values_[idx];}
     const T& operator[](size_t idx) const{return values_[idx];}
 
-    SimpleMatrix<T> subMatCopy(dim3 idx, dim3 sub_dim) const;
+    SimpleMatrix<T> subMatCopy(Dim3 idx, Dim3 sub_dim) const;
 
-    SubMatrixView<T> subMatView(dim3 idx, dim3 sub_dim);
-    SubMatrixView<const T> subMatView(dim3 idx, dim3 sub_dim) const;
+    SubMatrixView<T> subMatView(Dim3 idx, Dim3 sub_dim);
+    SubMatrixView<const T> subMatView(Dim3 idx, Dim3 sub_dim) const;
 
     auto begin() {return MatrixIterator<SimpleMatrix<T>&>(*this, {0, 0, 0});}
     auto end() {return MatrixIterator<SimpleMatrix<T>&>(*this, {0, 0, dim_.z});}
@@ -101,15 +101,15 @@ public:
 
     /* === Dimension === */
 
-    const dim3& dims() const;
+    const Dim3& dims() const;
     using MatrixBase::dim;
     uint dim(size_t idx) const;
 
     void resize(int x, int y, int z);
-    void resize(dim3 new_dim){this->resize(new_dim.x, new_dim.y, new_dim.z);}
+    void resize(Dim3 new_dim){this->resize(new_dim.x, new_dim.y, new_dim.z);}
 
     void reshape(int x, int y, int z);
-    void reshape(dim3 new_dim){this->reshape(new_dim.x, new_dim.y, new_dim.z);}
+    void reshape(Dim3 new_dim){this->reshape(new_dim.x, new_dim.y, new_dim.z);}
 
     /* === Other Math === */
 
@@ -148,7 +148,7 @@ std::ostream& operator<<(std::ostream& os, const MatrixType& M){
         for (int k = 0; k < M.dim().z; k++){
             os << "[";
             for (int j = 0; j < M.dim().y; j++){
-                const T& val = M(dim3(i, j, k));
+                const T& val = M(Dim3(i, j, k));
                 os << (val < 0 ? "-" : " ") << std::setw(max_width) << abs(val) << (j == M.dim().y - 1 ? "]" : ",");
             }
             os << "   ";

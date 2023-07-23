@@ -100,7 +100,7 @@ struct Dim{
     }
 };  
 
-typedef Dim<3> dim3;
+typedef Dim<3> Dim3;
 typedef Dim<2> dim2;
 
 template<int N>

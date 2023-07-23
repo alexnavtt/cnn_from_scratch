@@ -18,7 +18,7 @@ public:
     /**
      * Constructor: Set the filter dimensions, filter count, and stride 
      */
-    Kernel(dim3 filter_dim, unsigned num_filters_in, unsigned stride);
+    Kernel(Dim3 filter_dim, unsigned num_filters_in, unsigned stride);
 
     /**
      * Inform the caller that this layer is a Kernel layer 
@@ -40,7 +40,7 @@ public:
      * is padded to allow a full convolution between the filter and the padded input 
      */
     template<typename MatrixType>
-    static SimpleMatrix<double> padInput(MatrixType&& input_data, const dim3 filter_dim);
+    static SimpleMatrix<double> padInput(MatrixType&& input_data, const Dim3 filter_dim);
 
     /**
      * Ensure that the depth of the input matches the depth of the kernel 
@@ -50,7 +50,7 @@ public:
     /**
      * Given the dimensions of the input data, return the dimensions of the ouptput data 
      */
-    dim3 outputSize(const SimpleMatrix<double>& input_data) const;
+    Dim3 outputSize(const SimpleMatrix<double>& input_data) const;
 
     /**
      * Pass the given input matrix through a convolutional filter and return the result  
@@ -102,7 +102,7 @@ public:
     bool deserialize(std::istream& is) override;
 
 private:
-    dim3 dim_;
+    Dim3 dim_;
 
     // Vectors of gradient matrices for batch backpropagation
     std::vector<SimpleMatrix<double>> weight_gradients_;

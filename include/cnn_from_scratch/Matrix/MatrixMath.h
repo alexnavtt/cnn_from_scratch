@@ -127,12 +127,12 @@ public:
         checkSize(m1_, m2_);
     }
 
-    type operator()(const dim3& idx) const {
+    type operator()(const Dim3& idx) const {
         return std::invoke(op, m1_, m2_, idx);
     }
 
     type operator()(uint x, uint y, uint z) const {
-        return operator()(dim3(x,y,z));
+        return operator()(Dim3(x,y,z));
     }
 
     auto begin() {return MatrixIterator<this_type&>(*this, {0, 0, 0});}
@@ -151,7 +151,7 @@ private:
                                                                                                         \
 template<typename MatrixType1, typename MatrixType2, typename = IsMatrixBase<MatrixType1, MatrixType2>> \
 auto operator op (MatrixType1&& M1, MatrixType2&& M2){                                                  \
-    auto OP = [](const MatrixType1& m1, const MatrixType2& m2, const dim3& idx) {                       \
+    auto OP = [](const MatrixType1& m1, const MatrixType2& m2, const Dim3& idx) {                       \
         return m1(idx) op m2(idx);                                                                      \
     };                                                                                                  \
                                                                                                         \
@@ -196,19 +196,19 @@ public:
     using MT2  = MatrixStorageType<MatrixType2>;
     using type = CommonMatrixType<MT1, MT2>;
 
-    GeneralMatrixOperationResult(MT1 M1, MT2 M2, dim3 dim, BinaryOp op) :
+    GeneralMatrixOperationResult(MT1 M1, MT2 M2, Dim3 dim, BinaryOp op) :
     MatrixBase(dim),
     m1_(std::forward<MatrixType1>(M1)), 
     m2_(std::forward<MatrixType2>(M2)),
     op_(op)
     {}
 
-    type operator()(const dim3& idx) const {
+    type operator()(const Dim3& idx) const {
         return std::invoke(op_, m1_, m2_, idx);
     }
 
     type operator()(uint x, uint y, uint z) const {
-        return operator()(dim3(x,y,z));
+        return operator()(Dim3(x,y,z));
     }
 
     auto begin() {return MatrixIterator<GeneralMatrixOperationResult<MatrixType1, MatrixType2, BinaryOp>&>(*this, {0, 0, 0});}
@@ -232,9 +232,9 @@ auto matrixMultiply(MatrixType1&& M1, MatrixType2&& M2){
 
     using T = CommonMatrixType<MatrixType1, MatrixType2>;
 
-    auto getMultipliedIndex = [](const MatrixType1& m1, const MatrixType2& m2, const dim3& idx) {
-        dim3 m1_idx(idx.x, 0, idx.z);
-        dim3 m2_idx(0, idx.y, idx.z);
+    auto getMultipliedIndex = [](const MatrixType1& m1, const MatrixType2& m2, const Dim3& idx) {
+        Dim3 m1_idx(idx.x, 0, idx.z);
+        Dim3 m2_idx(0, idx.y, idx.z);
                 
         T sum{};
         for (size_t i = 0; i < m1.dim().y; ++i, ++m1_idx.y, ++m2_idx.x){
@@ -244,7 +244,7 @@ auto matrixMultiply(MatrixType1&& M1, MatrixType2&& M2){
     };
 
     return GeneralMatrixOperationResult<decltype(M1), decltype(M2),decltype(getMultipliedIndex)>
-    (std::forward<MatrixType1>(M1), std::forward<MatrixType2>(M2), dim3(M1.dim().x, M2.dim().y, M1.dim().z), getMultipliedIndex);
+    (std::forward<MatrixType1>(M1), std::forward<MatrixType2>(M2), Dim3(M1.dim().x, M2.dim().y, M1.dim().z), getMultipliedIndex);
 }
 
 template<typename MatrixType1, typename MatrixType2, typename = IsMatrixBase<MatrixType1, MatrixType2>>
@@ -252,18 +252,18 @@ auto convolve(MatrixType1&& M1, MatrixType2&& M2, dim2 stride){
     // We define convolutions only for 2D matrices
     assert(M1.isFlat() && M2.isFlat());
 
-    const dim3 output_size(
+    const Dim3 output_size(
         M1.dim().x - M2.dim().x + 1,
         M1.dim().y - M2.dim().y + 1,
         1
     );
 
-    auto getConvolvedValue = [stride, output_size](const MatrixType1& m1, const MatrixType2& m2, const dim3& idx){
-        dim3 view_idx(idx.x*stride.x, idx.y*stride.y, 0);
+    auto getConvolvedValue = [stride, output_size](const MatrixType1& m1, const MatrixType2& m2, const Dim3& idx){
+        Dim3 view_idx(idx.x*stride.x, idx.y*stride.y, 0);
         CommonMatrixType<MatrixType1, MatrixType2> sum{};
         for (uint x = 0; x < m2.dim().x; x++){
             for (uint y = 0; y < m2.dim().y; y++){
-                dim3 local_idx(x, y, 0);
+                Dim3 local_idx(x, y, 0);
                 sum += m1(local_idx + view_idx) * m2(local_idx);
             }
         }
@@ -289,12 +289,12 @@ public:
     m_(std::forward<MatrixType>(M)), s_(S), op_(op) 
     {}
 
-    type operator()(dim3 idx) const {
+    type operator()(Dim3 idx) const {
         return std::invoke(op_, m_, s_, idx);
     }
 
     type operator()(uint x, uint y, uint z) const {
-        return operator()(dim3(x,y,z));
+        return operator()(Dim3(x,y,z));
     }
 
     auto begin() {return MatrixIterator<ScalarOperationResult<MatrixType, ScalarType, BinaryOp>&>(*this, {0, 0, 0});}
@@ -313,7 +313,7 @@ private:
 template<typename MatrixType, typename Scalar, typename = IsMatrixBase<MatrixType>,             \
     typename = std::enable_if_t<std::is_arithmetic_v<Scalar>>>                                  \
 auto operator op (MatrixType&& M1, const Scalar& S){                                            \
-    auto comp = [](const MatrixType& m1, const Scalar& s, const dim3& idx) {                    \
+    auto comp = [](const MatrixType& m1, const Scalar& s, const Dim3& idx) {                    \
         return m1(idx) op s;                                                                    \
     };                                                                                          \
                                                                                                 \
@@ -323,7 +323,7 @@ auto operator op (MatrixType&& M1, const Scalar& S){                            
 template<typename MatrixType, typename Scalar, typename = IsMatrixBase<MatrixType>,             \
     typename = std::enable_if_t<std::is_arithmetic_v<Scalar>>>                                  \
 auto operator op (const Scalar& S, MatrixType&& M1){                                            \
-    auto comp = [](const MatrixType& m1, const Scalar& s, const dim3& idx) {                    \
+    auto comp = [](const MatrixType& m1, const Scalar& s, const Dim3& idx) {                    \
         return s op m1(idx);                                                                    \
     };                                                                                          \
                                                                                                 \
@@ -363,12 +363,12 @@ public:
     m_(std::forward<MatrixType>(M)), op(Op) 
     {}
 
-    type operator()(dim3 idx) const {
+    type operator()(Dim3 idx) const {
         return std::invoke(op, m_, idx);
     }
 
     type operator()(uint x, uint y, uint z) const {
-        return operator()(dim3(x,y,z));
+        return operator()(Dim3(x,y,z));
     }
 
     auto begin() {return MatrixIterator<UnaryOperationResult<MatrixType, UnaryOp>&>(*this, {0, 0, 0});}
@@ -383,7 +383,7 @@ private:
 
 template<typename MatrixType, typename UnaryOp>
 auto apply(MatrixType&& M, UnaryOp op){
-    auto invoker = [op](const MatrixType& M_, const dim3& idx_){
+    auto invoker = [op](const MatrixType& M_, const Dim3& idx_){
         return op(M_(idx_));
     };
 
@@ -392,7 +392,7 @@ auto apply(MatrixType&& M, UnaryOp op){
 
 template<typename MatrixType>
 auto abs(MatrixType&& M){
-    auto absIdx = [](const MatrixType& M, const dim3& idx){
+    auto absIdx = [](const MatrixType& M, const Dim3& idx){
         return std::abs(M(idx));
     };
 
@@ -401,7 +401,7 @@ auto abs(MatrixType&& M){
 
 template<typename MatrixType>
 auto exp(MatrixType&& M){
-    auto expIdx = [](const MatrixType& M, const dim3& idx){
+    auto expIdx = [](const MatrixType& M, const Dim3& idx){
         return std::exp(M(idx));
     };
 
@@ -410,8 +410,8 @@ auto exp(MatrixType&& M){
 
 template<typename MatrixType>
 auto transpose(MatrixType&& M){
-    auto transposeIdx = [](const MatrixType& M, const dim3& idx){
-        return M(dim3(idx.y, idx.x, idx.z));
+    auto transposeIdx = [](const MatrixType& M, const Dim3& idx){
+        return M(Dim3(idx.y, idx.x, idx.z));
     };
     auto&& ret_val = UnaryOperationResult<decltype(M), decltype(transposeIdx)>(std::forward<MatrixType>(M), transposeIdx);
     ret_val.dim_.x = M.dim().y;
@@ -428,8 +428,8 @@ auto rotate(MatrixType&& M){
         throw MatrixTransformException(ss.str());
     }
 
-    auto rotatedIndex = [](const MatrixType& M, const dim3& idx){
-        dim3 new_idx;
+    auto rotatedIndex = [](const MatrixType& M, const Dim3& idx){
+        Dim3 new_idx;
         new_idx.z = idx.z;
         if constexpr (NumSteps == 1){
             new_idx.x = M.dim().y - idx.y - 1;

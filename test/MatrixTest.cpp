@@ -31,7 +31,7 @@ TEST(Constructor, dimConstructor){
     EXPECT_EQ(M3.dim(1), 0);
     EXPECT_EQ(M3.dim(2), 0);
 
-    my_cnn::dim3 size;
+    my_cnn::Dim3 size;
     size.x = 2;
     size.y = 4;
     size.z = 13;
@@ -288,7 +288,7 @@ TEST(Indexing, getIndex){
     // Uses column major storage, but regular (row, col, depth) matrix indexing
     my_cnn::SimpleMatrix<size_t> M({2, 3, 4});
     EXPECT_EQ(M.getIndex(1, 2, 3), 3*3*2 + 1*3 + 2);
-    EXPECT_EQ(M.getIndex(my_cnn::dim3{1, 2, 3}), 3*3*2 + 1*3 + 2);
+    EXPECT_EQ(M.getIndex(my_cnn::Dim3{1, 2, 3}), 3*3*2 + 1*3 + 2);
 }
 
 TEST(Indexing, writeSingle){
@@ -297,7 +297,7 @@ TEST(Indexing, writeSingle){
     size_t flat_idx = M.getIndex(3, 2, 1);
 
     for (auto it = M.begin(); it != M.end(); it++){
-        if (it.idx() == my_cnn::dim3(3, 2, 1))
+        if (it.idx() == my_cnn::Dim3(3, 2, 1))
             EXPECT_EQ(*it, 10);
         else
             EXPECT_EQ(*it, 0);
@@ -466,7 +466,7 @@ TEST(Arithmetic, rangeMatrixModify){
                    3, 6, 9});
 
     // Add a matrix to a range
-    my_cnn::dim3 sub_dim{3, 2, 1};
+    my_cnn::Dim3 sub_dim{3, 2, 1};
     M1.subMatView({0, 1, 0}, sub_dim) += 
         my_cnn::SimpleMatrix<float>(sub_dim, {6, 3,
                                               5, 2,
@@ -487,7 +487,7 @@ TEST(Arithmetic, rangeScalarModify){
                    3, 6, 9});
 
     // std::gslice_array doesn't support scalar addition, so you have to create a matrix to add
-    my_cnn::dim3 sub_dim{3, 2, 1};
+    my_cnn::Dim3 sub_dim{3, 2, 1};
     M1.subMatView({0, 1, 0}, sub_dim) -= 2;
 
     my_cnn::SimpleMatrix<float> expected({3, 3, 1});

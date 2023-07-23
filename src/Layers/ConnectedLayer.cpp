@@ -47,7 +47,7 @@ void ConnectedLayer::applyBatch(double learning_rate){
 
 bool ConnectedLayer::checkSize(const SimpleMatrix<double>& input_data){
     // If this is the first time at this layer, resize and apply random values
-    dim3 expected_size(biases.size(), input_data.size(), 1);
+    Dim3 expected_size(biases.size(), input_data.size(), 1);
     if (not initialized_){
         initialized_ = true;
         input_dim_ = input_data.dim();

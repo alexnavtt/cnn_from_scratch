@@ -15,12 +15,12 @@ const T& SubMatrixView<T>::operator()(uint x, uint y, uint z) const{
 }
 
 template<typename T>
-const T& SubMatrixView<T>::operator()(const dim3& idx) const{
+const T& SubMatrixView<T>::operator()(const Dim3& idx) const{
     return mat_ptr_->operator()(start_ + idx);
 }
 
 template<typename T>
-const T& SubMatrixView<T>::at(const dim3& idx) const{
+const T& SubMatrixView<T>::at(const Dim3& idx) const{
     if (idx.x >= dim_.x || idx.y >= dim_.y || idx.z >= dim_.z){
         std::stringstream ss;
         ss << "Failed to index SubMatrixView of size " << dim_ << " with index " << idx;
@@ -35,12 +35,12 @@ T& SubMatrixView<T>::operator()(uint x, uint y, uint z) {
 }
 
 template<typename T>
-T& SubMatrixView<T>::operator()(const dim3& idx) {
+T& SubMatrixView<T>::operator()(const Dim3& idx) {
     return mat_ptr_->operator()(start_ + idx);
 }
 
 template<typename T>
-T& SubMatrixView<T>::at(const dim3& idx) {
+T& SubMatrixView<T>::at(const Dim3& idx) {
     if (idx.x >= dim_.x || idx.y >= dim_.y || idx.z >= dim_.z){
         std::stringstream ss;
         ss << "Failed to index SubMatrixView of size " << dim_ << " with index " << idx;

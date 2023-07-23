@@ -14,7 +14,7 @@ namespace my_cnn{
 
 template<typename InputDataType, typename OutputDataType>
 Kernel& ModelDescription<InputDataType, OutputDataType>::addKernel
-    (dim3 size, size_t count)
+    (Dim3 size, size_t count)
 {
     auto& K = layers.emplace_back(new Kernel(size, count, 1));
     K->name = "Kernel_" + std::to_string(++kernel_count_);
