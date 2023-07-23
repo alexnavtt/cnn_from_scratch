@@ -48,41 +48,7 @@ std::ostream& operator<<(std::ostream& os, const my_cnn::ModelResults<T>& mr){
 // ------------------------------------------------------------------------------------------------
 // ------------------------------------------------------------------------------------------------
 
-template<typename ModelType>
-size_t runEpoch(ModelType& model, my_cnn::MNISTReader& image_source, size_t training_size, double learning_rate){
-    size_t correct_count = 0;
-    double total_loss = 0.0;
-    for (size_t i = 0; i < training_size; i++){
-        auto Data = image_source.getImage(i);
-
-        // Run forwards and backwards propagation
-        my_cnn::ModelResults result = model.forwardPropagation(Data.data, 0);
-        model.backwardsPropagation(result, Data.label, 0);
-        total_loss += result.loss;
-
-        // Try to catch where it happens
-        for (const auto& layer : model.layers){
-            auto w_norm = my_cnn::l2Norm(layer->weights);
-            auto b_norm = my_cnn::l2Norm(layer->biases);
-
-            if  (std::isnan(w_norm) || std::isinf(w_norm) || std::isnan(b_norm) || std::isinf(b_norm)){
-                std::cout << "Layer " << layer->name << " has weights of norm " << w_norm << "\n";
-                std::cout << "Layer " << layer->name << " has biases of norm " << b_norm << "\n";
-                throw(std::runtime_error(""));
-            }
-        }
-
-        correct_count += model.output_labels[result.label_idx] == Data.label;
-        loadingBar(i, training_size);
-    }
-    std::cout << "\n";
-    std::cout << "Average loss was " << total_loss/training_size << " and ";
-    return correct_count;
-}
-
-// ------------------------------------------------------------------------------------------------
-// ------------------------------------------------------------------------------------------------
-
+// Run through the MNIST test dataset for validation
 template<typename ModelType>
 void validate(ModelType& model){
     STIC;
@@ -122,6 +88,7 @@ void validate(ModelType& model){
 // ------------------------------------------------------------------------------------------------
 // ------------------------------------------------------------------------------------------------
 
+// Derive a class from DataGenerator to interface with the model for getting the data
 class MNistGenerator : public my_cnn::DataGenerator<float> {
 public:
     MNistGenerator(std::string image_filepath, std::string label_filepath) :
@@ -159,12 +126,14 @@ private:
 
 int main(int argc, char* argv[]){   
 
+    // Load the MNIST training data from disk
     MNistGenerator data_source(
          data_dir + "/MNIST Train Images.ubyte-img"s, 
          data_dir + "/MNIST Train Labels.ubyte-label"s);   
 
     // Create a model to put the images through
-    my_cnn::ModelDescription<float, std::string> model;
+    using Model = my_cnn::ModelDescription<float, std::string>;
+    Model model;
 
     // Full model description
     model.addKernel ({5, 5, 1},  2);
@@ -176,16 +145,20 @@ int main(int argc, char* argv[]){
     model.addConnectedLayer(10);
     model.setOutputLabels({"0", "1", "2", "3", "4", "5", "6", "7", "8", "9"}, my_cnn::SOFTMAX);
 
-    my_cnn::ModelDescription<float, std::string>::Hyperparameters params;
+    // Set the hyperparameters
+    Model::Hyperparameters params;
     params.learning_rate = 0.03;
     params.num_epochs    = 2;
     params.batch_size    = 32;
     params.num_threads   = 8; 
 
+    // Train the model
     model.train(data_source, params);
 
+    // Validate on the MNIST test data set
     validate(model);
 
+    // If applicable, save the resulting model to a file
     if (argc < 2){
         std::cout << "No file provided, model training results will not be saved\n";
     }else{
@@ -193,7 +166,7 @@ int main(int argc, char* argv[]){
         std::cout << "Saving model to \"" << filename << "\"\n";
         model.saveModel(filename);
     }
-    global_timer.summary();
 
+    global_timer.summary();
     return 0;
 }
