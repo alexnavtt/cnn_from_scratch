@@ -43,6 +43,7 @@ public:
         double learning_rate = 0;
         int    batch_size    = 1;
         int    num_threads   = 1;
+        int    num_epochs    = 1;
     };
 
     bool saveModel(std::string filename);
@@ -60,7 +61,8 @@ public:
     std::vector<SimpleMatrix<double>> getLayerGradients(const std::vector<ModelResults<OutputDataType>>&, const std::vector<OutputDataType>& labels);
     void backwardsPropagation(ModelResults<OutputDataType>& result, OutputDataType label, size_t batch_idx);
 
-    int train(DataGenerator<InputDataType>& data_source, Hyperparameters params);
+    int runEpoch(DataGenerator<InputDataType>& data_source, Hyperparameters params);
+    void train(DataGenerator<InputDataType>& data_source, Hyperparameters params);
 
 private:
     size_t kernel_count_     = 0;

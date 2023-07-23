@@ -146,7 +146,7 @@ public:
         return db_.imageIndex() < db_.numImages();
     }
 
-    void reset() {
+    void reset() override {
         db_.getImage(0);
     }
 
@@ -178,19 +178,13 @@ int main(int argc, char* argv[]){
 
     my_cnn::ModelDescription<float, std::string>::Hyperparameters params;
     params.learning_rate = 0.03;
+    params.num_epochs    = 2;
     params.batch_size    = 32;
     params.num_threads   = 8; 
 
-    TIC("Train");
-    for (int epoch = 0; epoch < 2; epoch++){
-        int correct_count = model.train(data_source, params);
-        std::cout << "\nEpoch " << epoch << ": Accuracy was " << 100.0 * correct_count / data_source.size() << "%\n";
-        data_source.reset();
-    }
-    TOC("Train");
+    model.train(data_source, params);
 
     validate(model);
-    debugLayerWeights(model);
 
     if (argc < 2){
         std::cout << "No file provided, model training results will not be saved\n";

@@ -213,17 +213,13 @@ void ModelDescription<InputDataType, OutputDataType>::backwardsPropagation(Model
 }
 
 template<typename InputDataType, typename OutputDataType>
-int ModelDescription<InputDataType, OutputDataType>::train(DataGenerator<InputDataType>& data_source, Hyperparameters params){
-    // Set up all layers to expect the incoming batch size
-    for (auto& layer : layers){
-        layer->setBatchSize(params.batch_size);
-    }
+int ModelDescription<InputDataType, OutputDataType>::runEpoch(DataGenerator<InputDataType>& data_source, Hyperparameters params){
     
     // Create a pool of worker threads to operate on the inputs
     std::vector<std::thread> workers(params.num_threads);
 
     // Determine how much work each thread has to do
-    const int work_count  = std::ceil((float)params.batch_size / params.num_threads);
+    const int work_count = std::ceil((float)params.batch_size / params.num_threads);
 
     // Create a vector to store the results of each individual forward propagation
     std::vector<ModelResults<OutputDataType>> batch_results(params.batch_size);
@@ -279,6 +275,23 @@ int ModelDescription<InputDataType, OutputDataType>::train(DataGenerator<InputDa
 
     // Return the number of inputs that successfully classified the input
     return success_count;
+}
+
+template<typename InputDataType, typename OutputDataType>
+void ModelDescription<InputDataType, OutputDataType>::train(DataGenerator<InputDataType>& data_source, Hyperparameters params){
+    STIC;
+
+    // Set up all layers to expect the incoming batch size
+    for (auto& layer : layers){
+        layer->setBatchSize(params.batch_size);
+    }
+
+    // Run all the epochs
+    for (int epoch = 0; epoch < params.num_epochs; epoch++){
+        int success_count = runEpoch(data_source, params);
+        std::cout << "\nEpoch " << epoch << ": Accuracy was " << 100.0 * success_count / data_source.size() << "%\n";
+        data_source.reset();
+    }
 }
 
 } // namespace my_cnn
