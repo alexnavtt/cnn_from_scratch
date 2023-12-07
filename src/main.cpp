@@ -16,6 +16,10 @@
 using namespace std::string_literals;
 static const std::string data_dir(DATA_DIR); 
 
+#ifdef TIMEIT
+extern cpp_timer::Timer global_timer;
+#endif
+
 template<typename ModelType>
 void debugLayerWeights(const ModelType& model){
     int ii = 0;
@@ -167,6 +171,9 @@ int main(int argc, char* argv[]){
         model.saveModel(filename);
     }
 
+    #ifdef TIMEIT
     global_timer.summary();
+    #endif
+    
     return 0;
 }
