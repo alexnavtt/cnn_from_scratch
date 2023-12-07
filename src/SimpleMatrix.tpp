@@ -31,7 +31,7 @@ SimpleMatrix<T>::SimpleMatrix(MatrixType&& M) :
 MatrixBase(M.dim()),
 values_(M.size())
 {
-    std::copy(std::forward<MatrixType>(M).begin(), std::forward<MatrixType>(M).end(), begin());
+    std::transform(std::forward<MatrixType>(M).begin(), std::forward<MatrixType>(M).end(), begin(), [](auto InType){return static_cast<type>(InType);});
 }
 
 // Full matrix description constructor
@@ -99,7 +99,7 @@ SimpleMatrix<T>& SimpleMatrix<T>::operator=(MatrixType&& M){
 // ================================== //
 
 template<typename T>
-uint SimpleMatrix<T>::dim(size_t idx) const{
+uint32_t SimpleMatrix<T>::dim(size_t idx) const{
     return dim_.data[idx];
 }
 

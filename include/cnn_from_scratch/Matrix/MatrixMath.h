@@ -1,7 +1,9 @@
 #pragma once
 
+#include <cstdint>
 #include <assert.h>
 #include <numeric>
+#include <algorithm>
 #include <type_traits>
 #include <functional>
 #include "cnn_from_scratch/Matrix/MatrixBase.h"
@@ -131,7 +133,7 @@ public:
         return std::invoke(op, m1_, m2_, idx);
     }
 
-    type operator()(uint x, uint y, uint z) const {
+    type operator()(uint32_t x, uint32_t y, uint32_t z) const {
         return operator()(dim3(x,y,z));
     }
 
@@ -207,7 +209,7 @@ public:
         return std::invoke(op_, m1_, m2_, idx);
     }
 
-    type operator()(uint x, uint y, uint z) const {
+    type operator()(uint32_t x, uint32_t y, uint32_t z) const {
         return operator()(dim3(x,y,z));
     }
 
@@ -261,8 +263,8 @@ auto convolve(MatrixType1&& M1, MatrixType2&& M2, dim2 stride){
     auto getConvolvedValue = [stride, output_size](const MatrixType1& m1, const MatrixType2& m2, const dim3& idx){
         dim3 view_idx(idx.x*stride.x, idx.y*stride.y, 0);
         CommonMatrixType<MatrixType1, MatrixType2> sum{};
-        for (uint x = 0; x < m2.dim().x; x++){
-            for (uint y = 0; y < m2.dim().y; y++){
+        for (uint32_t x = 0; x < m2.dim().x; x++){
+            for (uint32_t y = 0; y < m2.dim().y; y++){
                 dim3 local_idx(x, y, 0);
                 sum += m1(local_idx + view_idx) * m2(local_idx);
             }
@@ -293,7 +295,7 @@ public:
         return std::invoke(op_, m_, s_, idx);
     }
 
-    type operator()(uint x, uint y, uint z) const {
+    type operator()(uint32_t x, uint32_t y, uint32_t z) const {
         return operator()(dim3(x,y,z));
     }
 
@@ -367,7 +369,7 @@ public:
         return std::invoke(op, m_, idx);
     }
 
-    type operator()(uint x, uint y, uint z) const {
+    type operator()(uint32_t x, uint32_t y, uint32_t z) const {
         return operator()(dim3(x,y,z));
     }
 
@@ -422,7 +424,7 @@ auto transpose(MatrixType&& M){
 template<size_t NumSteps, typename MatrixType, typename = IsMatrixBase<MatrixType>>
 auto rotate(MatrixType&& M){
     static_assert(NumSteps > 0 && NumSteps < 4);
-    if (not M.isSquare()){
+    if (!M.isSquare()){
         std::stringstream ss;
         ss << "Cannot rotate matrix of size " << M.dim() << " because it is not square";
         throw MatrixTransformException(ss.str());

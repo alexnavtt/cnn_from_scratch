@@ -103,7 +103,7 @@ public:
 
     const dim3& dims() const;
     using MatrixBase::dim;
-    uint dim(size_t idx) const;
+    uint32_t dim(size_t idx) const;
 
     void resize(int x, int y, int z);
     void resize(dim3 new_dim){this->resize(new_dim.x, new_dim.y, new_dim.z);}

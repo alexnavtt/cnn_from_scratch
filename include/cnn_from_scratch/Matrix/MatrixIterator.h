@@ -57,16 +57,16 @@ public:
     }
 
     // Difference of two iterators
-    difference_type operator-(const MatrixIterator& other){
+    difference_type operator-(const MatrixIterator& other) const{
         dim3 diff = dim_it_.idx - other.dim_it_.idx;
         return (diff.z * dim_it_.dim.x * dim_it_.dim.y) + (diff.y * dim_it_.dim.x) + diff.x;
     }
 
-    bool operator==(const MatrixIterator& other){
+    bool operator==(const MatrixIterator& other) const{
         return dim_it_ == other.dim_it_ && parent_ == other.parent_;
     }
-    bool operator!=(const MatrixIterator& other){
-        return not (*this == other);
+    bool operator!=(const MatrixIterator& other) const{
+        return !(*this == other);
     }
 
 private:

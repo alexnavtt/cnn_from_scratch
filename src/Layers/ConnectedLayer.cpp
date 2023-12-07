@@ -1,3 +1,4 @@
+#include <chrono>
 #include "cnn_from_scratch/Layers/ConnectedLayer.h"
 
 namespace my_cnn{
@@ -48,7 +49,7 @@ void ConnectedLayer::applyBatch(double learning_rate){
 bool ConnectedLayer::checkSize(const SimpleMatrix<double>& input_data){
     // If this is the first time at this layer, resize and apply random values
     dim3 expected_size(biases.size(), input_data.size(), 1);
-    if (not initialized_){
+    if (!initialized_){
         initialized_ = true;
         input_dim_ = input_data.dim();
         std::srand(std::chrono::steady_clock::now().time_since_epoch().count());
@@ -77,7 +78,7 @@ bool ConnectedLayer::checkSize(const SimpleMatrix<double>& input_data){
 // ----------------------------------------------------------------------------
 
 SimpleMatrix<double> ConnectedLayer::propagateForward(SimpleMatrix<double>&& input_data, size_t) {
-    if (not checkSize(input_data)){
+    if (!checkSize(input_data)){
         throw ModelLayerException("Invalid input size for fully connected layer. Input has size " + 
             std::to_string(input_data.size()) + " and this layer has size " + std::to_string(weights.dim(1)));
     }
@@ -157,9 +158,9 @@ bool ConnectedLayer::deserialize(std::istream& is) {
     stream_dim.x = serialization::expect<int>(is, "x");
     stream_dim.y = serialization::expect<int>(is, "y");
     serialization::expect<void>(is, "weights");
-    if (not weights.deserialize(is)) return false;
+    if (!weights.deserialize(is)) return false;
     serialization::expect<void>(is, "biases");
-    if (not biases.deserialize(is)) return false;
+    if (!biases.deserialize(is)) return false;
     initialized_ = true;
     return true;
 }

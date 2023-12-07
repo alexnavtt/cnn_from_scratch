@@ -32,7 +32,7 @@ struct Dim{
 
     Dim(Dim<N>&& other){
         *this = other;
-        std::memset(other.data.begin(), 0x00, sizeof(Dim<N>));
+        std::memset(&other.data[0], 0x00, sizeof(Dim<N>));
     }
 
     Dim(const Dim<N>& other) = default;
@@ -41,7 +41,7 @@ struct Dim{
 
     Dim<N>& operator =(Dim<N>&& other){
         *this = other;
-        std::memset(other.data.begin(), 0x00, sizeof(Dim<N>));
+        std::memset(&other.data[0], 0x00, sizeof(Dim<N>));
         return *this;
     }
 
@@ -62,7 +62,7 @@ struct Dim{
     }
 
     bool operator!=(const Dim<N>& other) const{
-        return not (other == *this);
+        return !(other == *this);
     }
 
     Dim<N> operator+(const Dim<N>& other) const{
