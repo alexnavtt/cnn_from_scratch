@@ -1,3 +1,4 @@
+#include <mutex>
 #include <thread>
 #include <fstream>
 #include <atomic>
@@ -7,8 +8,7 @@
 #include "cnn_from_scratch/ModelDescription.h"
 #include "cnn_from_scratch/Layers/Softmax.h"
 #include "cnn_from_scratch/LoadingBar.h"
-
-extern cpp_timer::Timer global_timer;
+#include "cnn_from_scratch/timerConfig.h"
 
 namespace my_cnn{
 
@@ -65,7 +65,7 @@ bool ModelDescription<InputDataType, OutputDataType>::saveModel(std::string file
 
     int i = 0;
     try{
-        for (auto& layer : layers){
+        for (std::shared_ptr<my_cnn::ModelLayer>& layer : layers){
             f << "(" << i++ << ") ----------\n";
             f << layer->serialize();
         }
@@ -75,7 +75,7 @@ bool ModelDescription<InputDataType, OutputDataType>::saveModel(std::string file
     }
 
     f << "\nOutput labels " << output_labels.size() << "\n";
-    for (auto& label : output_labels){
+    for (OutputDataType& label : output_labels){
         f << label << "\n";
     }
     f << std::endl;
@@ -241,7 +241,7 @@ int ModelDescription<InputDataType, OutputDataType>::runEpoch(DataGenerator<Inpu
                 // Process each data input invidually
                 for (int batch_idx = start; batch_idx < cutoff; batch_idx++){
                     data_mtx.lock();
-                    if (not data_source.hasAvailableData()){
+                    if (!data_source.hasAvailableData()){
                         break;
                     }
                     LabeledInput<InputDataType> data_point = data_source.getNextDataPoint();

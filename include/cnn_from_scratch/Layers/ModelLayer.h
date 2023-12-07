@@ -1,6 +1,5 @@
 #pragma once
 
-#include <valarray>
 #include "cnn_from_scratch/Layers/ModelFlow.h"
 #include "cnn_from_scratch/Matrix/SimpleMatrix.h"
 

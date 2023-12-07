@@ -1,4 +1,5 @@
 #include <string>
+#include <cstdint>
 #include <type_traits>
 #include "cnn_from_scratch/Matrix/SubMatrixView.h"
 #include "cnn_from_scratch/Matrix/SimpleMatrix.h"
@@ -10,7 +11,7 @@ template<typename MatrixType>
 using type = typename MatrixType::type;
 
 template<typename T>
-const T& SubMatrixView<T>::operator()(uint x, uint y, uint z) const{
+const T& SubMatrixView<T>::operator()(uint32_t x, uint32_t y, uint32_t z) const{
     return mat_ptr_->operator()(start_.x + x, start_.y + y, start_.z + z);
 }
 
@@ -30,7 +31,7 @@ const T& SubMatrixView<T>::at(const dim3& idx) const{
 }
 
 template<typename T>
-T& SubMatrixView<T>::operator()(uint x, uint y, uint z) {
+T& SubMatrixView<T>::operator()(uint32_t x, uint32_t y, uint32_t z) {
     return mat_ptr_->operator()(start_.x + x, start_.y + y, start_.z + z);
 }
 

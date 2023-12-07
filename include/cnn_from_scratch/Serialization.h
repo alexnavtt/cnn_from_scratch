@@ -54,7 +54,7 @@ static inline T expect(std::istream& is, const std::string& expected){
         throw std::runtime_error("Error loading Kernel. Expected value was \"" + expected + "\" but \"" + result + "\" was read instead");
     }
 
-    if constexpr (not std::is_void_v<T>){
+    if constexpr (!std::is_void_v<T>){
         T output;
         is >> output;
         clearLine(is);

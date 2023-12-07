@@ -55,7 +55,7 @@ SimpleMatrix<double> Softmax::softMax(const SimpleMatrix<double>& X){
 // ----------------------------------------------------------------------------
 
 SimpleMatrix<double> Softmax::propagateForward(SimpleMatrix<double>&& input, size_t) {
-    if (not checkSize(input))
+    if (!checkSize(input))
         throw ModelLayerException("Softmax input size is ill formed");
 
     return softMax(input);   
@@ -77,7 +77,7 @@ SimpleMatrix<double> Softmax::propagateBackward(
         const SimpleMatrix<double>&, const SimpleMatrix<double>& output, 
         const SimpleMatrix<double>&, size_t, bool) 
 {
-    if (not knows_true_label_){
+    if (!knows_true_label_){
         throw ModelLayerException("Cannot backpropagate softmax layer without knowledge of true label");
     }
 

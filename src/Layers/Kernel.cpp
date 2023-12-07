@@ -104,7 +104,7 @@ dim3 Kernel::outputSize(const SimpleMatrix<double>& input_data) const{
 
 SimpleMatrix<double> Kernel::propagateForward(SimpleMatrix<double>&& input_data, size_t) {
     // Make sure the input size is what we expect based on weights and biases dimensions
-    if (not checkSize(input_data))
+    if (!checkSize(input_data))
         throw ModelLayerException("Mismatched channel count for convolution");
 
     SimpleMatrix<double> output(outputSize(input_data));
@@ -252,11 +252,11 @@ bool Kernel::deserialize(std::istream& is) {
 
     // Read the weights matrix
     serialization::expect<void>(is, "weights");
-    if (not weights.deserialize(is)) return false;
+    if (!weights.deserialize(is)) return false;
 
     // Read the biases matrix
     serialization::expect<void>(is, "biases");
-    if (not biases.deserialize(is)) return false;
+    if (!biases.deserialize(is)) return false;
 
     return true;
 }
