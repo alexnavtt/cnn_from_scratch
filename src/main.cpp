@@ -150,7 +150,7 @@ int main(int argc, char* argv[]){
     params.learning_rate = 0.03;
     params.num_epochs    = 2;
     params.batch_size    = 32;
-    params.num_threads   = 8; 
+    params.num_threads   = std::max(std::thread::hardware_concurrency(), 1U); 
 
     // Train the model
     model.train(data_source, params);
