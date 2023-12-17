@@ -240,12 +240,12 @@ int ModelDescription<InputDataType, OutputDataType>::runEpoch(DataGenerator<Inpu
 
                 // Process each data input invidually
                 for (int batch_idx = start; batch_idx < cutoff; batch_idx++){
-                    data_mtx.lock();
+                    std::unique_lock<std::mutex> lock(data_mtx);
                     if (!data_source.hasAvailableData()){
                         break;
                     }
                     LabeledInput<InputDataType> data_point = data_source.getNextDataPoint();
-                    data_mtx.unlock();
+                    lock.unlock();
 
                     ModelResults<OutputDataType>& result = batch_results[batch_idx];
                     result = forwardPropagation(data_point.data, batch_idx);
