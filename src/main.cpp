@@ -1,3 +1,4 @@
+#include <atomic>
 #include <limits>
 #include <sstream>
 #include <cstring>
@@ -54,7 +55,7 @@ std::ostream& operator<<(std::ostream& os, const my_cnn::ModelResults<T>& mr){
 
 // Run through the MNIST test dataset for validation
 template<typename ModelType>
-void validate(ModelType& model){
+void validate(ModelType& model, const typename ModelType::Hyperparameters& params){
     STIC;
 
     my_cnn::MNISTReader db
@@ -63,19 +64,36 @@ void validate(ModelType& model){
 
     std::cout << "Running model validation test...\n";
 
-    int correct_count = 0;
-    int num_images = db.numImages();
-    for (int i = 0; i < num_images; i++){
-        auto Data = db.getImage(i);
+    // Set up threads to validate
+    std::mutex mtx;
+    std::atomic<int> correct_count = 0;
+    std::vector<std::thread> workers(params.num_threads);
 
-        // Run forwards and backwards propagation
-        my_cnn::ModelResults result = model.forwardPropagation(Data.data);
-        correct_count += model.output_labels[result.label_idx] == std::to_string(Data.label);
-        loadingBar(i, num_images);
+    // Assign work to threads
+    auto start = std::chrono::steady_clock::now();
+    int num_images = db.numImages();
+    for (size_t worker_idx = 0; worker_idx < workers.size(); worker_idx++){
+        workers[worker_idx] = std::thread([&, worker_idx](){
+            for (int i = worker_idx; i < num_images; i += workers.size()){
+                // getImage isn't thread safe, so we need to protect with a mutex
+                std::unique_lock<std::mutex> lock(mtx);
+                auto Data = db.getImage(i);
+                lock.unlock();
+
+                // Run forwards propagation and check result
+                my_cnn::ModelResults result = model.forwardPropagation(Data.data);
+                correct_count += model.output_labels[result.label_idx] == std::to_string(Data.label);
+            }
+        });
     }
 
-    std::cout << "\n\n";
+    // Wait for them to finish
+    std::for_each(workers.begin(), workers.end(), [](std::thread& t){t.join();});
+    auto stop = std::chrono::steady_clock::now();
+    std::cout << "\nValidation finished in " << std::chrono::duration_cast<std::chrono::milliseconds>(stop-start).count()
+              << " milliseconds.\nValidation accuracy was " << 100.0f * correct_count/num_images << "%\n\n";
 
+    // Print some samples for manual inspection
     for (int i = 0; i < 5; i++){
         int idx = (double)(rand())/RAND_MAX * num_images;
         auto Data = db.getImage(idx);
@@ -85,8 +103,6 @@ void validate(ModelType& model){
         my_cnn::printImage(Data.data);
         std::cout << result << "\n\n";
     }
-
-    std::cout << "\nValidation accuracy was " << 100.0f * correct_count/num_images << "%\n";
 }
 
 // ------------------------------------------------------------------------------------------------
@@ -160,7 +176,7 @@ int main(int argc, char* argv[]){
     model.train(data_source, params);
 
     // Validate on the MNIST test data set
-    validate(model);
+    validate(model, params);
 
     // If applicable, save the resulting model to a file
     if (argc < 2){
